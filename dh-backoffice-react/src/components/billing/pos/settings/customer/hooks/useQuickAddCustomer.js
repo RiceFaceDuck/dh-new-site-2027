@@ -76,14 +76,40 @@ export function useQuickAddCustomer({
         rawText: ''
     });
 
+    // Dedicated runner for in-memory customer matching (0 Firestore Reads)
+    const evaluateCustomerMatching = useCallback((parsed, customersList, adsIdx) => {
+        if (!parsed || !Array.isArray(customersList) || customersList.length === 0) {
+            setMatchedCustomer(null);
+            setMatchedCustomers([]);
+            return;
+        }
+
+        // 1. Enrich candidates with Partner Ads before matching (attaches adStoreTitle for web partners)
+        const candidates = adsIdx 
+            ? customersList.map(c => enrichCustomerWithAdData(c, adsIdx))
+            : customersList;
+
+        // 2. Deterministic match scoring
+        const matches = findBestCustomerMatches(parsed, candidates, 35, 5);
+        if (matches && matches.length > 0) {
+            const enrichedMatches = matches.map(m => ({
+                ...m,
+                candidate: enrichCustomerWithAdData(m.candidate, adsIdx)
+            }));
+            setMatchedCustomer(enrichedMatches[0]);
+            setMatchedCustomers(enrichedMatches);
+        } else {
+            setMatchedCustomer(null);
+            setMatchedCustomers([]);
+        }
+    }, []);
+
     // 1. Initialize or reset modal state
     useEffect(() => {
         if (isOpen) {
             setModalStep(1);
             setCreatedCustomerObj(null);
             setRawInputText(initialText || '');
-            setMatchedCustomer(null);
-            setMatchedCustomers([]);
             setIsDuplicateModalOpen(false);
             setDuplicateCandidates([]);
             setPendingNewCustPayload(null);
@@ -96,7 +122,10 @@ export function useQuickAddCustomer({
                 const parsed = parseCustomerAddress(initialText);
                 setParsedData(parsed);
                 if (parsed.lineId) setStagedLineId(parsed.lineId);
+                evaluateCustomerMatching(parsed, existingCustomers, adsIndex);
             } else {
+                setMatchedCustomer(null);
+                setMatchedCustomers([]);
                 setParsedData({
                     accountName: '',
                     contactName: '',
@@ -124,7 +153,7 @@ export function useQuickAddCustomer({
                 });
             }
         }
-    }, [isOpen, initialText]);
+    }, [isOpen, initialText, existingCustomers, adsIndex, evaluateCustomerMatching]);
 
     // 2. Load Role Tier Config (Warm Cache)
     useEffect(() => {
@@ -146,11 +175,23 @@ export function useQuickAddCustomer({
     useEffect(() => {
         if (!isOpen) return;
         fetchCustomerAdsIndex().then(index => {
-            if (index) setAdsIndex(index);
+            if (index) {
+                setAdsIndex(index);
+            }
         }).catch(err => {
             console.warn('[useQuickAddCustomer] Ads index fetch warning:', err);
         });
     }, [isOpen]);
+
+    // 3.1 Re-evaluate matching when adsIndex or existingCustomers updates
+    useEffect(() => {
+        if (!isOpen) return;
+        const text = rawInputText || initialText;
+        if (text && text.trim()) {
+            const parsed = parseCustomerAddress(text);
+            evaluateCustomerMatching(parsed, existingCustomers, adsIndex);
+        }
+    }, [isOpen, adsIndex, existingCustomers, rawInputText, initialText, evaluateCustomerMatching]);
 
     // 4. Real-time text change and in-memory customer matching
     const handleTextChange = useCallback((text) => {
@@ -167,29 +208,8 @@ export function useQuickAddCustomer({
             setStagedLineId(parsed.lineId);
         }
 
-        // 🔍 In-memory matching (0 Firestore Reads)
-        if (Array.isArray(existingCustomers) && existingCustomers.length > 0) {
-            const matches = findBestCustomerMatches(parsed, existingCustomers, 35, 5);
-            if (matches && matches.length > 0) {
-                // Enrich matched candidates with Partner Ads data
-                const enrichedMatches = matches.map(m => {
-                    const enriched = enrichCustomerWithAdData(m.candidate, adsIndex);
-                    return {
-                        ...m,
-                        candidate: enriched
-                    };
-                });
-                setMatchedCustomer(enrichedMatches[0]);
-                setMatchedCustomers(enrichedMatches);
-            } else {
-                setMatchedCustomer(null);
-                setMatchedCustomers([]);
-            }
-        } else {
-            setMatchedCustomer(null);
-            setMatchedCustomers([]);
-        }
-    }, [existingCustomers, adsIndex, stagedLineId]);
+        evaluateCustomerMatching(parsed, existingCustomers, adsIndex);
+    }, [existingCustomers, adsIndex, stagedLineId, evaluateCustomerMatching]);
 
     // 5. Handle field changes in manual editor
     const handleFieldChange = useCallback((field, value) => {
@@ -223,9 +243,11 @@ export function useQuickAddCustomer({
         }
 
         // Business / Store Name takes HIGHEST precedence for DH B2B system
-        const effectiveStoreName = (parsedData.storeName && parsedData.storeName !== 'ลูกค้าใหม่')
-            ? parsedData.storeName
-            : (candidate.storeName || candidate.accountName || candidate.displayName);
+        const effectiveStoreName = candidate.adStoreTitle || (
+            (parsedData.storeName && parsedData.storeName !== 'ลูกค้าใหม่')
+                ? parsedData.storeName
+                : (candidate.storeName || candidate.accountName || candidate.displayName)
+        );
 
         const effectiveContactName = parsedData.contactName || candidate.contactName || candidate.firstName || candidate.displayName;
 

@@ -36,20 +36,37 @@ export default function CustomerDetectedSheet({
     );
 
     // Business / Store Name takes HIGHEST precedence for DH B2B workflow
-    const storeName = (parsedData.storeName && parsedData.storeName !== 'ลูกค้าใหม่')
-        ? parsedData.storeName 
-        : (candidate.storeName || candidate.accountName || candidate.displayName || '-');
+    const storeName = candidate.adStoreTitle || (
+        (parsedData.storeName && parsedData.storeName !== 'ลูกค้าใหม่')
+            ? parsedData.storeName 
+            : (candidate.storeName || candidate.accountName || candidate.displayName || '-')
+    );
 
     // Contact Person Name
     const candidatePerson = candidate.displayName || candidate.firstName || candidate.contactName || '';
-    const parsedPerson = parsedData.contactName && parsedData.contactName !== storeName ? parsedData.contactName : '';
+    let parsedPerson = parsedData.contactName || '';
+    if (storeName && parsedPerson.includes(storeName)) {
+        parsedPerson = parsedPerson.replace(storeName, '').replace(/^ร้าน\s*/i, '').trim();
+    }
+    if (parsedPerson === storeName) parsedPerson = '';
+
     let contactName = candidatePerson || parsedPerson || storeName;
     if (candidatePerson && parsedPerson && candidatePerson.toLowerCase() !== parsedPerson.toLowerCase()) {
-        contactName = `${candidatePerson} (${parsedPerson.startsWith('คุณ') ? parsedPerson : `คุณ ${parsedPerson}`})`;
+        const cleanPerson = parsedPerson.startsWith('คุณ') ? parsedPerson : `คุณ ${parsedPerson}`;
+        contactName = `${candidatePerson} (${cleanPerson})`;
     }
     const accountId = candidate.accountId || candidate.customerCode || candidate.id?.substring(0, 8)?.toUpperCase() || 'TRJEHNHG';
     const points = candidate.creditPoints ?? candidate.totalAccumulatedPoints ?? 0;
-    const primaryPhone = candidate.phone || candidate.phoneNumber || parsedData.phone || '-';
+
+    const isValidPhone = (p) => {
+        if (!p) return false;
+        const digits = String(p).replace(/\D/g, '');
+        return digits.length >= 9;
+    };
+    const hasExistingPhone = isValidPhone(candidate.phone) || isValidPhone(candidate.phoneNumber);
+    const primaryPhone = hasExistingPhone 
+        ? (candidate.phone || candidate.phoneNumber) 
+        : (parsedData.formattedPhone || parsedData.phone || '-');
     const email = candidate.email || parsedData.email || '-';
     const currentLine = stagedLineId || candidate.lineId || parsedData.lineId || '';
     const fb = candidate.facebook || candidate.facebookUrl || parsedData.facebook || '';
@@ -139,9 +156,15 @@ export default function CustomerDetectedSheet({
                         <span className="font-mono font-bold text-slate-900 text-sm">
                             {primaryPhone}
                         </span>
-                        <span className="text-emerald-700 font-medium text-[11px] bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
-                            ✓ ตรงกับระบบเดิม
-                        </span>
+                        {hasExistingPhone ? (
+                            <span className="text-emerald-700 font-medium text-[11px] bg-emerald-50 px-1.5 py-0.2 rounded border border-emerald-200">
+                                ✓ ตรงกับระบบเดิม
+                            </span>
+                        ) : parsedData.phone ? (
+                            <span className="text-amber-800 font-medium text-[11px] bg-amber-50 px-1.5 py-0.2 rounded border border-amber-300">
+                                + เพิ่มเบอร์นี้ลงโปรไฟล์
+                            </span>
+                        ) : null}
                         {Array.isArray(candidate.phones) && candidate.phones.length > 1 && (
                             <span className="text-slate-400 text-[10px]">
                                 (+{candidate.phones.length - 1} เบอร์สำรอง)

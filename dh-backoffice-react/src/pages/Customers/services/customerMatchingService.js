@@ -103,15 +103,25 @@ export function calculateCustomerMatchScore(parsed = {}, candidate = {}) {
     matchReasons.push('อีเมลตรงกัน');
   }
 
-  // 3. Name & Store Name Comparison (Weight: up to 25 pts)
+  // 3. Name & Store Name Comparison (Weight: up to 35 pts)
+  const GENERIC_SHOP_WORDS = new Set([
+    'คอม', 'ไอที', 'การช่าง', 'เซอร์วิส', 'เทรดดิ้ง', 'ช็อป', 'shop', 'service', 'computer', 'store', 'mobile', 'phone'
+  ]);
+
   const parsedNames = [
     normalizeThaiText(parsed.storeName),
     normalizeThaiText(parsed.customerName),
-    normalizeThaiText(parsed.name)
+    normalizeThaiText(parsed.name),
+    normalizeThaiText(parsed.accountName)
   ].filter(Boolean);
 
+  const candStoreName = normalizeThaiText(candidate.storeName);
+  const candAdStoreTitle = normalizeThaiText(candidate.adStoreTitle);
+  const targetStoreTokens = [candStoreName, candAdStoreTitle].filter(s => s && s.length >= 3 && !GENERIC_SHOP_WORDS.has(s));
+
   const candNames = [
-    normalizeThaiText(candidate.storeName),
+    candStoreName,
+    candAdStoreTitle,
     normalizeThaiText(candidate.displayName),
     normalizeThaiText(candidate.accountName),
     normalizeThaiText(candidate.contactName),
@@ -126,8 +136,21 @@ export function calculateCustomerMatchScore(parsed = {}, candidate = {}) {
     for (const cName of candNames) {
       if (cName.length < 2) continue;
       if (pName === cName) {
-        nameScore = Math.max(nameScore, 25);
-        nameMatchedStr = 'ชื่อร้าน/ชื่อผู้ติดต่อตรงกัน 100%';
+        if (targetStoreTokens.includes(cName)) {
+          nameScore = Math.max(nameScore, 35);
+          nameMatchedStr = `ชื่อร้านตรงกับในระบบ 100% (${candidate.adStoreTitle || candidate.storeName || ''})`;
+        } else {
+          nameScore = Math.max(nameScore, 25);
+          nameMatchedStr = 'ชื่อผู้ติดต่อตรงกัน 100%';
+        }
+        break;
+      } else if (
+        targetStoreTokens.includes(cName) &&
+        pName.includes(cName)
+      ) {
+        // High confidence: Pasted address contains the exact store name token (e.g. Aor.ACC)
+        nameScore = Math.max(nameScore, 30);
+        nameMatchedStr = `พบชื่อร้านตรงกับในระบบ (${candidate.adStoreTitle || candidate.storeName || ''})`;
         break;
       } else if (
         (pName.length >= 4 && cName.includes(pName)) ||
@@ -137,7 +160,21 @@ export function calculateCustomerMatchScore(parsed = {}, candidate = {}) {
         if (!nameMatchedStr) nameMatchedStr = 'ชื่อร้านหรือชื่อผู้ติดต่อใกล้เคียงมาก';
       }
     }
-    if (nameScore === 25) break;
+    if (nameScore >= 35) break;
+  }
+
+  // Fallback: Check raw address/text for exact storeName or adStoreTitle occurrence
+  if (nameScore < 30 && targetStoreTokens.length > 0) {
+    const rawNormalized = normalizeThaiText(parsed.rawText || parsed.rawAddress || '');
+    if (rawNormalized) {
+      for (const token of targetStoreTokens) {
+        if (rawNormalized.includes(token)) {
+          nameScore = Math.max(nameScore, 30);
+          nameMatchedStr = `พบชื่อร้านตรงกับในระบบ (${candidate.adStoreTitle || candidate.storeName || ''})`;
+          break;
+        }
+      }
+    }
   }
 
   if (nameScore > 0) {
@@ -164,7 +201,7 @@ export function calculateCustomerMatchScore(parsed = {}, candidate = {}) {
     matchReasons.push('LINE ID ตรงกัน');
   }
 
-  // 6. Storefront Golden Record Bonus (+10 pts)
+  // 6. Storefront Golden Record Bonus (+15 pts)
   // Storefront accounts have auth emails, partner tiers, loyalty points, or web registration flags
   const isStorefront = !candidate.isManualCustomer && (
     Boolean(candidate.email) ||
@@ -175,9 +212,9 @@ export function calculateCustomerMatchScore(parsed = {}, candidate = {}) {
     (candidate.role && candidate.role.toLowerCase().includes('partner'))
   );
 
-  if (isStorefront && score >= 25) {
-    score += 10;
-    breakdown.storefrontBonus = 10;
+  if (isStorefront && score >= 20) {
+    score += 15;
+    breakdown.storefrontBonus = 15;
     matchReasons.push('สมาชิกหน้าเว็บ (โบนัสความน่าเชื่อถือ)');
   }
 
