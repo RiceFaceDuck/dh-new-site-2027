@@ -24,7 +24,6 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
     if (s === 'OUT_OF_CREDIT' || ad.isQuotaExhausted || (ad.remainingViews !== undefined && ad.remainingViews <= 0)) {
       return <span className="flex items-center gap-1 bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><XCircle size={12}/> โควต้าหมด</span>;
     }
-    const s = String(status).toUpperCase();
     if (['APPROVED', 'ACTIVE'].includes(s)) return <span className="flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><CheckCircle2 size={12}/> Active</span>;
     if (s === 'PENDING') return <span className="flex items-center gap-1 bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><Clock size={12}/> Pending</span>;
     if (s === 'REJECTED') return <span className="flex items-center gap-1 bg-rose-100 text-rose-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><XCircle size={12}/> Rejected</span>;
