@@ -1,8 +1,12 @@
 # SSR Local Grimoire: Master Deployment Center
 
 <usage_workflow>
-1. ผู้ใช้งานเรียกใช้งานผ่านไฟล์ `deploy-all.bat` ในโฟลเดอร์ `Management System`
-2. ระบบแสดง Dashboard ตรวจสอบสถานะความพร้อม (Pre-flight Status):
+1. ผู้ใช้งานเรียกใช้งานผ่านไฟล์ `Management System\_deploy\deploy-all.bat`
+2. หรือใช้ไฟล์ Deploy ย่อยในโฟลเดอร์ `Management System\_deploy\`:
+   - `deploy-backoffice.bat`
+   - `deploy-frontend.bat`
+   - `deploy-staff.bat`
+3. ระบบแสดง Dashboard ตรวจสอบสถานะความพร้อม (Pre-flight Status):
    - ตรวจจับ Git Commits รอขึ้น Cloud (นับจาก `git log origin/main..HEAD`)
    - ตรวจจับการแก้ไขตกค้างใน dh-frontend, dh-backoffice-react, dh-staff-app, Rules, Functions, Indexes (นับจาก `git status --porcelain`)
 3. ผู้ใช้งานเลือกการกระทำ:
@@ -23,7 +27,8 @@
 </domain_rules>
 
 <core_schema>
-- Entry Point: `Management System/deploy-all.bat`
+- Entry Point: `Management System/_deploy/deploy-all.bat`
+- Dedicated Deploy Scripts: `Management System/_deploy/deploy-*.bat`
 - Main Logic: `Management System/scripts/deploy_center.mjs`
 - Database Backup Runner: `Management System/scripts/backupDatabase.mjs`
 - Backup Output Directory: `Management System/backups/{YYYY-MM-DD}_{HH-mm-ss}/{collection}.json`
