@@ -2,7 +2,7 @@
 
 <usage_workflow>
 1. ผู้ใช้งานหรือผู้บริหารเข้าสู่หน้าเว็บระบบหลังบ้านเมนู "ภาพรวม" (`/overview`)
-2. ระบบดึงเอกสารสรุปสถิติ `system_stats/web_traffic` จาก Firestore ผ่าน `useWebTrafficStats` (1 Read หรือแคช)
+2. ระบบดึงเอกสารสรุปสถิติ `settings/web_traffic` จาก Firestore ผ่าน `useWebTrafficStats` (1 Read หรือแคช)
 3. หน้าระบบแสดงผลการ์ดสถิติผู้เข้าชมเว็บไซต์ขนาดกะทัดรัด (Compact Card) สไตล์ Classic Retro Desktop UI
 4. การ์ดแจกแจง 4 ค่า: เมื่อวาน, 7 วันล่าสุด, 30 วันล่าสุด, ทั้งหมด พร้อมแสดงวันเวลาที่อัปเดตล่าสุด
 5. พื้นที่ด้านล่างเว้นว่างไว้รองรับการต่อขยายวิดเจ็ตสรุปข้อมูลสต็อก/ยอดขาย/งานที่ต้องทำในอนาคต
@@ -20,7 +20,7 @@
 - UI Component: `dh-backoffice-react/src/components/overview/WebTrafficCard.jsx`
 - Hook Controller: `dh-backoffice-react/src/components/overview/hooks/useWebTrafficStats.js`
 - Service: `dh-backoffice-react/src/firebase/webTrafficService.js`
-- Firestore Document Path: `system_stats/web_traffic`
+- Firestore Document Path: `settings/web_traffic`
   - Fields:
     - `yesterday` (number): ยอดเข้าชมเมื่อวาน
     - `last7Days` (number): ยอดเข้าชม 7 วันล่าสุด
