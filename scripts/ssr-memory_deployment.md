@@ -1,8 +1,10 @@
 # SSR Local Grimoire: Master Deployment Center
 
 <usage_workflow>
-1. ผู้ใช้งานเรียกใช้งานผ่านไฟล์ `Management System\_deploy\deploy-all.bat`
-2. หรือใช้ไฟล์ Deploy ย่อยในโฟลเดอร์ `Management System\_deploy\`:
+1. ผู้ใช้งานเรียกใช้งานผ่านโปรแกรม `Management System\_deploy\DeployCenter.exe` (Classic Desktop GUI) หรือรันผ่าน `deploy-all.bat`
+2. ระบบทำการสแกนตรวจสอบสถานะอัตโนมัติ (Smart Change Detection) ตรวจจับครบทั้ง Uncommitted และ Unpushed
+3. ผู้ใช้งานกดปุ่ม [ 🚀 Deploy เฉพาะส่วนที่แก้ไข (Smart Deploy) ] เพื่อให้ระบบสั่ง Build & Deploy เฉพาะจุดที่ตรวจพบ และซิงค์ Git Push อัตโนมัติ 100%
+4. หรือใช้ไฟล์ Deploy ย่อยในโฟลเดอร์ `Management System\_deploy\`:
    - `deploy-backoffice.bat`
    - `deploy-frontend.bat`
    - `deploy-staff.bat`
@@ -27,7 +29,9 @@
 </domain_rules>
 
 <core_schema>
-- Entry Point: `Management System/_deploy/deploy-all.bat`
+- Entry Point (GUI): `Management System/_deploy/DeployCenter.exe` (Classic Desktop Utility)
+- Entry Point (BAT): `Management System/_deploy/deploy-all.bat`
+- Source Code: `Management System/_deploy/src/DeployCenter.cs`
 - Dedicated Deploy Scripts: `Management System/_deploy/`
   * `deploy-all.bat`: Master Deployment Center
   * `deploy-frontend.bat`: หน้าร้านหลัก
