@@ -3,6 +3,7 @@ import { doc, getDoc, collection, query, where, onSnapshot } from 'firebase/fire
 import { db } from '../../../../firebase/config';
 import { driveService } from '../../../../firebase/driveService';
 import { marketingService, toggleAdStatus } from '../../../../firebase/marketingService';
+import { getAdImpressionPricing, checkCanActivateAd, activateAdWithPrepaidQuota } from '../../../../firebase/credit/adPrepaidService';
 import { useUserCredit } from '../../../../firebase/creditService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
@@ -252,31 +253,48 @@ export const useAdManager = (user) => {
   const handleToggleAdStatus = async (ad) => {
     if (!ad || !ad.id) return;
     const isCurrentlyActive = ['APPROVED', 'ACTIVE'].includes(String(ad.status).toUpperCase());
-    const actionText = isCurrentlyActive ? 'พักแคมเปญชั่วคราว' : 'เปิดใช้งานโฆษณาต่อ';
-    const nextStatus = isCurrentlyActive ? 'paused' : 'active';
 
-    if (!isCurrentlyActive && userCredit <= 0) {
-      return showToast("ไม่สามารถเปิดใช้งานโฆษณาได้ เนื่องจาก Credit Point ของคุณหมด กรุณาเติม Credit ก่อน", 'error');
+    // กรณีต้องการพักแคมเปญ (Pause)
+    if (isCurrentlyActive) {
+      setAds(prevAds => prevAds.map(item => item.id === ad.id ? { ...item, status: 'paused', isActive: false } : item));
+      if (businessCardAd && businessCardAd.id === ad.id) {
+        setBusinessCardAd(prev => ({ ...prev, status: 'paused', isActive: false }));
+      }
+      try {
+        await toggleAdStatus(ad.id, ad.status, ad.type);
+        showToast('พักแคมเปญชั่วคราวเรียบร้อยแล้ว (โควต้าคงเหลือจะถูกเก็บไว้)', 'info');
+        fetchMyAds(true);
+      } catch (err) {
+        console.error("🔥 Error pausing ad:", err);
+        fetchMyAds(true);
+        showToast("เกิดข้อผิดพลาดในการพักแคมเปญ", 'error');
+      }
+      return;
     }
 
-    // 🚀 Instant Toggle (0ms Optimistic UI update across both tabs)
-    setAds(prevAds => prevAds.map(item => item.id === ad.id ? { ...item, status: nextStatus, isActive: !isCurrentlyActive } : item));
-    if (businessCardAd && businessCardAd.id === ad.id) {
-      setBusinessCardAd(prev => ({ ...prev, status: nextStatus, isActive: !isCurrentlyActive }));
-    }
-
+    // กรณีต้องการเปิดใช้งานโฆษณา (Prepaid Quota Activation / Gatekeeper Guard)
     try {
-      await toggleAdStatus(ad.id, ad.status, ad.type);
-      showToast(`${actionText} เรียบร้อยแล้ว`, 'info');
+      const pricing = await getAdImpressionPricing();
+      const check = checkCanActivateAd(userCredit, ad, pricing);
+
+      // 🛡️ Gatekeeper Guard: หากแต้มไม่พอห้ามเปิดเด็ดขาด
+      if (!check.canActivate) {
+        return showToast(`ไม่สามารถเปิดใช้งานได้ เครดิตของคุณไม่เพียงพอ (มี ${userCredit} Pts) ต้องมีอย่างน้อย ${check.requiredCost} Pts ในการเปิดใช้งาน`, 'error');
+      }
+
+      // ดำเนินการเปิดใช้งานพร้อมเติมโควต้า และตัดแต้มล่วงหน้าแบบ Atomic Transaction
+      const result = await activateAdWithPrepaidQuota(user.uid, ad.id, ad.type, ad);
+
+      if (result.resumed) {
+        showToast(`เปิดใช้งานโฆษณาต่อเรียบร้อยแล้ว (คงเหลือโควต้า ${result.remainingViews} วิว)`, 'info');
+      } else {
+        showToast(`เปิดใช้งานสำเร็จ ได้รับโควต้า ${result.remainingViews} วิว (หัก ${result.deducted} Pts)`, 'success');
+      }
+
       fetchMyAds(true);
     } catch (err) {
-      console.error("🔥 Error toggling status:", err);
-      // Rollback state on error
-      setAds(prevAds => prevAds.map(item => item.id === ad.id ? { ...item, status: ad.status } : item));
-      if (businessCardAd && businessCardAd.id === ad.id) {
-        setBusinessCardAd(prev => ({ ...prev, status: ad.status, isActive: ad.isActive }));
-      }
-      showToast("เกิดข้อผิดพลาดในการเปลี่ยนสถานะโฆษณา", 'error');
+      console.error("🔥 Error activating ad with prepaid quota:", err);
+      showToast(err.message || "เกิดข้อผิดพลาดในการเปิดใช้งานโฆษณา", 'error');
     }
   };
 

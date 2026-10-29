@@ -19,7 +19,11 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
     );
   }
 
-  const getStatusBadge = (status) => {
+  const getStatusBadge = (status, ad = {}) => {
+    const s = String(status).toUpperCase();
+    if (s === 'OUT_OF_CREDIT' || ad.isQuotaExhausted || (ad.remainingViews !== undefined && ad.remainingViews <= 0)) {
+      return <span className="flex items-center gap-1 bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><XCircle size={12}/> โควต้าหมด</span>;
+    }
     const s = String(status).toUpperCase();
     if (['APPROVED', 'ACTIVE'].includes(s)) return <span className="flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><CheckCircle2 size={12}/> Active</span>;
     if (s === 'PENDING') return <span className="flex items-center gap-1 bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><Clock size={12}/> Pending</span>;
@@ -71,7 +75,7 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <span className="font-bold text-slate-800 text-sm truncate">{ad.title || ad.productName || 'โฆษณา'}</span>
-                  {getStatusBadge(ad.status)}
+                  {getStatusBadge(ad.status, ad)}
                 </div>
                 <div className="flex items-center gap-2">
                   {getTypeBadge(ad.type)}
@@ -198,7 +202,7 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
                     </div>
                   )}
                 </td>
-                <td className="p-4">{getStatusBadge(ad.status)}</td>
+                <td className="p-4">{getStatusBadge(ad.status, ad)}</td>
                 <td className="p-4 text-center">
                   <span className="font-black text-slate-700 bg-slate-100 px-3 py-1 rounded-lg">
                     {Number(ad.stats?.views || 0).toLocaleString()}

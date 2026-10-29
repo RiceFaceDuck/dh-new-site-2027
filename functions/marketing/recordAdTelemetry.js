@@ -88,10 +88,13 @@ const calculateAdDeductions = (validAdMap, config = {}) => {
   const ownerDeductions = {};
 
   for (const adId of Object.keys(validAdMap)) {
-    const { ownerId, deltaViews, deltaClicks } = validAdMap[adId];
+    const { ownerId, deltaViews, deltaClicks, data } = validAdMap[adId];
+
+    // โฆษณาที่ใช้ระบบ Prepaid โควต้าวิวจะจ่ายล่วงหน้าแล้ว ไม่ต้องหักซ้ำตอนเกิดวิว
+    const isPrepaid = data?.remainingViews !== undefined;
 
     const clickDeduct = deltaClicks * costPerClick;
-    const viewDeduct = (deltaViews / impressionBatchSize) * costPerImpressionBatch;
+    const viewDeduct = isPrepaid ? 0 : ((deltaViews / impressionBatchSize) * costPerImpressionBatch);
     const rawTotal = clickDeduct + viewDeduct;
     // Micro-deduction precision: ensure small view batches (< 50 views) aren't lost to zero rounding
     const totalDeduct = rawTotal > 0 && rawTotal < 0.01
@@ -197,6 +200,17 @@ const commitTelemetryTransaction = async (db, adAggregates, config) => {
         isExhausted = true;
       }
 
+      // 📦 จัดการโควต้าวิวคงเหลือสำหรับระบบ Prepaid
+      const isPrepaid = adData.remainingViews !== undefined;
+      let newRemaining = null;
+      if (isPrepaid) {
+        const curRemaining = Number(adData.remainingViews || 0);
+        newRemaining = Math.max(0, curRemaining - deltaViews);
+        if (newRemaining <= 0) {
+          isExhausted = true;
+        }
+      }
+
       const adUpdate = {
         "stats.views": FieldValue.increment(deltaViews),
         "stats.clicks": FieldValue.increment(deltaClicks),
@@ -204,12 +218,25 @@ const commitTelemetryTransaction = async (db, adAggregates, config) => {
         updatedAt: FieldValue.serverTimestamp()
       };
 
+      if (isPrepaid) {
+        adUpdate.remainingViews = newRemaining;
+        if (newRemaining <= 0) {
+          adUpdate.isQuotaExhausted = true;
+        }
+      }
+
       if (isExhausted) {
         adUpdate.status = "OUT_OF_CREDIT";
         adUpdate.isActive = false;
       }
 
       transaction.update(adRef, adUpdate);
+
+      // หากโควต้าหมดและเป็นนามบัตรช่าง ให้ปลดออกจาก ActivePartners ทันที
+      if (isExhausted && adData.type === 'BUSINESS_CARD' && ownerId) {
+        const activePartnerRef = db.collection("ActivePartners").doc(ownerId);
+        transaction.delete(activePartnerRef);
+      }
       totalAdsUpdated++;
     }
 
