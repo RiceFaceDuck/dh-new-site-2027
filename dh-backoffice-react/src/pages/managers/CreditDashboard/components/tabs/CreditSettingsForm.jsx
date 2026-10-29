@@ -135,17 +135,22 @@ export default function CreditSettingsForm({
 
                   <hr className="border-slate-200" />
 
-                  <div>
-                    <label className="block text-sm font-bold text-slate-700 uppercase tracking-wide mb-1.5">
-                      Partner Ranking Cost (Points)
-                    </label>
-                    <p className="text-xs text-slate-500 mb-2">แต้มที่หัก ต่อวัน สำหรับการเป็น Partner แนะนำ</p>
+                  <div className="opacity-80">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="block text-sm font-bold text-slate-600 uppercase tracking-wide">
+                        Partner Ranking Cost (Points)
+                      </label>
+                      <span className="px-2 py-0.5 text-[10px] font-bold bg-slate-200 text-slate-600 rounded-xs border border-slate-300 uppercase tracking-wider flex items-center gap-1">
+                        🔒 ยังไม่เปิดใช้งาน (เร็วๆ นี้)
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 mb-2">แต้มที่หัก ต่อวัน สำหรับการเป็น Partner แนะนำ (เตรียมไว้สำหรับอนาคต)</p>
                     <div className="relative">
                       <input 
                         type="text" 
+                        disabled={true}
                         value={settings.partnerRankingCost?.toLocaleString('th-TH') || '50'}
-                        onChange={(e) => handleChange(e, 'partnerRankingCost')}
-                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-xs text-sm font-bold text-slate-800 focus:border-slate-800 focus:bg-white outline-hidden transition-none text-right font-mono"
+                        className="w-full px-3 py-2 bg-slate-100 border border-slate-300 rounded-xs text-sm font-bold text-slate-400 cursor-not-allowed text-right font-mono select-none"
                       />
                     </div>
                   </div>
