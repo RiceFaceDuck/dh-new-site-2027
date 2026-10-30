@@ -33,6 +33,7 @@ export default function QuickAddCustomerModal({
         handleFieldChange,
         isSaving,
         matchedCustomer,
+        isShowingDetected,
         isTaxRequested,
         setIsTaxRequested,
         stagedLineId,
@@ -113,7 +114,7 @@ export default function QuickAddCustomerModal({
                         </div>
 
                         {/* โซนแสดงผลลัพธ์: สลับระหว่างพบบัญชีเดิม (CustomerDetectedSheet) กับ ลูกค้าใหม่ (NewCustomerPreviewSheet) */}
-                        {matchedCustomer ? (
+                        {isShowingDetected ? (
                             <CustomerDetectedSheet 
                                 matchedCustomer={matchedCustomer}
                                 parsedData={parsedData}
@@ -157,15 +158,15 @@ export default function QuickAddCustomerModal({
                             <button 
                                 type="button"
                                 onClick={handleCreateNewCustomer}
-                                disabled={isSaving || !parsedData.accountName.trim()}
+                                disabled={isSaving || (!isShowingDetected && !parsedData.accountName.trim())}
                                 className="py-2.5 px-5 bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-slate-950 font-normal text-sm rounded-lg shadow-xs border border-amber-500/70 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                             >
-                                {isSaving && !matchedCustomer && <Loader2 size={16} className="animate-spin text-slate-900" />}
+                                {isSaving && !isShowingDetected && <Loader2 size={16} className="animate-spin text-slate-900" />}
                                 <span>นี่คือลูกค้าใหม่ (สร้าง/ถัดไป)</span>
                             </button>
 
                             {/* ทางเลือกที่ 2: ดำเนินการต่อด้วยบัญชีนี้ (ปุ่มเขียว) */}
-                            {matchedCustomer && (
+                            {isShowingDetected && (
                                 <button 
                                     type="button"
                                     onClick={() => handleProceedWithCandidate()}

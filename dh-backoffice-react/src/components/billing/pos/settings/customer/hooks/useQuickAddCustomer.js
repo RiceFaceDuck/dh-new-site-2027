@@ -11,7 +11,8 @@ import toast from 'react-hot-toast';
 import { parseCustomerAddress } from 'dh-shared';
 import { 
     findBestCustomerMatches, 
-    computeSafeGapFilling 
+    computeSafeGapFilling,
+    normalizePhone 
 } from '../../../../../../pages/Customers/services/customerMatchingService';
 import { 
     fetchCustomerAdsIndex, 
@@ -35,6 +36,7 @@ export function useQuickAddCustomer({
     // Matching States
     const [matchedCustomer, setMatchedCustomer] = useState(null);
     const [matchedCustomers, setMatchedCustomers] = useState([]);
+    const [dismissedMatchedCustomer, setDismissedMatchedCustomer] = useState(null);
     const [adsIndex, setAdsIndex] = useState(null);
 
     // Inline Staging & Decision States
@@ -76,6 +78,18 @@ export function useQuickAddCustomer({
         rawText: ''
     });
 
+    // Helper: ตรวจสอบความสมบูรณ์ของเบอร์โทรศัพท์ไทย (9-10 หลัก ขึ้นต้นด้วย 0)
+    const isPhoneValid = (phone) => {
+        if (!phone) return false;
+        const normalized = normalizePhone(phone);
+        return (normalized.length >= 9 && normalized.length <= 10 && normalized.startsWith('0'));
+    };
+
+    // Encapsulated View State: Pure UI ไม่ต้องคำนวณเงื่อนไขซับซ้อนเอง
+    const topCandidateId = matchedCustomer?.candidate?.uid || matchedCustomer?.candidate?.id;
+    const dismissedId = dismissedMatchedCustomer?.candidate?.uid || dismissedMatchedCustomer?.candidate?.id;
+    const isShowingDetected = Boolean(matchedCustomer && (!dismissedMatchedCustomer || topCandidateId !== dismissedId));
+
     // Dedicated runner for in-memory customer matching (0 Firestore Reads)
     const evaluateCustomerMatching = useCallback((parsed, customersList, adsIdx) => {
         if (!parsed || !Array.isArray(customersList) || customersList.length === 0) {
@@ -96,13 +110,20 @@ export function useQuickAddCustomer({
                 ...m,
                 candidate: enrichCustomerWithAdData(m.candidate, adsIdx)
             }));
-            setMatchedCustomer(enrichedMatches[0]);
             setMatchedCustomers(enrichedMatches);
+
+            // Race Condition Guard: ไม่ overwrite candidate ที่ผู้ใช้เพิ่งกด dismiss
+            const topCandidate = enrichedMatches[0];
+            const topId = topCandidate?.candidate?.uid || topCandidate?.candidate?.id;
+            const currentDismissedId = dismissedMatchedCustomer?.candidate?.uid || dismissedMatchedCustomer?.candidate?.id;
+            if (!dismissedMatchedCustomer || topId !== currentDismissedId) {
+                setMatchedCustomer(topCandidate);
+            }
         } else {
             setMatchedCustomer(null);
             setMatchedCustomers([]);
         }
-    }, []);
+    }, [dismissedMatchedCustomer]);
 
     // 1. Initialize or reset modal state
     useEffect(() => {
@@ -117,6 +138,7 @@ export function useQuickAddCustomer({
             setStagedLineId('');
             setIsEditingLine(false);
             setAutoFillMissing(true);
+            setDismissedMatchedCustomer(null);
 
             if (initialText) {
                 const parsed = parseCustomerAddress(initialText);
@@ -196,6 +218,7 @@ export function useQuickAddCustomer({
     // 4. Real-time text change and in-memory customer matching
     const handleTextChange = useCallback((text) => {
         setRawInputText(text);
+        setDismissedMatchedCustomer(null); // Invalidation: เมื่อพิมพ์ใหม่ ล้าง dismissed candidate เสมอ
         if (!text.trim()) {
             setMatchedCustomer(null);
             setMatchedCustomers([]);
@@ -303,9 +326,36 @@ export function useQuickAddCustomer({
         onClose();
     };
 
-    // 7. Save New Customer to DB (Action 2: Yellow Button)
+    // 7. Save New Customer to DB or Switch to Manual Form (Action 2: Yellow Button)
     const handleCreateNewCustomer = async () => {
         if (isSaving) return;
+
+        // Smart Transition: หากกำลังแสดงหน้าตรวจพบบัญชีเดิม (isShowingDetected)
+        // และข้อมูลจำเป็น (เช่น เบอร์โทรศัพท์ หรือ ชื่อร้าน) ยังไม่ครบถ้วนสมบูรณ์
+        // ให้หุบหน้าตรวจจับลง แล้วสลับมาเปิด NewCustomerPreviewSheet ทันที โดยไม่บันทึกลงฐานข้อมูล
+        const phone = parsedData.phone || parsedData.phoneNumber || '';
+        const hasValidPhone = isPhoneValid(phone);
+        const hasValidName = Boolean(parsedData.accountName && parsedData.accountName.trim());
+
+        if (isShowingDetected && (!hasValidPhone || !hasValidName)) {
+            // ดึงชื่อร้านจาก matched candidate มาเติมให้อัตโนมัติ หากใน parsedData ยังไม่มีชื่อร้าน
+            if (!hasValidName && matchedCustomer?.candidate) {
+                const autoName = matchedCustomer.candidate.storeName || 
+                                 matchedCustomer.candidate.accountName || 
+                                 matchedCustomer.candidate.displayName || '';
+                if (autoName) {
+                    setParsedData(prev => ({
+                        ...prev,
+                        accountName: autoName,
+                        storeName: autoName
+                    }));
+                }
+            }
+            setDismissedMatchedCustomer(matchedCustomer);
+            toast('กรุณากรอกเบอร์โทรศัพท์และตรวจทานข้อมูลลูกค้าใหม่', { icon: '📝' });
+            return;
+        }
+
         if (!parsedData.accountName || !parsedData.accountName.trim()) {
             toast.error('⚠️ กรุณาระบุชื่อลูกค้าหรือชื่อร้านค้า');
             return;
@@ -326,9 +376,25 @@ export function useQuickAddCustomer({
             );
 
             if (checkRes.isDuplicate) {
-                setDuplicateCandidates(checkRes.duplicates);
-                setPendingNewCustPayload(checkRes.payload);
-                setIsDuplicateModalOpen(true);
+                // กรอง candidate ที่ผู้ใช้เพิ่งกด dismiss ออกจากรายการ duplicates เพื่อไม่ให้เด้งถามซ้ำ
+                const currentDismissedId = dismissedMatchedCustomer?.candidate?.uid || dismissedMatchedCustomer?.candidate?.id;
+                const filteredDuplicates = currentDismissedId 
+                    ? checkRes.duplicates.filter(d => (d.uid || d.id) !== currentDismissedId)
+                    : checkRes.duplicates;
+
+                if (filteredDuplicates.length > 0) {
+                    setDuplicateCandidates(filteredDuplicates);
+                    setPendingNewCustPayload(checkRes.payload);
+                    setIsDuplicateModalOpen(true);
+                } else {
+                    // หากซ้ำเฉพาะ candidate ที่เพิ่ง dismiss ไป ให้บังคับสร้างได้ทันที
+                    const newCust = await quickCustomerService.executeCreateCustomer(checkRes.payload);
+                    const newCustomerWithTax = { ...newCust, isTaxRequested };
+                    setCreatedCustomerObj(newCustomerWithTax);
+                    if (onCustomerCreated) onCustomerCreated(newCustomerWithTax);
+                    toast.success(`สร้างลูกค้าใหม่ ${newCustomerWithTax.accountName} สำเร็จแล้ว`);
+                    onClose();
+                }
             } else if (checkRes.newCust) {
                 const newCustomerWithTax = {
                     ...checkRes.newCust,
@@ -402,6 +468,9 @@ export function useQuickAddCustomer({
         isSaving,
         matchedCustomer,
         matchedCustomers,
+        dismissedMatchedCustomer,
+        setDismissedMatchedCustomer,
+        isShowingDetected,
         isTaxRequested,
         setIsTaxRequested,
         stagedLineId,
