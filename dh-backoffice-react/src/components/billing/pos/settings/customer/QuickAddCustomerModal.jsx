@@ -69,13 +69,24 @@ export default function QuickAddCustomerModal({
         }, 50);
     };
 
+    // ป้องกันการเผลอคลิกปิด Backdrop นอกกรอบ หากมีข้อมูลกำลังกรอกอยู่
+    const hasUnsavedDraft = Boolean(rawInputText || parsedData.accountName || parsedData.phone);
+    const handleBackdropClick = () => {
+        if (isSaving) return;
+        if (hasUnsavedDraft) {
+            // หากมีข้อความอยู่ ไม่ปิดทันทีเพื่อป้องกันข้อมูลสูญหาย (ให้กดกากบาทหรือยกเลิกเท่านั้น)
+            return;
+        }
+        onClose();
+    };
+
     if (!isOpen) return null;
 
     return createPortal(
         <>
             <div 
                 className="fixed inset-0 z-[100] flex items-center justify-center p-3 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200"
-                onClick={onClose}
+                onClick={handleBackdropClick}
             >
                 <div 
                     className="bg-white rounded-[0.1rem] shadow-2xl border border-slate-300 w-full max-w-xl overflow-hidden flex flex-col max-h-[92vh]"
@@ -99,7 +110,8 @@ export default function QuickAddCustomerModal({
                         <button 
                             type="button"
                             onClick={onClose}
-                            className="text-slate-400 hover:text-white p-1 rounded-[0.1rem] transition-colors text-base leading-none cursor-pointer"
+                            disabled={isSaving}
+                            className="text-slate-400 hover:text-white p-1 rounded-[0.1rem] transition-colors text-base leading-none cursor-pointer disabled:opacity-50"
                         >
                             <X size={18} />
                         </button>
@@ -188,7 +200,7 @@ export default function QuickAddCustomerModal({
                                 className="py-2.5 px-5 bg-amber-400 hover:bg-amber-500 active:bg-amber-600 text-slate-950 font-normal text-sm rounded-lg shadow-xs border border-amber-500/70 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                             >
                                 {isSaving && !isShowingDetected && <Loader2 size={16} className="animate-spin text-slate-900" />}
-                                <span>นี่คือลูกค้าใหม่ (สร้าง/ถัดไป)</span>
+                                <span>นี่คือลูกค้าใหม่ (สร้าง)</span>
                             </button>
 
                             {/* ทางเลือกที่ 2: ดำเนินการต่อด้วยบัญชีนี้ (ปุ่มเขียว) */}

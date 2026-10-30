@@ -100,20 +100,20 @@ export default function CustomerDetectedSheet({
     return (
         <div className="border border-slate-200 rounded-[0.1rem] p-5 bg-white space-y-3.5 text-xs shadow-xs">
             {/* Header: ⚠️ ใช่ลูกค้าคนนี้หรือไม่? */}
-            <div className="flex items-center justify-between pb-3 border-b border-slate-200">
-                <div className="flex items-center gap-2">
-                    <span className="text-base">⚠️</span>
-                    <span className="text-base font-bold text-amber-600 tracking-tight">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-200 gap-2">
+                <div className="flex items-center gap-2 min-w-0 flex-wrap">
+                    <span className="text-base shrink-0">⚠️</span>
+                    <span className="text-base font-bold text-amber-600 tracking-tight shrink-0 whitespace-nowrap">
                         ใช่ลูกค้าคนนี้หรือไม่?
                     </span>
-                    <span className="text-[11px] text-amber-900 font-semibold bg-amber-50 px-2 py-0.5 rounded-[0.1rem] border border-amber-300">
+                    <span className="text-[11px] text-amber-900 font-semibold bg-amber-50 px-2 py-0.5 rounded-[0.1rem] border border-amber-300 shrink-0">
                         {matchReasons[0] || 'เบอร์โทรศัพท์ตรงกัน 100%'}
                     </span>
                 </div>
                 {isStorefront && (
-                    <span className="text-[11px] text-slate-500 font-medium flex items-center gap-1.5">
+                    <span className="text-[11px] text-emerald-800 font-medium bg-emerald-50 px-2 py-0.5 rounded-[0.1rem] border border-emerald-200 flex items-center gap-1.5 shrink-0 whitespace-nowrap">
                         <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                        สมาชิก Partner หน้าเว็บ
+                        Partner
                     </span>
                 )}
             </div>
