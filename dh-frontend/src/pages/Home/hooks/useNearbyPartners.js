@@ -31,12 +31,12 @@ export const useNearbyPartners = () => {
         let formattedDistance = null;
         if (lat && lng && partner.latitude && partner.longitude) {
           distanceKm = calculateDistance(lat, lng, partner.latitude, partner.longitude);
-          formattedDistance = distanceKm < 1 ? `${Math.round(distanceKm * 1000)} เน€เธกเธ•เธฃ` : `${Math.floor(distanceKm)} เธเธก.`;
+          formattedDistance = distanceKm < 1 ? `${Math.round(distanceKm * 1000)} เมตร` : `${Math.floor(distanceKm)} กม.`;
         }
         return { ...partner, distanceKm, formattedDistance };
       });
 
-      // 3. Sort by distance 100% (Nearest first - เธซเธเนเธฒเนเธฃเธเนเธเนเธฃเนเธฒเธเนเธเธฅเนเน€เธเธตเธขเธ 100%)
+      // 3. Sort by distance 100% (Nearest first - หน้าแรกใช้ร้านใกล้เคียง 100%)
       if (lat && lng) {
         partnersWithDistance.sort((a, b) => {
           const distA = typeof a.distanceKm === 'number' ? a.distanceKm : Infinity;
@@ -45,7 +45,7 @@ export const useNearbyPartners = () => {
           return (b.points || 0) - (a.points || 0);
         });
       } else {
-        // Fallback: เธเธฃเธ“เธตเธฅเธนเธเธเนเธฒเนเธกเนเนเธ”เนเธญเธเธธเธเธฒเธ• GPS เนเธซเนเน€เธฃเธตเธขเธเธ•เธฒเธกเธเธฐเนเธเธเธเธงเธฒเธกเธเธดเธขเธก
+        // Fallback: กรณีลูกค้าไม่ได้อนุญาต GPS ให้เรียงตามคะแนนความนิยม
         partnersWithDistance.sort((a, b) => (b.points || 0) - (a.points || 0));
       }
 
@@ -63,7 +63,7 @@ export const useNearbyPartners = () => {
 
   const requestLocation = useCallback((showExplanation = false) => {
     if (!navigator.geolocation) {
-      setLocationError("เน€เธเธฃเธฒเธงเนเน€เธเธญเธฃเนเธเธญเธเธเธธเธ“เนเธกเนเธฃเธญเธเธฃเธฑเธเธเธฒเธฃเธฃเธฐเธเธธเธ•เธณเนเธซเธเนเธ");
+      setLocationError("เบราว์เซอร์ของคุณไม่รองรับการระบุตำแหน่ง");
       fetchPartnersAndCalculate(null, null);
       return;
     }
@@ -88,7 +88,7 @@ export const useNearbyPartners = () => {
       },
       (error) => {
         console.warn("Location permission denied or error:", error);
-        setLocationError("เนเธกเนเธชเธฒเธกเธฒเธฃเธ–เน€เธเนเธฒเธ–เธถเธเธเธดเธเธฑเธ”เนเธ”เน (เธฃเธฐเธเธเธเธฐเนเธชเธ”เธเธเธฅเธฃเนเธฒเธเนเธเธฐเธเธณเธ—เธฑเนเธงเนเธ)");
+        setLocationError("ไม่สามารถเข้าถึงพิกัดได้ (ระบบจะแสดงผลร้านแนะนำทั่วไป)");
         fetchPartnersAndCalculate(null, null); // Fetch without location
       },
       { timeout: 10000, enableHighAccuracy: true }
