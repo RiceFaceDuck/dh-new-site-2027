@@ -13,7 +13,7 @@ export const WebTrafficCard = () => {
     { label: 'เมื่อวาน', value: stats.yesterday },
     { label: '7 วันล่าสุด', value: stats.last7Days },
     { label: '30 วันล่าสุด', value: stats.last30Days },
-    { label: 'ทั้งหมด', value: stats.allTime }
+    { label: 'ตั้งแต่ต้น (All-time)', value: stats.allTime }
   ];
 
   return (
