@@ -73,3 +73,8 @@
 - **Solution:** ใช้ `featuredQueryService.getRandomFeaturedProducts(8)` ร่วมกับ `<ProductList />` ที่มี `useAdInjection` ฝังในตัว และครอบด้วย `useInView` โหลดเมื่อเลื่อนจอลงมาเท่านั้น
 - **Problem:** เมื่อหน้าเว็บเกิดความขัดข้องชั่วคราว (เช่น การเชื่อมต่อหลุด หรือโมดูลแคชเดิม) หน้าจอตัดเข้าหน้าแดง "ขออภัย เกิดข้อผิดพลาด" ทันที ทำให้ลูกค้าตกใจ
 - **Solution:** ปรับปรุง `ErrorBoundary.jsx` ให้มีระบบ Auto-Refresh อัตโนมัติสูงสุด 3 รอบผ่าน `sessionStorage` โดยแสดงสถานะโหลดใหม่อย่างนุ่มนวล และจะแสดงหน้า Fallback สีแดงเฉพาะเมื่อรีเฟรชครบ 3 รอบแล้วยังไม่ผ่านเท่านั้น
+- **Problem:** ระหว่างอัปเดตระบบ View Tracking / Telemetry ใน `StoreProfileHero.jsx` มีการเผลอทับโค้ดสไตล์ปุ่ม MAP (สีฟ้า 3D) และปุ่มแชร์ (สีเทา 3D) ด้วยโค้ดปุ่มแบนสีเทาตัวเก่า ทำให้หน้าตาปุ่มหลุดธีม ไม่เข้าพวกกับปุ่มโทร
+- **Solution:** กู้คืนสไตล์ปุ่ม 3D นูนเฉียงดั้งเดิม (MAP: `bg-sky-600 border-sky-800`, แชร์: `bg-slate-700 border-slate-900`) ให้เข้าชุดกับปุ่มโทร 100% โดยคงระบบ View Tracking และสถิติการกดโทรไว้ครบถ้วน
+
+## 6. <future_roadmap>
+- **Telemetry for Map & Share Buttons:** วางแผนติดตั้ง `trackAdClick` สำหรับปุ่มแผนที่ (`actionType: 'maps_open'`) และปุ่มแชร์ (`actionType: 'share_click'`) เพื่อเก็บสถิติความสนใจของลูกค้าเพิ่มเติม นอกเหนือจากการกดโทรออก (`phone_call`)

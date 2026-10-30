@@ -99,13 +99,20 @@ const StoreProfileHero = ({ partner }) => {
                   href={mapsUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs md:text-xs lg:text-sm border border-slate-200 shadow-2xs hover:shadow-xs hover:-translate-y-0.5 active:translate-y-0.5 transition-all h-11 md:h-[38px] cursor-pointer w-1/2 mx-auto sm:w-full"
+                  title="Google MAP"
+                  className="group relative flex items-center justify-between overflow-hidden rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold text-sm sm:text-base md:text-xs lg:text-sm border-b-[3px] border-sky-800 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-0 transition-all h-11 md:h-[38px] cursor-pointer w-1/2 mx-auto sm:w-full"
                 >
-                  <MapPin size={14} className="text-brand shrink-0" />
-                  <span className="truncate">แผนที่ร้าน</span>
+                  <span className="px-2 sm:px-3 py-1.5 truncate text-center flex-1">
+                    <span className="md:hidden">Google MAP</span>
+                    <span className="hidden md:inline">MAP</span>
+                  </span>
+                  <span className="h-full w-10 sm:w-11 md:w-9 bg-white text-sky-600 flex items-center justify-center [clip-path:polygon(10px_0,100%_0,100%_100%,0_100%)] pl-2 shrink-0">
+                    <MapPin size={14} className="group-hover:scale-110 transition-transform" />
+                  </span>
                 </a>
               )}
               <button 
+                type="button"
                 onClick={() => {
                   if (navigator.share) {
                     navigator.share({
@@ -118,10 +125,16 @@ const StoreProfileHero = ({ partner }) => {
                     showToast('คัดลอกลิงก์ร้านค้าเรียบร้อยแล้ว', 'success');
                   }
                 }}
-                className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-bold text-xs md:text-xs lg:text-sm border border-slate-200 shadow-2xs hover:shadow-xs hover:-translate-y-0.5 active:translate-y-0.5 transition-all h-11 md:h-[38px] cursor-pointer w-1/2 mx-auto sm:w-full"
+                title="แชร์ร้านค้านี้"
+                className="group relative flex items-center justify-between overflow-hidden rounded-xl bg-slate-700 hover:bg-slate-600 text-white font-bold text-sm sm:text-base md:text-xs lg:text-sm border-b-[3px] border-slate-900 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0.5 active:border-b-0 transition-all h-11 md:h-[38px] cursor-pointer w-1/2 mx-auto sm:w-full"
               >
-                <Share2 size={14} className="text-slate-500 shrink-0" />
-                <span className="truncate">แชร์ร้าน</span>
+                <span className="px-2 sm:px-3 py-1.5 truncate text-center flex-1">
+                  <span className="md:hidden">แชร์ร้านค้านี้</span>
+                  <span className="hidden md:inline">แชร์</span>
+                </span>
+                <span className="h-full w-10 sm:w-11 md:w-9 bg-white text-slate-700 flex items-center justify-center [clip-path:polygon(10px_0,100%_0,100%_100%,0_100%)] pl-2 shrink-0">
+                  <Share2 size={14} className="group-hover:scale-110 transition-transform" />
+                </span>
               </button>
             </div>
           </div>
