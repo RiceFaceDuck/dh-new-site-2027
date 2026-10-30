@@ -34,6 +34,8 @@ export default function QuickAddCustomerModal({
         handleFieldChange,
         isSaving,
         matchedCustomer,
+        dismissedMatchedCustomer,
+        setDismissedMatchedCustomer,
         isShowingDetected,
         isTaxRequested,
         setIsTaxRequested,
@@ -174,6 +176,9 @@ export default function QuickAddCustomerModal({
                                 dynamicRoles={dynamicRoles}
                                 isTaxRequested={isTaxRequested}
                                 setIsTaxRequested={setIsTaxRequested}
+                                dismissedCandidate={dismissedMatchedCustomer}
+                                onRestoreDismissed={() => setDismissedMatchedCustomer(null)}
+                                onSubmitForm={handleCreateNewCustomer}
                             />
                         )}
                     </div>

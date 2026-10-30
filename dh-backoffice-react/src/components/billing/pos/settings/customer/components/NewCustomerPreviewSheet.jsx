@@ -1,5 +1,5 @@
-import React from 'react';
-import { User, Phone, MapPin, Mail, MessageSquare, Truck, Shield } from 'lucide-react';
+import React, { useEffect, useRef } from 'react';
+import { User, Phone, MapPin, Mail, MessageSquare, Truck, Shield, ArrowLeft } from 'lucide-react';
 
 /**
  * NewCustomerPreviewSheet Component
@@ -15,10 +15,54 @@ export default function NewCustomerPreviewSheet({
     setSelectedRole,
     dynamicRoles = [],
     isTaxRequested,
-    setIsTaxRequested
+    setIsTaxRequested,
+    dismissedCandidate,
+    onRestoreDismissed,
+    onSubmitForm
 }) {
+    const phoneInputRef = useRef(null);
+
+    // Auto-focus ช่องเบอร์โทรศัพท์ทันทีเมื่อสลับมาเปิดหน้านี้
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (phoneInputRef.current) {
+                phoneInputRef.current.focus();
+            }
+        }, 80);
+        return () => clearTimeout(timer);
+    }, []);
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            if (onSubmitForm) {
+                e.preventDefault();
+                onSubmitForm();
+            }
+        }
+    };
+
+    const hasPhone = Boolean(parsedData.phone && parsedData.phone.trim());
+    const hasAccountName = Boolean(parsedData.accountName && parsedData.accountName.trim());
+
     return (
         <div className="border border-slate-200 rounded-[0.1rem] p-5 bg-white space-y-4 text-xs shadow-xs">
+            {/* Banner ย้อนกลับไปเลือกร้านเดิมที่ตรวจพบ (ถ้ามี) */}
+            {dismissedCandidate && (
+                <div className="p-2.5 bg-amber-50 border border-amber-300 rounded-[0.1rem] flex items-center justify-between gap-2 animate-in fade-in duration-150">
+                    <span className="text-[11px] text-amber-900 font-medium">
+                        พบร้านเดิมในระบบ: <strong className="font-bold text-amber-950">{dismissedCandidate.candidate?.storeName || dismissedCandidate.candidate?.accountName || 'บัญชีเดิม'}</strong>
+                    </span>
+                    <button
+                        type="button"
+                        onClick={onRestoreDismissed}
+                        className="text-[11px] font-semibold text-amber-800 hover:text-amber-950 underline flex items-center gap-1 cursor-pointer shrink-0"
+                    >
+                        <ArrowLeft size={12} />
+                        <span>กลับไปใช้บัญชีนี้</span>
+                    </button>
+                </div>
+            )}
+
             {/* Header */}
             <div className="flex items-center justify-between pb-3 border-b border-slate-200">
                 <div className="flex items-center gap-2">
@@ -70,8 +114,11 @@ export default function NewCustomerPreviewSheet({
                         type="text" 
                         value={parsedData.accountName} 
                         onChange={e => handleFieldChange('accountName', e.target.value)} 
+                        onKeyDown={handleKeyDown}
                         placeholder="ระบุชื่อลูกค้า หรือ ชื่อร้าน" 
-                        className="w-full px-3 py-1.5 border border-slate-300 rounded-[0.1rem] text-xs font-bold text-slate-900 bg-white focus:ring-1 focus:ring-indigo-500 outline-none" 
+                        className={`w-full px-3 py-1.5 border rounded-[0.1rem] text-xs font-bold text-slate-900 bg-white focus:ring-1 focus:ring-indigo-500 outline-none transition-colors ${
+                            !hasAccountName ? 'border-rose-300 bg-rose-50/30' : 'border-slate-300'
+                        }`} 
                     />
                 </div>
 
@@ -84,6 +131,7 @@ export default function NewCustomerPreviewSheet({
                         type="text" 
                         value={parsedData.contactName || ''} 
                         onChange={e => handleFieldChange('contactName', e.target.value)} 
+                        onKeyDown={handleKeyDown}
                         placeholder="ระบุชื่อผู้ติดต่อ (ถ้ามี)" 
                         className="w-full px-3 py-1.5 border border-slate-300 rounded-[0.1rem] text-xs font-medium text-slate-900 bg-white focus:ring-1 focus:ring-blue-500 outline-none" 
                     />
@@ -92,14 +140,18 @@ export default function NewCustomerPreviewSheet({
                 <div className="space-y-1">
                     <label className="text-[11px] font-bold text-slate-600 flex items-center gap-1">
                         <Phone size={12} className="text-emerald-500" />
-                        เบอร์โทรศัพท์
+                        เบอร์โทรศัพท์ <span className="text-rose-500">*</span>
                     </label>
                     <input 
+                        ref={phoneInputRef}
                         type="text" 
                         value={parsedData.phone} 
                         onChange={e => handleFieldChange('phone', e.target.value)} 
+                        onKeyDown={handleKeyDown}
                         placeholder="0812345678" 
-                        className="w-full px-3 py-1.5 border border-slate-300 rounded-[0.1rem] text-xs font-mono font-bold text-slate-900 bg-white focus:ring-1 focus:ring-emerald-500 outline-none" 
+                        className={`w-full px-3 py-1.5 border rounded-[0.1rem] text-xs font-mono font-bold text-slate-900 bg-white focus:ring-1 focus:ring-emerald-500 outline-none transition-colors ${
+                            !hasPhone ? 'border-amber-300 bg-amber-50/40' : 'border-slate-300'
+                        }`} 
                     />
                 </div>
 
@@ -112,6 +164,7 @@ export default function NewCustomerPreviewSheet({
                         type="email" 
                         value={parsedData.email || ''} 
                         onChange={e => handleFieldChange('email', e.target.value)} 
+                        onKeyDown={handleKeyDown}
                         placeholder="example@mail.com" 
                         className="w-full px-3 py-1.5 border border-slate-300 rounded-[0.1rem] text-xs text-slate-900 bg-white focus:ring-1 focus:ring-violet-500 outline-none" 
                     />
@@ -126,6 +179,7 @@ export default function NewCustomerPreviewSheet({
                         type="text" 
                         value={parsedData.lineId || ''} 
                         onChange={e => handleFieldChange('lineId', e.target.value)} 
+                        onKeyDown={handleKeyDown}
                         placeholder="@lineid หรือ id" 
                         className="w-full px-3 py-1.5 border border-slate-300 rounded-[0.1rem] text-xs text-slate-900 bg-white focus:ring-1 focus:ring-emerald-500 outline-none" 
                     />
@@ -140,6 +194,7 @@ export default function NewCustomerPreviewSheet({
                         type="text" 
                         value={parsedData.preferredCourier || parsedData.logisticProvider || ''} 
                         onChange={e => handleFieldChange('preferredCourier', e.target.value)} 
+                        onKeyDown={handleKeyDown}
                         placeholder="เช่น Flash, Kerry" 
                         className="w-full px-3 py-1.5 border border-slate-300 rounded-[0.1rem] text-xs text-slate-900 bg-white focus:ring-1 focus:ring-amber-500 outline-none" 
                     />
@@ -154,6 +209,7 @@ export default function NewCustomerPreviewSheet({
                         type="text" 
                         value={parsedData.addressLine} 
                         onChange={e => handleFieldChange('addressLine', e.target.value)} 
+                        onKeyDown={handleKeyDown}
                         placeholder="บ้านเลขที่, ซอย, ถนน, ตำบล, อำเภอ, จังหวัด, รหัสไปรษณีย์" 
                         className="w-full px-3 py-1.5 border border-slate-300 rounded-[0.1rem] text-xs text-slate-900 bg-white focus:ring-1 focus:ring-rose-500 outline-none" 
                     />
