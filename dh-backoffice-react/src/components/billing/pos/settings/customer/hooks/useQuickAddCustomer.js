@@ -234,6 +234,42 @@ export function useQuickAddCustomer({
         evaluateCustomerMatching(parsed, existingCustomers, adsIndex);
     }, [existingCustomers, adsIndex, stagedLineId, evaluateCustomerMatching]);
 
+    // 4.1 Reset / Clear All Form & Parser Data (0 Backend Resource)
+    const handleReset = useCallback(() => {
+        setRawInputText('');
+        setMatchedCustomer(null);
+        setMatchedCustomers([]);
+        setDismissedMatchedCustomer(null);
+        setStagedLineId('');
+        setIsEditingLine(false);
+        setIsTaxRequested(false);
+        setParsedData({
+            accountName: '',
+            contactName: '',
+            storeName: '',
+            phone: '',
+            phoneNumber: '',
+            phones: [],
+            formattedPhone: '',
+            email: '',
+            lineId: '',
+            facebook: '',
+            facebookUrl: '',
+            addressLine: '',
+            subDistrict: '',
+            district: '',
+            province: '',
+            postalCode: '',
+            zipCode: '',
+            preferredCourier: '',
+            logisticProvider: '',
+            shippingNotes: '',
+            logisticNote: '',
+            rawAddress: '',
+            rawText: ''
+        });
+    }, []);
+
     // 5. Handle field changes in manual editor
     const handleFieldChange = useCallback((field, value) => {
         setParsedData(prev => {
@@ -460,6 +496,7 @@ export function useQuickAddCustomer({
         setModalStep,
         rawInputText,
         handleTextChange,
+        handleReset,
         selectedRole,
         setSelectedRole,
         dynamicRoles,

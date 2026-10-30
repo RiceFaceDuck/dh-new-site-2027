@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { X, Sparkles, Loader2 } from 'lucide-react';
+import { X, Sparkles, Loader2, RotateCcw } from 'lucide-react';
 import CustomerDuplicateComparisonModal from '../../../../../pages/Customers/components/forms/CustomerDuplicateComparisonModal';
 import { useQuickAddCustomer } from './hooks/useQuickAddCustomer';
 import CustomerDetectedSheet from './components/CustomerDetectedSheet';
@@ -26,6 +26,7 @@ export default function QuickAddCustomerModal({
     const {
         rawInputText,
         handleTextChange,
+        handleReset,
         selectedRole,
         setSelectedRole,
         dynamicRoles,
@@ -58,6 +59,15 @@ export default function QuickAddCustomerModal({
         onCustomerCreated,
         onClose
     });
+
+    const textareaRef = useRef(null);
+
+    const onResetClick = () => {
+        handleReset();
+        setTimeout(() => {
+            textareaRef.current?.focus();
+        }, 50);
+    };
 
     if (!isOpen) return null;
 
@@ -99,16 +109,32 @@ export default function QuickAddCustomerModal({
                     <div className="p-5 space-y-4 overflow-y-auto max-h-[82vh] bg-white custom-scrollbar">
                         {/* ส่วนบน: กล่องวางข้อความสีเหลืองอำพันทึบ Solid bg-amber-200 */}
                         <div className="p-3.5 bg-amber-200 border border-amber-400 rounded-[0.1rem] shadow-xs space-y-1.5">
-                            <label className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
-                                <span className="text-amber-700 text-sm">✨</span>
-                                วางข้อมูลลูกค้าชุดเดียวที่นี่ (ก๊อปปี้จาก Chat / Line / FB)
-                            </label>
+                            <div className="flex items-center justify-between">
+                                <label className="text-xs font-bold text-amber-950 flex items-center gap-1.5">
+                                    <span className="text-amber-700 text-sm">✨</span>
+                                    วางข้อมูลลูกค้าชุดเดียวที่นี่ (ก๊อปปี้จาก Chat / Line / FB)
+                                </label>
+                                {(rawInputText || parsedData.accountName || parsedData.phone) && (
+                                    <button
+                                        type="button"
+                                        onClick={onResetClick}
+                                        disabled={isSaving}
+                                        className="text-[11px] font-medium text-amber-950/80 hover:text-amber-950 bg-amber-300/80 hover:bg-amber-300 active:bg-amber-400/80 px-2 py-0.5 rounded-[0.1rem] border border-amber-400/80 transition-colors flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                        title="ล้างข้อมูลทั้งหมดเพื่อเริ่มกรอกใหม่"
+                                    >
+                                        <RotateCcw size={12} />
+                                        <span>ล้างข้อมูล (Reset)</span>
+                                    </button>
+                                )}
+                            </div>
                             <textarea 
+                                ref={textareaRef}
                                 rows={2} 
                                 value={rawInputText}
                                 onChange={(e) => handleTextChange(e.target.value)}
+                                disabled={isSaving}
                                 placeholder="วางชื่อลูกค้า, ที่อยู่ และเบอร์โทรศัพท์ที่นี่..."
-                                className="w-full p-2 border border-amber-300 rounded-[0.1rem] text-xs bg-white text-slate-900 outline-none resize-none font-mono leading-relaxed focus:ring-1 focus:ring-amber-500 shadow-2xs"
+                                className="w-full p-2 border border-amber-300 rounded-[0.1rem] text-xs bg-white text-slate-900 outline-none resize-none font-mono leading-relaxed focus:ring-1 focus:ring-amber-500 shadow-2xs disabled:bg-slate-50 disabled:text-slate-500"
                                 autoFocus
                             />
                         </div>
