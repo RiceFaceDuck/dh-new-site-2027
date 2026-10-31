@@ -130,27 +130,6 @@ export const storeProfileSubmitService = {
         batch.delete(doc(db, getCollectionPath('todos'), taskId));
       }
 
-      // 🌟 ตัดร้านออกจาก catalogs/active_partners_bundle ระหว่างรอตรวจสอบหรือเมื่อปิดรับลูกค้า
-      try {
-        const bundleRef = doc(db, 'catalogs', 'active_partners_bundle');
-        const bundleSnap = await getDoc(bundleRef);
-        if (bundleSnap.exists()) {
-          const bData = bundleSnap.data() || {};
-          const items = Array.isArray(bData.items) ? bData.items : [];
-          const filtered = items.filter(i => (i.id !== user.uid && i.partnerId !== user.uid));
-          if (filtered.length !== items.length) {
-            batch.set(bundleRef, {
-              items: filtered,
-              totalActivePartners: filtered.length,
-              bundledCount: filtered.length,
-              updatedAt: serverTimestamp()
-            }, { merge: true });
-          }
-        }
-      } catch (e) {
-        console.warn("Could not remove partner from active_partners_bundle in storeProfileSubmitService:", e);
-      }
-      
       await batch.commit();
       
       // ล้างแคชเพื่อให้ระบบโหลดใหม่ (ใช้ localStorage เพื่อให้มีผลทุกแท็บ)
