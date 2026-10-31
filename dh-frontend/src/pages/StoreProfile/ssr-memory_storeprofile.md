@@ -33,6 +33,10 @@
 - **Recommended Products Block:** `components/StoreRecommendedProducts.jsx` (Random 4 items via `featuredQueryService`, unified `ProductList` with auto `useAdInjection` = 5 cards total in 1 row)
 - **Image Compressor:** `utils/imageCompressor.js`
 - **Storage Service:** `firebase/storageService.js` (ฟังก์ชัน `uploadStoreImage`, `deleteStoreImage` รองรับ fallback)
+- **Stats Components & Hook:**
+  - `StoreLikeButton.jsx`: ปุ่มกดถูกใจแบบเรียบง่าย (Simple Heart + Count) ใช้ภาพหัวใจโปร่งใส `like_heart.png`
+  - `StoreViewBadge.jsx`: ป้ายยอดวิว All-time ตามหลัก Calm UI และ Border Radius 0.1 (`rounded-[2px]`)
+  - `hooks/useStoreStats.js`: Custom Hook จัดการสถานะและกันปั๊มยอดด้วย `sessionStorage` และ `localStorage`
 - **Edit Component & Hook:** `StoreProfileBasicInfo.jsx`, `hooks/useStoreProfile.js`
 - **Migration Script:** `tests/verifications/migrate_drive_images_to_firebase.mjs`
 - **Mapping Archive:** `tests/verifications/drive_to_firebase_mapping.json` (สำรองคู่ URL 181 ภาพ เพื่อตรวจสอบและย้อนกลับได้)
@@ -44,7 +48,10 @@
   - `public/images/tiktok_logo.png`
   - `public/images/shopee_logo.png`
   - `public/images/lazada_logo.png`
+  - `public/images/like_heart.png`
 - **Fields Schema:**
+  - `likeCount` (number): จำนวนการกดถูกใจหน้าร้าน (Organic Likes)
+  - `viewCount` (number): ยอดการเข้าชมหน้าร้าน All-time (Organic Page Views)
   - `lineUrl` (string): ลิงก์ LINE หรือ LINE ID
   - `messengerUrl` (string): ลิงก์ Messenger หรือ Page handle
   - `websiteUrl` / `storeWebsite` (string): URL เว็บไซต์ร้าน
