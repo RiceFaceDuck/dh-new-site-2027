@@ -5,7 +5,7 @@ import { calculateDistance } from '../utils/geoUtils';
 import { safeJsonParse } from 'dh-shared';
 
 const appId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
-const CACHE_KEY = `active_partners_cache_v5_${appId}`;
+const CACHE_KEY = `active_partners_cache_v6_${appId}`;
 const CACHE_TTL_MINUTES = 15; // เก็บแคชไว้ 15 นาที เพื่อประหยัด Firebase Reads
 
 let inFlightFetchPromise = null;

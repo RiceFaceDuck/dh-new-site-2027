@@ -31,6 +31,27 @@ const PartnerCard = ({ partner, placement = 'home_squad_highlight' }) => {
     }
   });
 
+  // 🛡️ Distance Sanitizer: ป้องกันตัวอักษรเพี้ยน (Mojibake) และบังคับคำนวณระยะทางมาตรฐานเสมอ
+  const getDisplayDistance = () => {
+    if (typeof partner.distanceKm === 'number' && !isNaN(partner.distanceKm)) {
+      return partner.distanceKm < 1 
+        ? `${Math.round(partner.distanceKm * 1000)} เมตร` 
+        : `${Math.floor(partner.distanceKm)} กม.`;
+    }
+    if (!partner.formattedDistance) return null;
+    const str = String(partner.formattedDistance);
+    const numMatch = str.match(/\d+(\.\d+)?/);
+    if (numMatch) {
+      const num = parseFloat(numMatch[0]);
+      if (str.includes('เมตร')) {
+        return `${Math.round(num)} เมตร`;
+      }
+      return `${Math.floor(num)} กม.`;
+    }
+    return str;
+  };
+  const displayDistance = getDisplayDistance();
+
   const handleClick = async () => {
     try {
       await trackAdClick('partner_ads', adId, {
@@ -57,12 +78,12 @@ const PartnerCard = ({ partner, placement = 'home_squad_highlight' }) => {
         <p className="text-xs text-slate-500 font-normal leading-snug line-clamp-2 min-h-[2.25rem] mb-2 break-words" title={role}>{role}</p>
         
         {/* Distance Display */}
-        {partner.formattedDistance ? (
+        {displayDistance ? (
           <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-bold bg-linear-to-r from-indigo-50 to-emerald-50 text-indigo-700 px-2.5 py-1 rounded-md w-fit max-w-full border border-slate-200 shadow-xs">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1.5 text-emerald-500 shrink-0" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
             </svg>
-            <span className="truncate">เดินทาง {partner.formattedDistance}</span>
+            <span className="truncate">เดินทาง {displayDistance}</span>
           </div>
         ) : (
           <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-bold bg-slate-50 text-slate-500 px-2.5 py-1 rounded-md w-fit max-w-full border border-slate-200 shadow-xs">
