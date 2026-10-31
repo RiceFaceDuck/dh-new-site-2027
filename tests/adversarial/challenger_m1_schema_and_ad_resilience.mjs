@@ -264,15 +264,19 @@ const partnerAdsSource = fs.readFileSync(
   'utf8'
 );
 
+const partnerAdsHookPath = path.resolve(projectRoot, 'Management System/dh-frontend/src/pages/StoreProfile/hooks/usePartnerAds.js');
+const partnerAdsHookSource = fs.existsSync(partnerAdsHookPath) ? fs.readFileSync(partnerAdsHookPath, 'utf8') : '';
+
 // Test 3.1: Zero query to private users collection
 check('3.1 PartnerAds.jsx has zero occurrences of users collection query',
-  !partnerAdsSource.includes("getCollectionPath('users')") && !partnerAdsSource.includes("doc(db, 'users'"),
+  !partnerAdsSource.includes("getCollectionPath('users')") && !partnerAdsSource.includes("doc(db, 'users'") &&
+  !partnerAdsHookSource.includes("getCollectionPath('users')") && !partnerAdsHookSource.includes("doc(db, 'users'"),
   'Found query to private users collection'
 );
 
-// Test 3.2: Public ActivePartners inspection
+// Test 3.2: Public ActivePartners inspection (via PartnerAds.jsx or its controller hook usePartnerAds.js)
 check('3.2 PartnerAds.jsx queries public ActivePartners collection',
-  partnerAdsSource.includes("getCollectionPath('ActivePartners')"),
+  partnerAdsSource.includes("getCollectionPath('ActivePartners')") || partnerAdsHookSource.includes("getCollectionPath('ActivePartners')"),
   'Missing ActivePartners query'
 );
 
