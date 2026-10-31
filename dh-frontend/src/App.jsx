@@ -22,6 +22,7 @@ const Cart = React.lazy(() => import('./pages/Cart'));
 const Checkout = React.lazy(() => import('./pages/Checkout'));
 const HardwareScanner = React.lazy(() => import('./pages/HardwareScanner/HardwareScanner'));
 const ProvidersPage = React.lazy(() => import('./pages/Providers/ProvidersPage'));
+const ResetPasswordPage = React.lazy(() => import('./pages/ResetPassword/ResetPasswordPage'));
 
 // 📜 นำเข้าระบบจัดการ PDPA และ Legal Pages แบบ Lazy เพื่อเร่งการเปิดหน้าแรก
 const PrivacyPolicy = React.lazy(() => import('./pages/legal/PrivacyPolicy'));
@@ -92,6 +93,8 @@ function App() {
                   <Route path="/privacy-policy" element={<PrivacyPolicy />} />
                   <Route path="/terms-of-service" element={<TermsOfService />} />
                   <Route path="/cookie-policy" element={<CookiePolicy />} />
+                  {/* 🔐 ลงทะเบียน Route สำหรับการตั้งรหัสผ่านใหม่ (Password Reset) */}
+                  <Route path="/reset-password" element={<ResetPasswordPage />} />
                 </Route>
               </Routes>
             </Suspense>

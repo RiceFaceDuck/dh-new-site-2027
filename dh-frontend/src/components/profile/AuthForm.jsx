@@ -1,9 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Mail, Lock, User, AlertCircle, ShieldCheck, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
-import { loginWithGoogle, loginWithEmail, registerWithEmail } from '../../firebase/authService';
+import { Mail, Lock, User, AlertCircle, ShieldCheck, ArrowRight, Loader2, Eye, EyeOff, KeyRound, CheckCircle2, ArrowLeft, Copy } from 'lucide-react';
+import { loginWithGoogle, loginWithEmail, registerWithEmail, requestPasswordReset } from '../../firebase/authService';
 import { useCookieConsent } from '../../hooks/useCookieConsent';
 import { parseConsentText } from '../../utils/textParser';
-import { Copy, CheckCircle2 } from 'lucide-react';
 
 const isInAppBrowser = () => {
     const ua = navigator.userAgent || navigator.vendor || window.opera;
@@ -26,6 +25,10 @@ const GoogleIcon = () => (
 
 export default function AuthForm({ onSuccess }) {
   const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+  const [isLoadingReset, setIsLoadingReset] = useState(false);
+
   const [formData, setFormData] = useState({ email: '', password: '', name: '' });
   const [error, setError] = useState('');
   
@@ -40,12 +43,12 @@ export default function AuthForm({ onSuccess }) {
   const [isTermsAccepted, setIsTermsAccepted] = useState(false);
   const { config } = useCookieConsent();
 
-  // ล้างฟอร์มและ Error เมื่อสลับโหมด Login / Register
+  // ล้างฟอร์มและ Error เมื่อสลับโหมด
   useEffect(() => {
     setError('');
     setFormData({ email: '', password: '', name: '' });
     setShowPassword(false);
-  }, [isLogin]);
+  }, [isLogin, isForgotPassword]);
 
   const [inAppBrowser, setInAppBrowser] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -105,6 +108,33 @@ export default function AuthForm({ onSuccess }) {
     }
   };
 
+  const handleResetSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.email) {
+      setError('กรุณากรอกอีเมลของคุณ');
+      return;
+    }
+
+    setIsLoadingReset(true);
+    setError('');
+
+    try {
+      await requestPasswordReset(formData.email);
+      setResetSent(true);
+    } catch (err) {
+      console.error('Password reset error:', err);
+      if (err.code === 'auth/user-not-found') {
+        setError('ไม่พบบัญชีผู้ใช้งานที่ใช้อีเมลนี้ในระบบ');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('รูปแบบอีเมลไม่ถูกต้อง');
+      } else {
+        setError('เกิดข้อผิดพลาดในการส่งลิงก์: ' + (err.message || 'โปรดลองใหม่อีกครั้ง'));
+      }
+    } finally {
+      setIsLoadingReset(false);
+    }
+  };
+
   const handleGoogleLogin = async () => {
     setIsLoadingGoogle(true);
     setError('');
@@ -122,18 +152,18 @@ export default function AuthForm({ onSuccess }) {
   };
 
   return (
-    <div className="bg-white rounded-md shadow-xl border border-slate-200 p-8 w-full max-w-md mx-auto relative overflow-hidden transition-all duration-300">
+    <div className="bg-white rounded-[2px] shadow-xl border border-slate-200 p-8 w-full max-w-md mx-auto relative overflow-hidden transition-all duration-300">
       
       {inAppBrowser && (
-          <div className="absolute inset-0 bg-white/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 text-center rounded-md">
-              <div className="w-16 h-16 bg-red-100 rounded-md flex items-center justify-center mx-auto mb-6">
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-md z-50 flex flex-col items-center justify-center p-8 text-center rounded-[2px]">
+              <div className="w-16 h-16 bg-red-100 rounded-[2px] flex items-center justify-center mx-auto mb-6">
                   <AlertCircle className="w-8 h-8 text-red-600" />
               </div>
               <h1 className="text-2xl font-bold mb-4 text-gray-800">ไม่สามารถล็อกอินในแอพนี้ได้</h1>
               <p className="text-gray-600 mb-6 leading-relaxed">
                   Google ไม่อนุญาตให้ล็อกอินผ่านหน้าต่างซ้อนของแอพ (เช่น LINE, Facebook) ด้วยเหตุผลด้านความปลอดภัย
               </p>
-              <div className="bg-blue-50 p-4 rounded-md mb-6 text-sm text-blue-700 w-full text-left">
+              <div className="bg-blue-50 p-4 rounded-[2px] mb-6 text-sm text-blue-700 w-full text-left">
                   <strong>วิธีแก้ไข:</strong><br />
                   กดปุ่ม <span className="inline-block px-2 py-0.5 bg-white rounded border border-blue-200 mx-1 shadow-xs">⋮</span> หรือ <span className="inline-block px-2 py-0.5 bg-white rounded border border-blue-200 mx-1 shadow-xs">⠇</span> ที่มุมขวาบน แล้วเลือก <strong>"เปิดในเบราว์เซอร์"</strong> (Open in Browser)
               </div>
@@ -153,171 +183,302 @@ export default function AuthForm({ onSuccess }) {
       <div className="absolute bottom-0 left-0 w-32 h-32 bg-emerald-50 rounded-full blur-3xl opacity-60 -ml-10 -mb-10 pointer-events-none"></div>
 
       <div className="relative z-10">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-100 shadow-xs">
-            <Lock className="w-8 h-8 text-[#0870B8]" />
-          </div>
-          <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
-            {isLogin ? 'ยินดีต้อนรับกลับมา' : 'สร้างบัญชีใหม่'}
-          </h2>
-          <p className="text-gray-500 mt-2 text-sm">
-            {isLogin ? 'เข้าสู่ระบบเพื่อจัดการร้านค้าและเครดิตของคุณ' : 'เข้าร่วมเป็นพาร์ทเนอร์และรับสิทธิพิเศษมากมาย'}
-          </p>
-        </div>
 
-        {/* Google Login Button */}
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          disabled={isLoadingEmail || isLoadingGoogle || (!isLogin && !isTermsAccepted)}
-          className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed group shadow-xs"
-        >
-          {isLoadingGoogle ? (
-            <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
-          ) : (
-            <>
-              <GoogleIcon />
-              <span className="group-hover:text-blue-600 transition-colors">ดำเนินการต่อด้วย Google</span>
-            </>
-          )}
-        </button>
+        {/* ======================================================== */}
+        {/* 🔐 โหมดที่ 1: ลืมรหัสผ่าน (Forgot Password) */}
+        {/* ======================================================== */}
+        {isForgotPassword ? (
+          <div>
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-100 shadow-xs">
+                <KeyRound className="w-8 h-8 text-[#0870B8]" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
+                ลืมรหัสผ่านใช่ไหม?
+              </h2>
+              <p className="text-gray-500 mt-2 text-sm leading-relaxed">
+                กรอกอีเมลของคุณเพื่อรับลิงก์สำหรับตั้งรหัสผ่านใหม่
+              </p>
+            </div>
 
-        <div className="mt-6 mb-6 flex items-center justify-center">
-          <div className="w-full border-t border-gray-200"></div>
-          <span className="px-4 text-sm text-gray-400 font-medium bg-white">หรือด้วยอีเมล</span>
-          <div className="w-full border-t border-gray-200"></div>
-        </div>
-
-        {/* Error Banner (Smooth Animation) */}
-        {error && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-md flex items-start gap-3 animate-[pulse_0.5s_ease-in-out]">
-            <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
-            <p className="text-sm text-red-700 font-medium leading-relaxed">{error}</p>
-          </div>
-        )}
-
-        <form onSubmit={handleEmailSubmit} className="space-y-4">
-          
-          {/* Name Field (Only for Register) */}
-          {!isLogin && (
-            <div className="animate-fade-in">
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">ชื่อ - นามสกุล</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <User className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+            {/* แจ้งเตือนเมื่อส่งเมลสำเร็จ */}
+            {resetSent ? (
+              <div className="text-center py-4">
+                <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-[2px] mb-6 text-left">
+                  <div className="flex items-center gap-2 text-emerald-800 font-semibold text-sm mb-1">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>ส่งลิงก์ตั้งรหัสผ่านเรียบร้อยแล้ว</span>
+                  </div>
+                  <p className="text-xs text-emerald-700 leading-relaxed">
+                    ระบบได้ส่งลิงก์ไปยัง <strong className="font-semibold">{formData.email}</strong> เรียบร้อยแล้วค่ะ กรุณาตรวจสอบกล่องข้อความหรืออีเมลขยะ
+                  </p>
                 </div>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="block w-full pl-11 pr-4 py-3 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white text-gray-800"
-                  placeholder="กรอกชื่อ-นามสกุล"
-                  disabled={isLoadingEmail || isLoadingGoogle}
-                />
-              </div>
-            </div>
-          )}
 
-          {/* Email Field */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">อีเมล</label>
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsForgotPassword(false);
+                    setResetSent(false);
+                    setError('');
+                  }}
+                  className="w-full py-3 px-4 bg-linear-to-r from-[#0870B8] to-[#0A85D9] hover:from-[#065a96] hover:to-[#0870B8] text-white rounded-md font-bold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                  <span>กลับไปเข้าสู่ระบบ</span>
+                </button>
               </div>
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleChange}
-                className="block w-full pl-11 pr-4 py-3 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white text-gray-800"
-                placeholder="you@example.com"
-                required
-                disabled={isLoadingEmail || isLoadingGoogle}
-              />
-            </div>
+            ) : (
+              <div>
+                {/* Error Banner */}
+                {error && (
+                  <div className="mb-5 p-3.5 bg-red-50 border border-red-200 rounded-[2px] flex items-start gap-2.5">
+                    <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                    <p className="text-xs text-red-700 font-medium leading-relaxed">{error}</p>
+                  </div>
+                )}
+
+                <form onSubmit={handleResetSubmit} className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-gray-700 mb-1.5">อีเมลของคุณ</label>
+                    <div className="relative group">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <Mail className="h-4 w-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                      </div>
+                      <input
+                        type="email"
+                        name="email"
+                        value={formData.email}
+                        onChange={handleChange}
+                        className="block w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-[2px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white text-gray-800 text-sm"
+                        placeholder="you@example.com"
+                        required
+                        disabled={isLoadingReset}
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={isLoadingReset || !formData.email}
+                    className="w-full mt-6 py-3.5 px-4 bg-linear-to-r from-[#0870B8] to-[#0A85D9] hover:from-[#065a96] hover:to-[#0870B8] text-white rounded-md font-bold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
+                  >
+                    {isLoadingReset ? (
+                      <>
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                        <span>กำลังส่งลิงก์...</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>ส่งลิงก์ตั้งรหัสผ่าน</span>
+                        <ArrowRight className="w-5 h-5" />
+                      </>
+                    )}
+                  </button>
+
+                  <div className="mt-4 text-center">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsForgotPassword(false);
+                        setError('');
+                      }}
+                      className="inline-flex items-center gap-1.5 text-xs text-gray-500 hover:text-gray-800 font-medium transition-colors"
+                    >
+                      <ArrowLeft className="w-3.5 h-3.5" />
+                      <span>กลับไปเข้าสู่ระบบ</span>
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
           </div>
-
-          {/* Password Field with Eye Toggle */}
+        ) : (
+          /* ======================================================== */
+          /* 🔑 โหมดที่ 2: ล็อกอิน / สมัครสมาชิกปกติ */
+          /* ======================================================== */
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-1.5">รหัสผ่าน</label>
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+            {/* Header */}
+            <div className="text-center mb-8">
+              <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-blue-100 shadow-xs">
+                <Lock className="w-8 h-8 text-[#0870B8]" />
               </div>
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                className="block w-full pl-11 pr-12 py-3 border border-gray-200 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white text-gray-800"
-                placeholder="••••••••"
-                required
-                disabled={isLoadingEmail || isLoadingGoogle}
-              />
-              {/* Toggle Visibility Button */}
-              <button 
-                type="button" 
-                onClick={() => setShowPassword(!showPassword)}
-                tabIndex="-1"
-                className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-hidden"
+              <h2 className="text-2xl font-bold text-gray-800 tracking-tight">
+                {isLogin ? 'ยินดีต้อนรับกลับมา' : 'สร้างบัญชีใหม่'}
+              </h2>
+              <p className="text-gray-500 mt-2 text-sm">
+                {isLogin ? 'เข้าสู่ระบบเพื่อจัดการร้านค้าและเครดิตของคุณ' : 'เข้าร่วมเป็นพาร์ทเนอร์และรับสิทธิพิเศษมากมาย'}
+              </p>
+            </div>
+
+            {/* Google Login Button */}
+            <button
+              type="button"
+              onClick={handleGoogleLogin}
+              disabled={isLoadingEmail || isLoadingGoogle || (!isLogin && !isTermsAccepted)}
+              className="w-full flex items-center justify-center px-4 py-3 border border-gray-300 rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 focus:outline-hidden focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed group shadow-xs"
+            >
+              {isLoadingGoogle ? (
+                <Loader2 className="w-5 h-5 animate-spin text-gray-500" />
+              ) : (
+                <>
+                  <GoogleIcon />
+                  <span className="group-hover:text-blue-600 transition-colors">ดำเนินการต่อด้วย Google</span>
+                </>
+              )}
+            </button>
+
+            <div className="mt-6 mb-6 flex items-center justify-center">
+              <div className="w-full border-t border-gray-200"></div>
+              <span className="px-4 text-sm text-gray-400 font-medium bg-white">หรือด้วยอีเมล</span>
+              <div className="w-full border-t border-gray-200"></div>
+            </div>
+
+            {/* Error Banner */}
+            {error && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-[2px] flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+                <p className="text-sm text-red-700 font-medium leading-relaxed">{error}</p>
+              </div>
+            )}
+
+            <form onSubmit={handleEmailSubmit} className="space-y-4">
+              
+              {/* Name Field (Only for Register) */}
+              {!isLogin && (
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">ชื่อ - นามสกุล</label>
+                  <div className="relative group">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <User className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                    </div>
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleChange}
+                      className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-[2px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white text-gray-800"
+                      placeholder="กรอกชื่อ-นามสกุล"
+                      disabled={isLoadingEmail || isLoadingGoogle}
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Email Field */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-1.5">อีเมล</label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Mail className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                  </div>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    className="block w-full pl-11 pr-4 py-3 border border-gray-300 rounded-[2px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white text-gray-800"
+                    placeholder="you@example.com"
+                    required
+                    disabled={isLoadingEmail || isLoadingGoogle}
+                  />
+                </div>
+              </div>
+
+              {/* Password Field with Eye Toggle & Forgot Password Link */}
+              <div>
+                <div className="flex items-center justify-between mb-1.5">
+                  <label className="block text-sm font-semibold text-gray-700">รหัสผ่าน</label>
+                  {isLogin && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsForgotPassword(true);
+                        setError('');
+                        setResetSent(false);
+                      }}
+                      className="text-xs text-[#0870B8] hover:text-[#065a96] hover:underline font-semibold"
+                    >
+                      ลืมรหัสผ่าน?
+                    </button>
+                  )}
+                </div>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="block w-full pl-11 pr-12 py-3 border border-gray-300 rounded-[2px] focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-gray-50 focus:bg-white text-gray-800"
+                    placeholder="••••••••"
+                    required
+                    disabled={isLoadingEmail || isLoadingGoogle}
+                  />
+                  {/* Toggle Visibility Button */}
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPassword(!showPassword)}
+                    tabIndex="-1"
+                    className="absolute inset-y-0 right-0 pr-4 flex items-center text-gray-400 hover:text-gray-600 focus:outline-hidden"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* 📜 เงื่อนไขการให้บริการ (แสดงเฉพาะตอนสมัครสมาชิก) */}
+              {!isLogin && (
+                <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-[2px]">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <div className="flex items-center h-5 mt-0.5">
+                      <input 
+                        type="checkbox" 
+                        checked={isTermsAccepted}
+                        onChange={(e) => setIsTermsAccepted(e.target.checked)}
+                        className="w-4 h-4 rounded-sm border-gray-300 text-[#0870B8] focus:ring-[#0870B8] cursor-pointer"
+                      />
+                    </div>
+                    <div className="text-xs text-slate-600 leading-relaxed">
+                      {config?.consentTexts?.registration 
+                        ? parseConsentText(config.consentTexts.registration, undefined, config?.policyLinks?.privacyPolicyUrl, "text-[#0870B8] hover:underline font-medium")
+                        : parseConsentText("ฉันยอมรับ [terms] และ [privacy]", undefined, undefined, "text-[#0870B8] hover:underline font-medium")}
+                    </div>
+                  </label>
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoadingEmail || isLoadingGoogle || !formData.email || !formData.password || (!isLogin && !isTermsAccepted)}
+                className="w-full mt-6 py-3.5 px-4 bg-linear-to-r from-[#0870B8] to-[#0A85D9] hover:from-[#065a96] hover:to-[#0870B8] text-white rounded-md font-bold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
               >
-                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                {isLoadingEmail ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <>
+                    {isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'}
+                    <ArrowRight className="w-5 h-5" />
+                  </>
+                )}
+              </button>
+            </form>
+
+            {/* Switch Mode */}
+            <div className="mt-8 text-center text-sm text-gray-600">
+              {isLogin ? "ยังไม่มีบัญชีใช่หรือไม่? " : "มีบัญชีอยู่แล้วใช่ไหม? "}
+              <button
+                type="button"
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-[#0870B8] font-bold hover:text-[#065a96] transition-colors underline decoration-2 decoration-transparent hover:decoration-[#0870B8] underline-offset-4"
+              >
+                {isLogin ? "สมัครสมาชิกใหม่" : "เข้าสู่ระบบเลย"}
               </button>
             </div>
           </div>
-
-          {/* 📜 เงื่อนไขการให้บริการ (แสดงเฉพาะตอนสมัครสมาชิก) */}
-          {!isLogin && (
-            <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-              <label className="flex items-start gap-3 cursor-pointer">
-                <div className="flex items-center h-5 mt-0.5">
-                  <input 
-                    type="checkbox" 
-                    checked={isTermsAccepted}
-                    onChange={(e) => setIsTermsAccepted(e.target.checked)}
-                    className="w-4 h-4 rounded-sm border-gray-300 text-[#0870B8] focus:ring-[#0870B8] cursor-pointer"
-                  />
-                </div>
-                <div className="text-xs text-slate-600 leading-relaxed">
-                  {config?.consentTexts?.registration 
-                    ? parseConsentText(config.consentTexts.registration, undefined, config?.policyLinks?.privacyPolicyUrl, "text-[#0870B8] hover:underline font-medium")
-                    : parseConsentText("ฉันยอมรับ [terms] และ [privacy]", undefined, undefined, "text-[#0870B8] hover:underline font-medium")}
-                </div>
-              </label>
-            </div>
-          )}
-
-          {/* Submit Button */}
-          <button
-            type="submit"
-            disabled={isLoadingEmail || isLoadingGoogle || !formData.email || !formData.password || (!isLogin && !isTermsAccepted)}
-            className="w-full mt-6 py-3.5 px-4 bg-linear-to-r from-[#0870B8] to-[#0A85D9] hover:from-[#065a96] hover:to-[#0870B8] text-white rounded-md font-bold flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-[0.98]"
-          >
-            {isLoadingEmail ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <>
-                {isLogin ? 'เข้าสู่ระบบ' : 'สมัครสมาชิก'}
-                <ArrowRight className="w-5 h-5" />
-              </>
-            )}
-          </button>
-        </form>
-
-        {/* Switch Mode */}
-        <div className="mt-8 text-center text-sm text-gray-600">
-          {isLogin ? "ยังไม่มีบัญชีใช่หรือไม่? " : "มีบัญชีอยู่แล้วใช่ไหม? "}
-          <button
-            type="button"
-            onClick={() => setIsLogin(!isLogin)}
-            className="text-[#0870B8] font-bold hover:text-[#065a96] transition-colors underline decoration-2 decoration-transparent hover:decoration-[#0870B8] underline-offset-4"
-          >
-            {isLogin ? "สมัครสมาชิกใหม่" : "เข้าสู่ระบบเลย"}
-          </button>
-        </div>
+        )}
 
         {/* Security Badge */}
         <div className="mt-8 pt-6 border-t border-slate-200 flex flex-col items-center justify-center gap-2 text-xs text-gray-400">
@@ -327,6 +488,7 @@ export default function AuthForm({ onSuccess }) {
           </div>
           <p>Secure login powered by Firebase Auth</p>
         </div>
+
       </div>
     </div>
   );

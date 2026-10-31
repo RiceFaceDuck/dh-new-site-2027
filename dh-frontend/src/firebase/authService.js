@@ -4,6 +4,9 @@ import {
   signInWithPopup, 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
+  sendPasswordResetEmail,
+  verifyPasswordResetCode,
+  confirmPasswordReset,
   signOut 
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
@@ -127,4 +130,29 @@ export const logoutUser = async () => {
     console.error("Error signing out: ", error);
     throw error;
   }
+};
+
+// ==========================================
+// 5. ขอรีเซ็ตรหัสผ่าน (In-House Domain Redirect)
+// ==========================================
+export const requestPasswordReset = async (email) => {
+  const actionCodeSettings = {
+    url: window.location.origin + '/reset-password',
+    handleCodeInApp: false
+  };
+  await sendPasswordResetEmail(auth, email, actionCodeSettings);
+};
+
+// ==========================================
+// 6. ตรวจสอบโค้ดรีเซ็ตรหัสผ่าน
+// ==========================================
+export const verifyResetCode = async (actionCode) => {
+  return await verifyPasswordResetCode(auth, actionCode);
+};
+
+// ==========================================
+// 7. บันทึกรหัสผ่านใหม่
+// ==========================================
+export const resetUserPassword = async (actionCode, newPassword) => {
+  return await confirmPasswordReset(auth, actionCode, newPassword);
 };
