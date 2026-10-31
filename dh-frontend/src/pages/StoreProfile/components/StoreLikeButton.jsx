@@ -62,10 +62,24 @@ const StoreLikeButton = ({
     );
   }
 
-  // 🖥️ เลย์เอาต์แนวนอนสำหรับหน้าจอ PC (ปุ่มหัวใจ + ป้ายตัวเลข)
+  // 🖥️ เลย์เอาต์แนวนอนสำหรับหน้าจอ PC (ป้ายตัวเลข + ปุ่มหัวใจ)
   return (
     <div className={`inline-flex items-center gap-1.5 select-none ${className}`}>
-      {/* 🔴 1. ปุ่มหัวใจทรงกลมสีแดงสด */}
+      {/* 🏷️ 1. กรอบแสดงผล "ถูกใจ X" */}
+      <div
+        title={`จำนวนผู้ถูกใจ: ${Number(likeCount).toLocaleString()} คน`}
+        className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-[2px] border transition-colors ${
+          isLiked
+            ? 'bg-rose-50/80 border-rose-300 text-rose-700'
+            : 'bg-slate-50 border-slate-200/90 text-slate-600'
+        }`}
+      >
+        <span>
+          ถูกใจ <strong className="font-semibold">{Number(likeCount).toLocaleString()}</strong>
+        </span>
+      </div>
+
+      {/* 🔴 2. ปุ่มหัวใจทรงกลมสีแดงสด */}
       <button
         type="button"
         onClick={onToggleLike}
@@ -82,20 +96,6 @@ const StoreLikeButton = ({
           className="fill-white text-white transition-transform duration-200 group-hover:scale-110"
         />
       </button>
-
-      {/* 🏷️ 2. กรอบแสดงผล "ถูกใจ X" */}
-      <div
-        title={`จำนวนผู้ถูกใจ: ${Number(likeCount).toLocaleString()} คน`}
-        className={`inline-flex items-center px-2 py-1 text-xs font-medium rounded-[2px] border transition-colors ${
-          isLiked
-            ? 'bg-rose-50/80 border-rose-300 text-rose-700'
-            : 'bg-slate-50 border-slate-200/90 text-slate-600'
-        }`}
-      >
-        <span>
-          ถูกใจ <strong className="font-semibold">{Number(likeCount).toLocaleString()}</strong>
-        </span>
-      </div>
     </div>
   );
 };
