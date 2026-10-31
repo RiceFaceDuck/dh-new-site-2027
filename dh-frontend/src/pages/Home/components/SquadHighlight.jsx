@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { ArrowRight } from 'lucide-react';
 import PartnerCard from './PartnerCard';
 import { useNearbyPartners } from '../hooks/useNearbyPartners';
 
@@ -29,8 +30,12 @@ const SquadHighlight = () => {
             </p>
           )}
         </div>
-        <Link to="/providers" className="text-brand hover:text-brand-accent font-semibold text-sm md:text-base transition-colors whitespace-nowrap">
+        <Link 
+          to="/providers" 
+          className="group flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-800 hover:text-brand font-bold text-sm rounded-md shadow-xs hover:shadow-md border border-slate-300 hover:border-brand/40 transition-all duration-300 active:scale-95 whitespace-nowrap"
+        >
           ดูช่างทั้งหมด
+          <ArrowRight size={16} className="text-brand group-hover:translate-x-1 transition-transform" />
         </Link>
       </div>
 
