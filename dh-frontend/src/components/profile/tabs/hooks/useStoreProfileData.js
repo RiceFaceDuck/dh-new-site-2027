@@ -24,7 +24,9 @@ export const DEFAULT_STORE_DATA = {
   latitude: null,
   longitude: null,
   isSupportActive: false,
-  pdpaConsent: false
+  pdpaConsent: false,
+  viewCount: 0,
+  likeCount: 0
 };
 
 export const normalizeStoreData = (data = {}) => {
@@ -95,6 +97,27 @@ export const useStoreProfileData = (user) => {
           fetchedData = normalizeStoreData(legacySnap.data());
         }
       }
+      
+      // 🌟 Parity: ตรวจสอบยอดเข้าชมหน้าร้าน (viewCount) และยอดถูกใจ (likeCount) จาก ActivePartners
+      let activePartnerViews = 0;
+      let activePartnerLikes = 0;
+      try {
+        const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), user.uid);
+        const activePartnerSnap = await getDoc(activePartnerRef);
+        if (activePartnerSnap.exists()) {
+          const apData = activePartnerSnap.data();
+          activePartnerViews = Number(apData.viewCount || apData.viewsCount || 0);
+          activePartnerLikes = Number(apData.likeCount || apData.likes || 0);
+        }
+      } catch (apErr) {
+        console.debug('ActivePartners stats fetch deferred:', apErr);
+      }
+
+      fetchedData = {
+        ...fetchedData,
+        viewCount: activePartnerViews || Number(rootSnap.exists() ? (rootSnap.data()?.viewCount || 0) : 0),
+        likeCount: activePartnerLikes || Number(rootSnap.exists() ? (rootSnap.data()?.likeCount || 0) : 0)
+      };
 
       setServerStoreData(fetchedData);
 

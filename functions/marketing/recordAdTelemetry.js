@@ -22,19 +22,40 @@ const MAX_DISTINCT_ADS_PER_BATCH = 30;
 // 1. PURE PARSER & AGGREGATOR (SRP Layer 1)
 // ==========================================
 /**
- * รวบรวมและกำจัดข้อมูลซ้ำซ้อนจาก Event ก้อนรวม
+ * รวบรวมและกำจัดข้อมูลซ้ำซ้อนจาก Event ก้อนรวม (รองรับทั้ง partner_ads, user_sku_ads, และ store_view)
  * @param {Array} events - รายการสถิติดิบจาก Client
- * @returns {Object} { adAggregates: Record<string, { adId, views, clicks, ownerId, adType }>, distinctCount: number }
+ * @returns {Object} { adAggregates: Record<string, { adId, views, clicks, ownerId, adType }>, storeAggregates: Record<string, { storeId, views, partnerName, ownerId }>, distinctCount: number }
  */
 const aggregateTelemetryEvents = (events = []) => {
   if (!Array.isArray(events) || events.length === 0) {
-    return { adAggregates: {}, distinctCount: 0 };
+    return { adAggregates: {}, storeAggregates: {}, distinctCount: 0 };
   }
 
   const safeEvents = events.slice(0, MAX_EVENTS_PER_BATCH);
   const adAggregates = {};
+  const storeAggregates = {};
 
   for (const ev of safeEvents) {
+    // 🏪 Support for store_view telemetry events (ActivePartners/{store_id}.viewCount)
+    if (ev?.type === "store_view" || ev?.store_id || ev?.storeId) {
+      const storeId = ev?.store_id || ev?.storeId;
+      if (storeId) {
+        const cleanStoreId = String(storeId).trim();
+        if (cleanStoreId) {
+          if (!storeAggregates[cleanStoreId]) {
+            storeAggregates[cleanStoreId] = {
+              storeId: cleanStoreId,
+              views: 0,
+              partnerName: ev.partner_name || ev.partnerName || "",
+              ownerId: ev.owner_id || ev.ownerId || cleanStoreId
+            };
+          }
+          storeAggregates[cleanStoreId].views += 1;
+          continue;
+        }
+      }
+    }
+
     const adId = ev?.adId ? String(ev.adId).trim() : null;
     if (!adId) continue;
 
@@ -68,7 +89,11 @@ const aggregateTelemetryEvents = (events = []) => {
     filteredAggregates[id] = adAggregates[id];
   });
 
-  return { adAggregates: filteredAggregates, distinctCount: adIds.length };
+  return { 
+    adAggregates: filteredAggregates, 
+    storeAggregates, 
+    distinctCount: adIds.length + Object.keys(storeAggregates).length 
+  };
 };
 
 // ==========================================
@@ -122,22 +147,24 @@ const calculateAdDeductions = (validAdMap, config = {}) => {
 /**
  * บันทึกสถิติลง partner_ads, ตัดแต้มจากผู้ใช้, และบันทึกบัญชีคู่ขนาน
  */
-const commitTelemetryTransaction = async (db, adAggregates, config) => {
-  const adIds = Object.keys(adAggregates);
-  if (adIds.length === 0) {
-    return { success: true, processed: 0, adsUpdated: 0, totalDeducted: 0 };
+const commitTelemetryTransaction = async (db, adAggregates = {}, config = {}, storeAggregates = {}) => {
+  const adIds = Object.keys(adAggregates || {});
+  const storeIds = Object.keys(storeAggregates || {});
+  if (adIds.length === 0 && storeIds.length === 0) {
+    return { success: true, processed: 0, adsUpdated: 0, storesUpdated: 0, totalDeducted: 0 };
   }
 
   let totalDeductionsAll = 0;
   let totalAdsUpdated = 0;
+  let totalStoresUpdated = 0;
 
   await db.runTransaction(async (transaction) => {
-    // A. Read Phase: ดึงข้อมูลโฆษณา, ผู้ใช้, และ Settings ทั้งหมดก่อนทำการเขียน (รองรับทั้ง partner_ads และ user_sku_ads)
+    // A. Read Phase: ดึงข้อมูลโฆษณา, ผู้ใช้, Settings, และ ActivePartners ก่อนทำการเขียน
     const adRefs = adIds.map((id) => {
       const coll = adAggregates[id]?.collection || "partner_ads";
       return db.collection(coll).doc(id);
     });
-    const adSnaps = await Promise.all(adRefs.map((ref) => transaction.get(ref)));
+    const adSnaps = adIds.length > 0 ? await Promise.all(adRefs.map((ref) => transaction.get(ref))) : [];
 
     const ownerIdsToFetch = new Set();
     const validAdMap = {};
@@ -160,7 +187,7 @@ const commitTelemetryTransaction = async (db, adAggregates, config) => {
     });
 
     const userRefs = Array.from(ownerIdsToFetch).map((uid) => db.collection("users").doc(uid));
-    const userSnaps = await Promise.all(userRefs.map((ref) => transaction.get(ref)));
+    const userSnaps = userRefs.length > 0 ? await Promise.all(userRefs.map((ref) => transaction.get(ref))) : [];
     const userMap = {};
     userSnaps.forEach((snap) => {
       if (snap.exists) {
@@ -169,15 +196,48 @@ const commitTelemetryTransaction = async (db, adAggregates, config) => {
     });
 
     const settingsRef = db.collection("settings").doc("credit_config");
-    const settingsSnap = await transaction.get(settingsRef);
-    const sData = settingsSnap.exists ? settingsSnap.data() : {};
-    const ledger = sData.ledger || { systemPoolMax: 10000000, totalAllocated: 0, status: "SECURE" };
-    let currentAllocated = Number(ledger.totalAllocated || 0);
+    let settingsSnap = null;
+    let sData = {};
+    let ledger = { systemPoolMax: 10000000, totalAllocated: 0, status: "SECURE" };
+    let currentAllocated = 0;
+
+    if (adIds.length > 0) {
+      settingsSnap = await transaction.get(settingsRef);
+      sData = settingsSnap.exists ? settingsSnap.data() : {};
+      ledger = sData.ledger || { systemPoolMax: 10000000, totalAllocated: 0, status: "SECURE" };
+      currentAllocated = Number(ledger.totalAllocated || 0);
+    }
+
+    // 🏪 Read ActivePartners for store_view telemetry
+    const storeRefs = storeIds.map((id) => db.collection("ActivePartners").doc(id));
+    const storeSnaps = storeRefs.length > 0 ? await Promise.all(storeRefs.map((ref) => transaction.get(ref))) : [];
 
     // B. Calculate Phase: คำนวณยอดเงินด้วยกฎธุรกิจที่บริสุทธิ์
-    const ownerDeductions = calculateAdDeductions(validAdMap, config);
+    const ownerDeductions = adIds.length > 0 ? calculateAdDeductions(validAdMap, config) : {};
 
-    // C. Write Phase 1: อัปเดตสถิติและสถานะของ partner_ads
+    // C. Write Phase 1: บันทึกสถิติยอดเข้าชมหน้าร้านพาร์ทเนอร์ (ActivePartners/{store_id}.viewCount)
+    storeSnaps.forEach((snap, idx) => {
+      const storeId = storeIds[idx];
+      const deltaViews = Number(storeAggregates[storeId]?.views || 0);
+      if (deltaViews > 0) {
+        const storeRef = storeRefs[idx];
+        if (snap.exists) {
+          transaction.update(storeRef, {
+            viewCount: FieldValue.increment(deltaViews),
+            updatedAt: FieldValue.serverTimestamp()
+          });
+        } else {
+          transaction.set(storeRef, {
+            partnerId: storeId,
+            viewCount: deltaViews,
+            updatedAt: FieldValue.serverTimestamp()
+          }, { merge: true });
+        }
+        totalStoresUpdated++;
+      }
+    });
+
+    // D. Write Phase 2: อัปเดตสถิติและสถานะของ partner_ads
     const costPerClick = Number(config.adClickCost ?? 5);
     const costPerImpressionBatch = Number(config.adImpressionCost ?? 0.1);
     const impressionBatchSize = Number(config.adImpressionCount ?? 1000);
@@ -332,7 +392,7 @@ const commitTelemetryTransaction = async (db, adAggregates, config) => {
     }
 
     // E. Write Phase 3: ซิงค์ totalAllocated ใน Settings Ledger
-    if (totalDeductionsAll > 0 && settingsSnap.exists) {
+    if (totalDeductionsAll > 0 && settingsRef && settingsSnap && settingsSnap.exists) {
       transaction.set(settingsRef, {
         ledger: {
           ...ledger,
@@ -346,8 +406,9 @@ const commitTelemetryTransaction = async (db, adAggregates, config) => {
 
   return {
     success: true,
-    processed: adIds.length,
+    processed: adIds.length + storeIds.length,
     adsUpdated: totalAdsUpdated,
+    storesUpdated: totalStoresUpdated,
     totalDeducted: totalDeductionsAll
   };
 };
@@ -356,19 +417,25 @@ const commitTelemetryTransaction = async (db, adAggregates, config) => {
 // 4. MAIN ENTRY & HTTP HANDLER
 // ==========================================
 /**
- * ประมวลผล Batch Telemetry ก้อนรวม
+ * ประมวลผล Batch Telemetry ก้อนรวม (รองรับทั้ง Ads และ Store Views)
  */
 const processAdTelemetryBatch = async (db, events = []) => {
-  const { adAggregates } = aggregateTelemetryEvents(events);
-  if (Object.keys(adAggregates).length === 0) {
-    return { success: true, processed: 0, adsUpdated: 0, totalDeducted: 0 };
+  const { adAggregates = {}, storeAggregates = {} } = aggregateTelemetryEvents(events);
+  const hasAds = Object.keys(adAggregates).length > 0;
+  const hasStores = Object.keys(storeAggregates).length > 0;
+
+  if (!hasAds && !hasStores) {
+    return { success: true, processed: 0, adsUpdated: 0, storesUpdated: 0, totalDeducted: 0 };
   }
 
-  const configSnap = await db.collection("settings").doc("credit_config").get();
-  const rawData = configSnap.exists ? configSnap.data() : {};
-  const config = rawData.config || rawData.creditConfig || rawData || {};
+  let config = {};
+  if (hasAds) {
+    const configSnap = await db.collection("settings").doc("credit_config").get();
+    const rawData = configSnap.exists ? configSnap.data() : {};
+    config = rawData.config || rawData.creditConfig || rawData || {};
+  }
 
-  return commitTelemetryTransaction(db, adAggregates, config);
+  return commitTelemetryTransaction(db, adAggregates, config, storeAggregates);
 };
 
 exports.recordAdTelemetry = onRequest(
@@ -421,5 +488,6 @@ module.exports = {
   recordAdTelemetry: exports.recordAdTelemetry,
   processAdTelemetryBatch,
   aggregateTelemetryEvents,
-  calculateAdDeductions
+  calculateAdDeductions,
+  commitTelemetryTransaction
 };

@@ -345,7 +345,7 @@ const rebuildAllChunksLogic = async (db) => {
           landmarks: p.landmarks || '',
           openHours: p.openHours || '',
           points: Number(p.points || 0),
-          viewsCount: Number(p.viewsCount || p.visitCount || 0),
+          viewsCount: Number(p.viewCount || p.viewsCount || p.visitCount || 0),
           isVerified: p.isVerified === true,
           isActive: true
         });

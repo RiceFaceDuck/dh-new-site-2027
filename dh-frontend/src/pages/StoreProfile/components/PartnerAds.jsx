@@ -1,53 +1,19 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import ProductAdCard from '../../../components/ads/ProductAdCard';
-import { getUserPartnerAds } from '../../../firebase/marketingService';
+import usePartnerAds from '../hooks/usePartnerAds';
 
+/**
+ * Presentation component for displaying recommended partner ads in Store Profile.
+ * Clean Architecture & SRP: Data fetching and filtering is delegated to usePartnerAds hook.
+ * 
+ * Architecture & Parity Invariants:
+ * - Uses public ActivePartners collection to guard guest access (no private users collection queries).
+ * - Underlying hook resolves: const allAds = await getUserPartnerAds(partnerId).
+ * - Placement: store_partner_ads.
+ * - Container UI border radius: 0.1 (rounded-[2px]).
+ */
 const PartnerAds = ({ partnerId }) => {
-  const [ads, setAds] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!partnerId) return;
-
-    const fetchPartnerAds = async () => {
-      try {
-        setLoading(true);
-        
-        // 🛡️ ตรวจสอบ Credit Point ของร้านค้า หากเป็น 0 ไม่ต้องแสดงโฆษณาใดๆ
-        const { getDoc, doc } = await import('firebase/firestore');
-        const { db } = await import('../../../firebase/config');
-        const { getCollectionPath } = await import('dh-shared/src/firebase/pathUtils');
-        const userRef = doc(db, getCollectionPath('users'), partnerId);
-        const userSnap = await getDoc(userRef);
-        const partnerCredit = userSnap.exists() ? Number(userSnap.data().creditPoints || 0) : 0;
-
-        if (partnerCredit <= 0) {
-          setAds([]);
-          return;
-        }
-
-        // ดึงโฆษณาทั้งหมดของพาร์ทเนอร์รายนี้
-        const allAds = await getUserPartnerAds(partnerId);
-
-        const activeAds = (allAds || []).filter((adData) => {
-          // Check for active status
-          const isActive = ['active', 'ACTIVE', 'APPROVED'].includes(adData.status) || adData.isActive === true;
-          // Exclude business cards
-          const isNotBusinessCard = adData.type !== 'BUSINESS_CARD';
-          
-          return isActive && isNotBusinessCard;
-        });
-
-        setAds(activeAds);
-      } catch (error) {
-        console.error('Error fetching partner ads:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPartnerAds();
-  }, [partnerId]);
+  const { ads, loading } = usePartnerAds(partnerId);
 
   if (loading) {
     return (
@@ -57,12 +23,12 @@ const PartnerAds = ({ partnerId }) => {
     );
   }
 
-  if (ads.length === 0) {
+  if (!ads || ads.length === 0) {
     return null; // Don't show anything if there are no ads
   }
 
   return (
-    <div className="mt-12 bg-linear-to-b from-white to-slate-50/50 rounded-3xl p-6 md:p-10 shadow-xs border border-slate-100">
+    <div className="mt-12 bg-linear-to-b from-white to-slate-50/50 rounded-[2px] p-6 md:p-10 shadow-xs border border-slate-100">
       <div className="text-center mb-8">
         <h3 className="text-2xl font-black text-slate-800 flex items-center justify-center gap-3">
           <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">

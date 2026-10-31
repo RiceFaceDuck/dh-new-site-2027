@@ -1,5 +1,5 @@
 import React from 'react';
-import { Store, ShieldAlert, ExternalLink, RefreshCw } from 'lucide-react';
+import { Store, ShieldAlert, ExternalLink, RefreshCw, Eye } from 'lucide-react';
 import StoreProfileBasicInfo from './StoreProfileBasicInfo';
 import StoreProfileSocialLinks from './StoreProfileSocialLinks';
 import StoreProfileLocation from './StoreProfileLocation';
@@ -88,6 +88,17 @@ const StoreProfileForm = ({
               <ExternalLink size={13} className="text-slate-400 group-hover:text-indigo-600 transition-colors" />
             </a>
           )}
+
+          {/* 🌟 แสดงยอดเข้าชมหน้าร้าน (Store Profile Visits) แยกชัดเจนจากป้ายโฆษณา */}
+          <div className="bg-white text-slate-800 px-3.5 py-2.5 rounded-md flex items-center gap-2 border border-slate-200 shadow-2xs shrink-0" title="ยอดเข้าชมหน้าร้านพาร์ทเนอร์ทั้งหมด">
+            <span className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-1">
+              <Eye size={14} className="text-indigo-600" /> ยอดเข้าชมหน้าร้าน (Store Profile Visits):
+            </span>
+            <span className="font-mono font-black text-indigo-700 text-xs">
+              {Number(storeData?.viewCount || 0).toLocaleString()}
+            </span>
+            <span className="text-[10px] text-slate-400 font-medium">ครั้ง</span>
+          </div>
 
           <div className="bg-white p-3 rounded-md flex items-center gap-4 border border-slate-200 shadow-2xs">
           <div className="text-right">

@@ -85,22 +85,60 @@ export const adManagementService = {
   },
 
   /**
-   * ดึงข้อมูล Store Profile ของลูกค้า
+   * ดึงข้อมูล Store Profile ของลูกค้า พร้อมผูกข้อมูลสถิติจาก ActivePartners
    */
   getStoreProfile: async (uid) => {
     try {
+      let profileData = null;
       // 🚀 SSOT: อ่านจาก users/{uid}/storeProfile/main เป็นหลัก
       const storeRef = doc(db, getCollectionPath('users'), uid, 'storeProfile', 'main');
       const storeSnap = await getDoc(storeRef);
-      if (storeSnap.exists()) return storeSnap.data();
+      if (storeSnap.exists()) {
+        profileData = storeSnap.data();
+      } else {
+        // 🛡️ Fallback: ดึงจาก artifacts หากยังไม่มีใน users
+        const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
+        const legacyStoreRef = doc(db, 'artifacts', appId, 'users', uid, 'storeProfile', 'main');
+        const legacySnap = await getDoc(legacyStoreRef);
+        if (legacySnap.exists()) {
+          profileData = legacySnap.data();
+        }
+      }
 
-      // 🛡️ Fallback: ดึงจาก artifacts หากยังไม่มีใน users
-      const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
-      const legacyStoreRef = doc(db, 'artifacts', appId, 'users', uid, 'storeProfile', 'main');
-      const legacySnap = await getDoc(legacyStoreRef);
-      return legacySnap.exists() ? legacySnap.data() : null;
+      // 🌟 Parity: ตรวจสอบและเชื่อมโยง viewCount และ likeCount จาก ActivePartners (SSOT สถิติร้าน)
+      try {
+        const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), uid);
+        const activePartnerSnap = await getDoc(activePartnerRef);
+        if (activePartnerSnap.exists()) {
+          const apData = activePartnerSnap.data();
+          profileData = {
+            ...(profileData || {}),
+            viewCount: Number(apData.viewCount || apData.viewsCount || profileData?.viewCount || 0),
+            likeCount: Number(apData.likeCount || profileData?.likeCount || 0),
+            activePartner: apData
+          };
+        }
+      } catch (apErr) {
+        console.debug(`[getStoreProfile] ActivePartners stats fetch deferred:`, apErr?.message);
+      }
+
+      return profileData;
     } catch (error) {
       console.error(`❌ Error fetching store profile for [${uid}]:`, error);
+      return null;
+    }
+  },
+
+  /**
+   * ดึงข้อมูล ActivePartners รายบุคคลสำหรับตรวจสถิติร้านค้า
+   */
+  getActivePartner: async (uid) => {
+    try {
+      const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), uid);
+      const activePartnerSnap = await getDoc(activePartnerRef);
+      return activePartnerSnap.exists() ? activePartnerSnap.data() : null;
+    } catch (error) {
+      console.debug(`[getActivePartner] Error fetching ActivePartners for [${uid}]:`, error);
       return null;
     }
   },
@@ -209,6 +247,10 @@ export const adManagementService = {
            if (bundleSnap.exists()) {
              const bData = bundleSnap.data() || {};
              let items = Array.isArray(bData.items) ? [...bData.items] : [];
+             const existingIdx = items.findIndex(i => (i.id === partnerId || i.partnerId === partnerId));
+             const existingAd = existingIdx >= 0 ? items[existingIdx] : null;
+             const existingStats = existingAd?.stats || {};
+
              const partnerItem = {
                id: partnerId,
                partnerId: partnerId,
@@ -227,11 +269,19 @@ export const adManagementService = {
                landmarks: landmarks,
                openHours: openHours,
                points: points,
-               viewsCount: 0,
+               viewsCount: Number(adData?.stats?.views || adData?.viewsCount || 0),
+               stats: {
+                 ...existingStats,
+                 views: existingAd?.stats?.views || existingAd?.viewsCount || 0,
+                 clicks: existingAd?.stats?.clicks || Number(adData?.stats?.clicks || adData?.clicks || 0)
+               },
                isVerified: true,
                isActive: true
              };
-             const existingIdx = items.findIndex(i => (i.id === partnerId || i.partnerId === partnerId));
+             // 🛡️ M3 Parity: ป้องกันการรีเซ็ตยอดวิวเดิมของร้านใน bundle
+             if (existingAd?.viewsCount || existingAd?.views || existingAd?.stats?.views) {
+               partnerItem.viewsCount = existingAd?.viewsCount || existingAd?.views || existingAd?.stats?.views || 0;
+             }
              if (existingIdx >= 0) {
                items[existingIdx] = { ...items[existingIdx], ...partnerItem };
              } else {

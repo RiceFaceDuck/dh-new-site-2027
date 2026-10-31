@@ -79,6 +79,11 @@ const TabAdManager = ({ user }) => {
             }`}
           >
             <Store size={15} /> ข้อมูลร้านซ่อม
+            {Number(storeData?.viewCount || 0) > 0 && (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${activeSubTab === 'store' ? 'bg-slate-900 text-amber-300' : 'bg-slate-700/80 text-indigo-300 border border-indigo-500/30'}`} title="ยอดเข้าชมหน้าร้านพาร์ทเนอร์">
+                {Number(storeData.viewCount).toLocaleString()} วิว
+              </span>
+            )}
           </button>
           <button
             onClick={() => setActiveSubTab('ads')}

@@ -1,4 +1,4 @@
-import React, { Suspense, useLayoutEffect } from 'react';
+import React, { Suspense, useLayoutEffect, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import MainLayout from './layouts/MainLayout';
 import Home from './pages/Home/Home';
@@ -32,19 +32,35 @@ const CookiePolicy = React.lazy(() => import('./pages/legal/CookiePolicy'));
 import CookieConsentBanner from './components/common/CookieConsentBanner';
 import LineBrowserWarning from './components/common/LineBrowserWarning';
 import TopLoadingBar from './components/common/TopLoadingBar';
-
+import { analytics } from './firebase/config';
+import { logEvent } from 'firebase/analytics';
 
 // ==========================================
-// 🌟 Smart UX Feature: Auto Scroll to Top
+// 🌟 Smart UX Feature: Auto Scroll to Top & GA4 Route Telemetry
 // ==========================================
 // ฮุกอัจฉริยะสำหรับ React Router: เมื่อลูกค้าคลิกเปลี่ยนหน้าต่าง 
-// ระบบจะทำการสมูทหน้าจอเลื่อนกลับขึ้นบนสุดอัตโนมัติ (ลดอาการงงหน้าจอค้างด้านล่าง)
+// ระบบจะทำการสมูทหน้าจอเลื่อนกลับขึ้นบนสุดอัตโนมัติ และส่ง telemetry page_view ไปยัง GA4
 const ScrollToTop = () => {
-  const { pathname } = useLocation();
+  const location = useLocation();
+  const { pathname, search } = location;
   
   useLayoutEffect(() => {
     window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
   }, [pathname]);
+
+  useEffect(() => {
+    try {
+      if (analytics && typeof window !== 'undefined') {
+        logEvent(analytics, 'page_view', {
+          page_path: pathname + (search || ''),
+          page_location: window.location.href,
+          page_title: typeof document !== 'undefined' ? document.title : ''
+        });
+      }
+    } catch (e) {
+      // Analytics offline / AdBlocker safe
+    }
+  }, [pathname, search]);
 
   return null;
 };

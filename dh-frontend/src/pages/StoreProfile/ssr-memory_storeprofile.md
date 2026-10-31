@@ -34,7 +34,7 @@
 - **Image Compressor:** `utils/imageCompressor.js`
 - **Storage Service:** `firebase/storageService.js` (ฟังก์ชัน `uploadStoreImage`, `deleteStoreImage` รองรับ fallback)
 - **Stats Components & Hook:**
-  - `StoreLikeButton.jsx`: ปุ่มกดถูกใจแบบเรียบง่าย (Simple Heart + Count) ใช้ภาพหัวใจโปร่งใส `like_heart.png`
+  - `StoreLikeButton.jsx`: ปุ่มกดถูกใจแบบเรียบง่าย (Simple Heart + Count) เรนเดอร์ Vector SVG ด้วย Lucide React `<Heart />` โดยตรง พร้อมพื้นหลังสีแดงสด `bg-[#f43f5e]` (ไม่ใช้ไฟล์ภาพ `like_heart.png`)
   - `StoreViewBadge.jsx`: ป้ายยอดวิว All-time ตามหลัก Calm UI และ Border Radius 0.1 (`rounded-[2px]`)
   - `hooks/useStoreStats.js`: Custom Hook จัดการสถานะและกันปั๊มยอดด้วย `sessionStorage` และ `localStorage`
 - **Edit Component & Hook:** `StoreProfileBasicInfo.jsx`, `hooks/useStoreProfile.js`
@@ -82,6 +82,12 @@
 - **Solution:** ปรับปรุง `ErrorBoundary.jsx` ให้มีระบบ Auto-Refresh อัตโนมัติสูงสุด 3 รอบผ่าน `sessionStorage` โดยแสดงสถานะโหลดใหม่อย่างนุ่มนวล และจะแสดงหน้า Fallback สีแดงเฉพาะเมื่อรีเฟรชครบ 3 รอบแล้วยังไม่ผ่านเท่านั้น
 - **Problem:** ระหว่างอัปเดตระบบ View Tracking / Telemetry ใน `StoreProfileHero.jsx` มีการเผลอทับโค้ดสไตล์ปุ่ม MAP (สีฟ้า 3D) และปุ่มแชร์ (สีเทา 3D) ด้วยโค้ดปุ่มแบนสีเทาตัวเก่า ทำให้หน้าตาปุ่มหลุดธีม ไม่เข้าพวกกับปุ่มโทร
 - **Solution:** กู้คืนสไตล์ปุ่ม 3D นูนเฉียงดั้งเดิม (MAP: `bg-sky-600 border-sky-800`, แชร์: `bg-slate-700 border-slate-900`) ให้เข้าชุดกับปุ่มโทร 100% โดยคงระบบ View Tracking และสถิติการกดโทรไว้ครบถ้วน
+- **Problem:** มีการเตรียมไฟล์ภาพ `like_heart.png` ไว้ แต่การแสดงผลบนอุปกรณ์ความละเอียดสูงอาจเบลอหรือไม่ยืดหยุ่นต่อการสลับสีสถานะ Active/Liking
+- **Solution:** ปรับ `StoreLikeButton.jsx` ให้เรนเดอร์ Vector SVG ด้วย Lucide React `<Heart />` โดยตรงบนปุ่มกลมสีแดงสด `bg-[#f43f5e]` มีความคมชัดทุกระดับหน้าจอและรองรับ transition สวยงามโดยไม่ต้องพึ่งพาไฟล์ภาพภายนอก
+- **Problem:** การนับยอดวิวหน้าร้านค้าเดิมยิงคำสั่ง `updateDoc` ตรงเข้า Firestore ทันทีที่เปิดหน้า ทำให้เสี่ยงโควต้าบวมเมื่อเกิดการรีเฟรช และมีการผูกรหัสโฆษณาเทียม (`AD-CARD-...`) ใน `StoreProfileHero` ส่งผลให้การเข้าชมหน้าร้านทั่วไปถูกคิดเป็นวิวโฆษณา
+- **Solution:** ติดตั้ง Dwell-time Guard (ต้องดูเกิน 1,000ms ถึงเริ่มนับ) ร่วมกับ Session Deduplication (คูลดาวน์ 5 นาที) และส่งผ่าน In-memory Telemetry Queue (`trackStoreView`) รวบรวมส่งเป็นรอบ พร้อมตัดการสร้างรหัสโฆษณาเทียมออก เพื่อแยกยอดวิวร้านค้าทั่วไป (Organic) ออกจากยอดวิวโฆษณา (Paid) อย่างเด็ดขาด
+- **Problem:** ตัวแปร `settingsRef` ใน Cloud Functions `recordAdTelemetry.js` ประกาศอยู่ลึกใน if-block เมื่อเข้าสู่ขั้นตอนการเขียนข้อมูลใน Transaction ทำให้เกิด `ReferenceError: settingsRef is not defined`
+- **Solution:** ยก (Hoist) ขอบเขตของ `settingsRef` ออกมาให้อยู่ใน Transaction Scope ด้านนอกสุด และใส่ Null-guard รัดกุม (`totalDeductionsAll > 0 && settingsRef && settingsSnap && settingsSnap.exists`) เพื่อความปลอดภัย 100%
 
 ## 6. <future_roadmap>
 - **Telemetry for Map & Share Buttons:** วางแผนติดตั้ง `trackAdClick` สำหรับปุ่มแผนที่ (`actionType: 'maps_open'`) และปุ่มแชร์ (`actionType: 'share_click'`) เพื่อเก็บสถิติความสนใจของลูกค้าเพิ่มเติม นอกเหนือจากการกดโทรออก (`phone_call`)

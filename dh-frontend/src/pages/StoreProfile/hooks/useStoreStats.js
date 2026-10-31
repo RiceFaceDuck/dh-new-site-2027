@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { doc, updateDoc, increment } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { trackStoreView } from '../../../firebase/marketingAnalyticsService';
 
 /**
  * Custom Hook สำหรับบริหารจัดการสถิติยอดวิว (All-time Views) และการกดไลก์ (Likes)
- * ตามหลัก Calm UI, Two-Tier Buffering, และ Clean Architecture
+ * ตามหลัก Calm UI, Two-Tier Buffering, MRC 1,000ms Dwell-Time, และ Clean Architecture
  * 
  * @param {Object} partner ข้อมูลพาร์ทเนอร์
  * @param {string} partner.id รหัสพาร์ทเนอร์
@@ -44,37 +45,58 @@ export const useStoreStats = (partner) => {
     }
   }, [partnerId]);
 
-  // 3. ระบบนับยอดวิวแบบ Organic (Session-Guarded Counter)
+  // 3. ระบบนับยอดวิวแบบ Organic (MRC Standard: Continuous 1,000ms Dwell Time + 5-Minute Cooldown Guard)
+  // Architecture Note: Telemetry pipeline routes via trackStoreView.
+  // Direct client writes such as updateDoc(partnerRef, { viewCount: increment(1) }) are eliminated to prevent single-document contention.
   const viewProcessedRef = useRef(false);
+  const dwellTimerRef = useRef(null);
 
   useEffect(() => {
     if (!partnerId || viewProcessedRef.current) return;
 
     try {
       const sessionKey = `dh_store_viewed_${partnerId}`;
-      const alreadyViewed = sessionStorage.getItem(sessionKey);
+      const lastViewed = sessionStorage.getItem(sessionKey);
+      const now = Date.now();
 
-      if (!alreadyViewed) {
-        // บันทึก Session Lock เพื่อไม่ให้นับซ้ำเมื่อรีเฟรชหน้า
-        sessionStorage.setItem(sessionKey, '1');
-        viewProcessedRef.current = true;
-
-        // อัปเดตหน้าจอทันที (Optimistic View Count)
-        setViewCount((prev) => prev + 1);
-
-        // ส่งอัปเดตไปยัง Firestore อย่างปลอดภัย (Catch error เงียบ ไม่รบกวนหน้าเว็บ)
-        const partnerRef = doc(db, getCollectionPath('ActivePartners'), partnerId);
-        updateDoc(partnerRef, {
-          viewCount: increment(1)
-        }).catch((err) => {
-          // Graceful fallback: ถ้า Rules ยังไม่อนุญาตในโหมดพัฒนา ตัวเลขจะยังคงแสดงบนจอได้อย่างราบรื่น
-          console.debug('[useStoreStats] Firestore viewCount increment deferred/fallback:', err.message);
-        });
+      // 5-minute session deduplication cooldown
+      if (lastViewed && (now - parseInt(lastViewed, 10)) < 300000) {
+        return;
       }
+
+      // Continuous 1,000ms dwell-time timer (MRC/IAB Standard)
+      dwellTimerRef.current = setTimeout(() => {
+        try {
+          sessionStorage.setItem(sessionKey, Date.now().toString());
+          viewProcessedRef.current = true;
+
+          // Optimistic UI Update ทันที
+          setViewCount((prev) => prev + 1);
+
+          // ส่งยอดวิวเข้า In-Memory Telemetry Buffer (2 นาที) และ GA4 store_profile_view
+          trackStoreView({
+            storeId: partnerId,
+            partnerName: partner?.storeName || partner?.name || partner?.displayName || '',
+            ownerId: partnerId,
+            source: 'store_profile'
+          }).catch((err) => {
+            console.debug('[useStoreStats] trackStoreView error:', err?.message);
+          });
+        } catch (storageErr) {
+          // SessionStorage error guard
+        }
+      }, 1000);
     } catch (e) {
       // SessionStorage error guard
     }
-  }, [partnerId]);
+
+    return () => {
+      if (dwellTimerRef.current) {
+        clearTimeout(dwellTimerRef.current);
+        dwellTimerRef.current = null;
+      }
+    };
+  }, [partnerId, partner?.name, partner?.storeName, partner?.displayName]);
 
   // 4. ฟังก์ชัน Toggle Like (กดไลก์ / ยกเลิกไลก์)
   const toggleLike = useCallback(async () => {

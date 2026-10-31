@@ -98,7 +98,7 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
             {/* Stats Row: Views / Clicks / Limit */}
             <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-md border border-slate-200 text-center">
               <div>
-                <span className="text-[10px] text-slate-400 font-bold uppercase block mb-0.5">Views</span>
+                <span className="text-[10px] text-slate-400 font-bold uppercase block mb-0.5" title="ยอดการมองเห็นป้ายโฆษณา (Ad Impressions)">ยอดมองเห็น (Ad Impressions)</span>
                 <span className="font-black text-slate-700 text-xs">{Number(ad.stats?.views || 0).toLocaleString()}</span>
                 {ad.remainingViews !== undefined && (
                   <span className="block text-[9px] text-emerald-600 font-bold mt-0.5">
@@ -165,7 +165,7 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
               <th className="p-4">รูปภาพ</th>
               <th className="p-4">แคมเปญ / ประเภท</th>
               <th className="p-4">สถานะ</th>
-              <th className="p-4 text-center">ยอดวิว (Views)</th>
+              <th className="p-4 text-center" title="ยอดการมองเห็นป้ายโฆษณา (Ad Impressions)">ยอดการมองเห็นป้ายโฆษณา (Ad Impressions)</th>
               <th className="p-4 text-center">ยอดคลิก (Clicks)</th>
               <th className="p-4 text-center">ใช้ไป / งบ (Pts)</th>
               <th className="p-4 text-right">จัดการ</th>

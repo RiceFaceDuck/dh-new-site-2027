@@ -1,117 +1,34 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import { db } from '../../firebase/config';
 import PartnerAds from './components/PartnerAds';
 import StoreProfileHero from './components/StoreProfileHero';
 import StoreProfileInfo from './components/StoreProfileInfo';
 import StoreRecommendedProducts from './components/StoreRecommendedProducts';
-import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import useStoreProfilePage from './hooks/useStoreProfilePage';
 
-// Ensure appId is defined
-const appId = typeof window !== "undefined" && typeof window.__app_id !== "undefined" ? window.__app_id : "default-app-id";
-
+/**
+ * Pure Layout Component for Partner Store Profile Page (/store/:id)
+ * Clean Architecture & SRP: State & data orchestration extracted to useStoreProfilePage hook.
+ * UI Border Radius Invariant: 0.1 (rounded-[2px]) on cards/containers.
+ */
 const StoreProfilePage = () => {
   const { id } = useParams();
-  const [partner, setPartner] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [currentUser, setCurrentUser] = useState(null);
-
-  useEffect(() => {
-    const auth = getAuth();
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setCurrentUser(user);
-    });
-    return () => unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const fetchPartnerProfile = async () => {
-      if (!id) return;
-      try {
-        setLoading(true);
-        // 1. Try getting from ActivePartners collection
-        const partnerRef = doc(db, getCollectionPath('ActivePartners'), id);
-        const partnerSnap = await getDoc(partnerRef);
-        
-        if (partnerSnap.exists()) {
-          setPartner({ id: partnerSnap.id, ...partnerSnap.data() });
-        } else {
-          // 2. Fallback: ดึงข้อมูลจาก users/{id}/storeProfile/main เผื่อเจ้าของร้านเปิดดูโปรไฟล์ร้านตัวเอง
-          try {
-            const userStoreRef = doc(db, getCollectionPath('users'), id, 'storeProfile', 'main');
-            const userStoreSnap = await getDoc(userStoreRef);
-            if (userStoreSnap.exists()) {
-              const uStore = userStoreSnap.data();
-              let points = 0;
-              let displayName = '';
-              try {
-                const userSnap = await getDoc(doc(db, getCollectionPath('users'), id));
-                if (userSnap.exists()) {
-                  const uData = userSnap.data();
-                  points = Number(uData.creditPoints || uData.points || 0);
-                  displayName = uData.displayName || '';
-                }
-              } catch (ue) {
-                console.warn("Could not fetch user points for fallback:", ue);
-              }
-              setPartner({
-                id: id,
-                partnerId: id,
-                storeName: uStore.storeName || displayName || 'ร้านค้าสมาชิก',
-                services: uStore.services || uStore.description || '',
-                phone: uStore.phone || '',
-                messengerUrl: uStore.messengerUrl || '',
-                lineUrl: uStore.lineUrl || '',
-                googleMapLink: uStore.googleMapLink || '',
-                latitude: Number(uStore.latitude || 0),
-                longitude: Number(uStore.longitude || 0),
-                storeImage: uStore.storeImage || '/logo.png',
-                address: uStore.address || '',
-                landmarks: uStore.landmarks || '',
-                richDescription: uStore.richDescription || '',
-                galleryImages: Array.isArray(uStore.galleryImages) ? uStore.galleryImages : [],
-                openHours: uStore.openHours || '',
-                websiteUrl: uStore.websiteUrl || '',
-                youtubeUrl: uStore.youtubeUrl || '',
-                tiktokUrl: uStore.tiktokUrl || '',
-                shopeeUrl: uStore.shopeeUrl || '',
-                lazadaUrl: uStore.lazadaUrl || '',
-                points: points,
-                isActive: false
-              });
-            } else {
-              console.warn("Partner not found in ActivePartners or users storeProfile");
-            }
-          } catch (fallbackErr) {
-            console.warn("Partner fallback error:", fallbackErr);
-          }
-        }
-      } catch (error) {
-        console.error("Error fetching partner profile:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchPartnerProfile();
-  }, [id]);
+  const { partner, loading, currentUser } = useStoreProfilePage(id);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 pb-20 animate-pulse">
         <div className="max-w-4xl lg:max-w-6xl xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-6 relative z-10">
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
-            <div className="w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80 aspect-square rounded-2xl bg-slate-200 shadow-sm shrink-0"></div>
+          <div className="bg-white rounded-[2px] shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8">
+            <div className="w-64 h-64 sm:w-72 sm:h-72 md:w-80 md:h-80 aspect-square rounded-[2px] bg-slate-200 shadow-sm shrink-0"></div>
             <div className="flex-1 w-full text-center md:text-left flex flex-col items-center md:items-start pt-2">
-              <div className="h-8 bg-slate-200 rounded-md w-2/3 mb-4"></div>
-              <div className="h-4 bg-slate-200 rounded-sm w-1/3 mb-4"></div>
+              <div className="h-8 bg-slate-200 rounded-[2px] w-2/3 mb-4"></div>
+              <div className="h-4 bg-slate-200 rounded-[2px] w-1/3 mb-4"></div>
               <div className="flex gap-2 mb-6">
-                <div className="h-6 w-16 bg-slate-200 rounded-full"></div>
-                <div className="h-6 w-16 bg-slate-200 rounded-full"></div>
+                <div className="h-6 w-16 bg-slate-200 rounded-[2px]"></div>
+                <div className="h-6 w-16 bg-slate-200 rounded-[2px]"></div>
               </div>
-              <div className="h-10 bg-slate-200 rounded-lg w-full md:w-1/2"></div>
+              <div className="h-10 bg-slate-200 rounded-[2px] w-full md:w-1/2"></div>
             </div>
           </div>
         </div>

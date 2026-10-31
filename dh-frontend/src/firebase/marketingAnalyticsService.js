@@ -200,7 +200,55 @@ export const logClick = async (adId, meta = {}) => {
   return trackAdClick('partner_ads', adId, meta);
 };
 
+/**
+ * 🏪 ส่ง Telemetry การเข้าชมหน้าร้านพาร์ทเนอร์ (Store Profile View)
+ * เชื่อมโยง GA4 custom event: store_profile_view ควบคู่กับ In-Memory Queue (2 นาที / sendBeacon)
+ * @param {Object} params
+ * @param {string} params.storeId - รหัสพาร์ทเนอร์/หน้าร้าน
+ * @param {string} [params.partnerName] - ชื่อร้านค้า
+ * @param {string} [params.ownerId] - รหัสเจ้าของร้าน
+ * @param {string} [params.source] - แหล่งที่มา (default: 'direct')
+ */
+export const trackStoreView = async ({ storeId, partnerName = '', ownerId = '', source = 'direct' } = {}) => {
+  if (!storeId) return;
+  if (!checkAntiFraud('store_view', storeId)) return;
+
+  // 1. ส่ง GA4 สำหรับวิเคราะห์การเข้าชมหน้าร้านพาร์ทเนอร์
+  try {
+    if (analytics) {
+      logEvent(analytics, 'store_profile_view', {
+        store_id: String(storeId),
+        partner_name: String(partnerName || ''),
+        owner_id: String(ownerId || storeId || ''),
+        source: String(source || 'direct')
+      });
+    }
+  } catch (err) {
+    // AdBlocker / Offline safe
+  }
+
+  // 2. ใส่ใน In-Memory Queue รอ Flush ทุก 2 นาที (0 Write ตอนนี้)
+  eventQueue.push({
+    type: 'store_view',
+    store_id: String(storeId),
+    storeId: String(storeId),
+    owner_id: String(ownerId || storeId || ''),
+    ownerId: String(ownerId || storeId || ''),
+    partner_name: String(partnerName || ''),
+    partnerName: String(partnerName || ''),
+    source: String(source || 'direct'),
+    timestamp: Date.now()
+  });
+
+  if (eventQueue.length >= MAX_QUEUE_SIZE) {
+    flushTelemetryQueue(false);
+  } else {
+    scheduleFlush();
+  }
+};
+
 // 🛡️ Backward Compatible dummy for any external callers
 export const flushAdStatsBatch = async () => {
   return flushTelemetryQueue(false);
 };
+

@@ -7,12 +7,25 @@
  * 2. Verify dual pipeline parity (GA4 'ad_impression' and Cloud Function 'recordAdTelemetry' metadata consistency)
  * 3. Verify coverage across all 3 ad types (BUSINESS_CARD, BILLBOARD, PRODUCT_LINK) and all 5 Touchpoints
  * 4. Verify Cloud Function multi-collection support (partner_ads & user_sku_ads) and micro-deduction precision
- * 5. Verify runtime bug fix in PartnerAds.jsx (allAds defined)
+ * 5. Verify SRP decomposition in Store Profile: usePartnerAds (controller) and PartnerAds (presentation)
  */
 
 import assert from 'node:assert';
 import fs from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '../../..');
+
+const resolveRepoPath = (subPath) => {
+  const candidate1 = path.resolve(projectRoot, 'Management System', subPath);
+  if (fs.existsSync(candidate1)) return candidate1;
+  const candidate2 = path.resolve(projectRoot, subPath);
+  if (fs.existsSync(candidate2)) return candidate2;
+  return candidate1;
+};
 
 console.log('==================================================================');
 console.log('🚀 RUNNING VERIFICATION: VIEW TRACKING & TELEMETRY PARITY');
@@ -21,7 +34,7 @@ console.log('=================================================================='
 // ------------------------------------------------------------------
 // Test 1: useAdViewTracker Hook Exists & Conforms to SRP & MRC Standards
 // ------------------------------------------------------------------
-const hookPath = path.resolve('dh-frontend/src/hooks/useAdViewTracker.js');
+const hookPath = resolveRepoPath('dh-frontend/src/hooks/useAdViewTracker.js');
 assert(fs.existsSync(hookPath), '❌ useAdViewTracker.js does not exist');
 const hookContent = fs.readFileSync(hookPath, 'utf8');
 
@@ -35,7 +48,8 @@ console.log('✅ [PASS] Test 1: useAdViewTracker correctly implements Intersecti
 // ------------------------------------------------------------------
 // Test 2: Dual Telemetry Parity & Metadata in marketingAnalyticsService
 // ------------------------------------------------------------------
-const analyticsServicePath = path.resolve('dh-frontend/src/firebase/marketingAnalyticsService.js');
+const analyticsServicePath = resolveRepoPath('dh-frontend/src/firebase/marketingAnalyticsService.js');
+assert(fs.existsSync(analyticsServicePath), '❌ marketingAnalyticsService.js does not exist');
 const analyticsContent = fs.readFileSync(analyticsServicePath, 'utf8');
 
 assert(analyticsContent.includes('inMemoryAntiFraudCache'), '❌ Missing in-memory fallback cache for anti-fraud');
@@ -82,17 +96,20 @@ console.log('✅ [PASS] Test 3: recordAdTelemetry handles multi-collection (part
 // ------------------------------------------------------------------
 // Test 4: Touchpoint 1 (Home) & Touchpoint 3 (Providers) Coverage
 // ------------------------------------------------------------------
-const nearbyPartnersPath = path.resolve('dh-frontend/src/pages/Home/hooks/useNearbyPartners.js');
+const nearbyPartnersPath = resolveRepoPath('dh-frontend/src/pages/Home/hooks/useNearbyPartners.js');
+assert(fs.existsSync(nearbyPartnersPath), '❌ useNearbyPartners.js does not exist');
 const nearbyContent = fs.readFileSync(nearbyPartnersPath, 'utf8');
 assert(!nearbyContent.includes('logImpression('), '❌ useNearbyPartners must not fire eager impressions on network fetch');
 
-const partnerCardPath = path.resolve('dh-frontend/src/pages/Home/components/PartnerCard.jsx');
+const partnerCardPath = resolveRepoPath('dh-frontend/src/pages/Home/components/PartnerCard.jsx');
+assert(fs.existsSync(partnerCardPath), '❌ PartnerCard.jsx does not exist');
 const partnerCardContent = fs.readFileSync(partnerCardPath, 'utf8');
 assert(partnerCardContent.includes('useAdViewTracker'), '❌ PartnerCard must integrate useAdViewTracker');
 assert(partnerCardContent.includes('home_squad_highlight'), '❌ PartnerCard missing home_squad_highlight default placement');
 assert(partnerCardContent.includes('trackAdClick'), '❌ PartnerCard must track ad clicks');
 
-const providersListPath = path.resolve('dh-frontend/src/pages/Providers/components/ProvidersList.jsx');
+const providersListPath = resolveRepoPath('dh-frontend/src/pages/Providers/components/ProvidersList.jsx');
+assert(fs.existsSync(providersListPath), '❌ ProvidersList.jsx does not exist');
 const providersContent = fs.readFileSync(providersListPath, 'utf8');
 assert(providersContent.includes('placement="providers_directory"'), '❌ ProvidersList must specify providers_directory placement');
 console.log('✅ [PASS] Test 4: Home (SquadHighlight) and Providers (/providers) touchpoints fully covered with viewport tracking');
@@ -100,7 +117,8 @@ console.log('✅ [PASS] Test 4: Home (SquadHighlight) and Providers (/providers)
 // ------------------------------------------------------------------
 // Test 5: Touchpoint 2 (Search Results Grid & Technician Modal) Coverage
 // ------------------------------------------------------------------
-const searchPagePath = path.resolve('dh-frontend/src/pages/SearchPage.jsx');
+const searchPagePath = resolveRepoPath('dh-frontend/src/pages/SearchPage.jsx');
+assert(fs.existsSync(searchPagePath), '❌ SearchPage.jsx does not exist');
 const searchContent = fs.readFileSync(searchPagePath, 'utf8');
 assert(searchContent.includes('SearchTechnicianCardItem'), '❌ SearchPage missing SearchTechnicianCardItem component');
 assert(searchContent.includes('search_technician_modal'), '❌ SearchPage missing search_technician_modal placement');
@@ -110,7 +128,8 @@ console.log('✅ [PASS] Test 5: Search results and Search technician modal cover
 // ------------------------------------------------------------------
 // Test 6: Touchpoint 4 (Product Detail Nearest Partner Box) Coverage
 // ------------------------------------------------------------------
-const partnerBoxPath = path.resolve('dh-frontend/src/components/partner/PartnerSupportBox.jsx');
+const partnerBoxPath = resolveRepoPath('dh-frontend/src/components/partner/PartnerSupportBox.jsx');
+assert(fs.existsSync(partnerBoxPath), '❌ PartnerSupportBox.jsx does not exist');
 const partnerBoxContent = fs.readFileSync(partnerBoxPath, 'utf8');
 assert(partnerBoxContent.includes('useAdViewTracker'), '❌ PartnerSupportBox must integrate useAdViewTracker');
 assert(partnerBoxContent.includes('product_detail_nearest_partner'), '❌ PartnerSupportBox missing product_detail_nearest_partner placement');
@@ -118,24 +137,36 @@ assert(partnerBoxContent.includes('handleContactClick'), '❌ PartnerSupportBox 
 console.log('✅ [PASS] Test 6: Product detail (/product/:id) nearest partner box covered with view & click telemetry');
 
 // ------------------------------------------------------------------
-// Test 7: Touchpoint 5 (Store Profile Hero & PartnerAds Bug Fix) Coverage
+// Test 7: Touchpoint 5 (Store Profile Hero & PartnerAds SRP Architecture) Coverage
 // ------------------------------------------------------------------
-const partnerAdsPath = path.resolve('dh-frontend/src/pages/StoreProfile/components/PartnerAds.jsx');
+const usePartnerAdsPath = resolveRepoPath('dh-frontend/src/pages/StoreProfile/hooks/usePartnerAds.js');
+assert(fs.existsSync(usePartnerAdsPath), '❌ usePartnerAds.js controller hook does not exist');
+const usePartnerAdsContent = fs.readFileSync(usePartnerAdsPath, 'utf8');
+assert(
+  usePartnerAdsContent.includes('const allAds = await getUserPartnerAds') ||
+  usePartnerAdsContent.includes('getUserPartnerAds(partnerId)'),
+  '❌ usePartnerAds controller hook must fetch allAds via getUserPartnerAds'
+);
+
+const partnerAdsPath = resolveRepoPath('dh-frontend/src/pages/StoreProfile/components/PartnerAds.jsx');
+assert(fs.existsSync(partnerAdsPath), '❌ PartnerAds.jsx presentation component does not exist');
 const partnerAdsContent = fs.readFileSync(partnerAdsPath, 'utf8');
-assert(partnerAdsContent.includes('const allAds = await getUserPartnerAds'), '❌ PartnerAds runtime bug: allAds must be defined via getUserPartnerAds');
+assert(partnerAdsContent.includes('usePartnerAds'), '❌ PartnerAds must use usePartnerAds controller hook');
 assert(partnerAdsContent.includes('store_partner_ads'), '❌ PartnerAds must pass store_partner_ads placement');
 
-const storeHeroPath = path.resolve('dh-frontend/src/pages/StoreProfile/components/StoreProfileHero.jsx');
+const storeHeroPath = resolveRepoPath('dh-frontend/src/pages/StoreProfile/components/StoreProfileHero.jsx');
+assert(fs.existsSync(storeHeroPath), '❌ StoreProfileHero.jsx does not exist');
 const storeHeroContent = fs.readFileSync(storeHeroPath, 'utf8');
 assert(storeHeroContent.includes('useAdViewTracker'), '❌ StoreProfileHero must integrate useAdViewTracker');
 assert(storeHeroContent.includes('store_profile_hero'), '❌ StoreProfileHero missing store_profile_hero placement');
 assert(storeHeroContent.includes('handlePhoneClick'), '❌ StoreProfileHero must track phone click instead of console.log');
-console.log('✅ [PASS] Test 7: Store Profile (/store/:id) hero and partner ads runtime fix verified');
+console.log('✅ [PASS] Test 7: Store Profile (/store/:id) hero, usePartnerAds hook, and presentation component verified');
 
 // ------------------------------------------------------------------
 // Test 8: ProductAdCard Component Upgraded to Unified Hook
 // ------------------------------------------------------------------
-const productAdCardPath = path.resolve('dh-frontend/src/components/ads/ProductAdCard.jsx');
+const productAdCardPath = resolveRepoPath('dh-frontend/src/components/ads/ProductAdCard.jsx');
+assert(fs.existsSync(productAdCardPath), '❌ ProductAdCard.jsx does not exist');
 const productAdCardContent = fs.readFileSync(productAdCardPath, 'utf8');
 assert(productAdCardContent.includes('useAdViewTracker'), '❌ ProductAdCard must use useAdViewTracker hook');
 console.log('✅ [PASS] Test 8: ProductAdCard upgraded to unified useAdViewTracker hook');
