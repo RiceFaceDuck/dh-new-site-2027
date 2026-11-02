@@ -90,6 +90,8 @@ export const useStoreProfilePage = (id) => {
                   shopeeUrl: uStore.shopeeUrl || '',
                   lazadaUrl: uStore.lazadaUrl || '',
                   points: points,
+                  viewCount: Number(uStore.viewCount || uStore.viewsCount || uStore.views || 0),
+                  likeCount: Number(uStore.likeCount || uStore.likes || 0),
                   isActive: false
                 });
               }
