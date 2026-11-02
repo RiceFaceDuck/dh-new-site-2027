@@ -42,7 +42,7 @@ const extractDriveId = (url) => {
   return match ? match[1] : null;
 };
 
-export const handleImageError = (event, originalUrl, fallbackUrl = '') => {
+export const handleImageError = (event, originalUrl, fallbackUrl = '/user-bg.jpg') => {
   const target = event?.target;
   if (!target) return;
   const driveId = extractDriveId(originalUrl || target.src);
@@ -59,11 +59,7 @@ export const handleImageError = (event, originalUrl, fallbackUrl = '') => {
     return;
   }
   target.onerror = null;
-  if (fallbackUrl) {
-    target.src = fallbackUrl;
-  } else {
-    target.style.display = 'none';
-  }
+  target.src = fallbackUrl || '/user-bg.jpg';
 };
 
 export const compressImageWithCanvas = (file, options = {}) => new Promise((resolve) => {

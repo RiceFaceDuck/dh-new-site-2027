@@ -16,7 +16,7 @@ export const DEFAULT_HERO_CONFIG = {
     { text: 'SPARES.', color: '', isHighlight: false, isBold: false, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: false, breakAll: false }
   ],
   subtitle: { text: '', isActive: false },
-  imageUrl: 'https://images.unsplash.com/photo-1591405351990-4726e331f14c?w=1200&q=80',
+  imageUrl: '/user-bg.jpg',
   imageLayout: 'split',
   bannerHeight: 'standard',
   textAlignment: 'left',

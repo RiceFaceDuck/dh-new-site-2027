@@ -1,13 +1,28 @@
-import { useState } from 'react';
-import { Monitor, Smartphone, EyeOff } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Monitor, Smartphone, EyeOff, ChevronLeft, ChevronRight } from 'lucide-react';
 import { getRenderableImageUrl, handleImageError } from 'dh-shared/src/utils/imageProcessingUtils.js';
 
-export default function HeroLivePreview({ config }) {
+export default function HeroLivePreview({ config, selectedBannerId }) {
   const [device, setDevice] = useState('desktop');
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+
   const c = config || {};
-  const overlayColor = c.overlay?.color || '#1f2937';
-  const overlayOpacity = (c.overlay?.opacity ?? 90) / 100;
-  const overlayDirection = c.overlay?.direction || 'to-r';
+  const banners = Array.isArray(c.banners) && c.banners.length > 0 ? c.banners : [c];
+  
+  // Keep slide in sync when selectedBannerId changes in parent
+  useEffect(() => {
+    if (selectedBannerId) {
+      const idx = banners.findIndex(b => b.id === selectedBannerId);
+      if (idx >= 0) setCurrentSlideIndex(idx);
+    }
+  }, [selectedBannerId, banners]);
+
+  // Current banner to display
+  const activeBanner = banners[currentSlideIndex] || banners[0] || c;
+
+  const overlayColor = activeBanner.overlay?.color || '#1f2937';
+  const overlayOpacity = (activeBanner.overlay?.opacity ?? 90) / 100;
+  const overlayDirection = activeBanner.overlay?.direction || 'to-r';
 
   let gradientBackground = `linear-gradient(to right, ${overlayColor} 0%, ${overlayColor} 45%, transparent 100%)`;
   if (overlayDirection === 'to-t') {
@@ -16,15 +31,26 @@ export default function HeroLivePreview({ config }) {
     gradientBackground = overlayColor;
   }
 
-  const heightClass = {
-    compact: 'min-h-[260px] md:min-h-[300px]',
-    standard: 'min-h-[320px] md:min-h-[380px]',
-    large: 'min-h-[380px] md:min-h-[460px]'
-  }[c.bannerHeight || 'standard'];
+  // Aspect ratio styling
+  const aspectClass = {
+    '16:9': 'aspect-[16/9]',
+    '3:1': 'aspect-[3/1]',
+    '21:9': 'aspect-[21/9]',
+    'auto': 'min-h-[280px] md:min-h-[360px]'
+  }[c.aspectRatio || '16:9'] || 'aspect-[16/9]';
 
-  const isCenter = c.textAlignment === 'center';
-  const isOverlayEnabled = c.overlay?.enabled !== false;
-  const isFullLayout = c.imageLayout === 'full';
+  const isCenter = activeBanner.textAlignment === 'center';
+  const isOverlayEnabled = activeBanner.overlay?.enabled !== false;
+  const isFullLayout = activeBanner.imageLayout === 'full';
+  const isContain = activeBanner.imageFit === 'contain';
+
+  const handlePrev = () => {
+    setCurrentSlideIndex(prev => (prev === 0 ? banners.length - 1 : prev - 1));
+  };
+
+  const handleNext = () => {
+    setCurrentSlideIndex(prev => (prev === banners.length - 1 ? 0 : prev + 1));
+  };
 
   return (
     <div className="border border-slate-300 rounded-[2px] overflow-hidden shadow-sm bg-white p-5 space-y-4">
@@ -34,9 +60,14 @@ export default function HeroLivePreview({ config }) {
           <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
             <span>หน้าจอจำลอง (Live Preview)</span>
           </h3>
-          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-[2px] border border-emerald-300 inline-block mt-1">
-            100% Exact Storefront Match
-          </span>
+          <div className="flex items-center gap-1.5 mt-1">
+            <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-[2px] border border-emerald-300 inline-block">
+              100% Exact Storefront Match
+            </span>
+            <span className="text-[10px] font-mono text-slate-600 bg-slate-100 px-1.5 py-0.5 rounded-[2px] border border-slate-300">
+              สัดส่วน: {c.aspectRatio || '16:9'}
+            </span>
+          </div>
         </div>
         <div className="flex items-center bg-slate-200/80 p-0.5 rounded-[2px] border border-slate-300">
           <button
@@ -64,33 +95,27 @@ export default function HeroLivePreview({ config }) {
       {!c.isActive && (
         <div className="flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-bold rounded-[2px]">
           <EyeOff size={16} className="shrink-0 text-amber-600" />
-          <span>สถานะป้ายถูก "ปิดใช้งาน" อยู่ — ลูกค้าหน้าเว็บจะเห็นแบนเนอร์รูปแบบดั้งเดิม</span>
+          <span>ระบบป้ายถูก "ปิดใช้งาน" รวมอยู่ — ลูกค้าหน้าเว็บจะเห็นแบนเนอร์รูปแบบดั้งเดิม</span>
         </div>
       )}
 
-      {/* Preview Screen */}
+      {/* Preview Screen Container */}
       <div className={`w-full flex justify-center transition-all duration-300 ${device === 'mobile' ? 'max-w-[360px] mx-auto' : 'w-full'}`}>
         <div
-          className={`relative w-full rounded-[2px] overflow-hidden flex flex-col justify-center border border-slate-700 shadow-xl ${heightClass}`}
+          className={`relative w-full rounded-[2px] overflow-hidden flex flex-col justify-center border border-slate-700 shadow-xl ${aspectClass}`}
           style={{ backgroundColor: overlayColor }}
         >
           {/* Background Graphic */}
           {isFullLayout ? (
-            <div className="absolute inset-0 z-0">
-              {c.imageUrl ? (
-                <img
-                  src={getRenderableImageUrl(c.imageUrl)}
-                  alt="Hero Preview"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => handleImageError(e, c.imageUrl)}
-                  className="w-full h-full object-cover object-center"
-                  loading="lazy"
-                />
-              ) : (
-                <div className="w-full h-full bg-slate-800 flex items-center justify-center text-slate-500 text-xs font-bold">
-                  ไม่มีรูปภาพ
-                </div>
-              )}
+            <div className="absolute inset-0 z-0 bg-slate-950 flex items-center justify-center">
+              <img
+                src={getRenderableImageUrl(activeBanner.imageUrl || '/user-bg.jpg') || '/user-bg.jpg'}
+                alt="Hero Preview"
+                referrerPolicy="no-referrer"
+                onError={(e) => handleImageError(e, activeBanner.imageUrl, '/user-bg.jpg')}
+                className={`w-full h-full ${isContain ? 'object-contain' : 'object-cover object-center'}`}
+                loading="lazy"
+              />
               {isOverlayEnabled && overlayOpacity > 0 && (
                 <div
                   className="absolute inset-0 pointer-events-none transition-all duration-300"
@@ -99,22 +124,16 @@ export default function HeroLivePreview({ config }) {
               )}
             </div>
           ) : (
-            <div className="absolute inset-0 z-0 flex justify-end">
-              <div className={`h-full relative transition-all duration-300 ${device === 'mobile' ? 'w-full' : 'w-full md:w-[70%]'}`}>
-                {c.imageUrl ? (
-                  <img
-                    src={getRenderableImageUrl(c.imageUrl)}
-                    alt="Hero Preview"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => handleImageError(e, c.imageUrl)}
-                    className="w-full h-full object-cover object-center"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-slate-800 flex items-center justify-center text-slate-500 text-xs font-bold">
-                    ไม่มีรูปภาพ
-                  </div>
-                )}
+            <div className="absolute inset-0 z-0 flex justify-end bg-slate-950">
+              <div className={`h-full relative transition-all duration-300 flex items-center justify-center ${device === 'mobile' ? 'w-full' : 'w-full md:w-[70%]'}`}>
+                <img
+                  src={getRenderableImageUrl(activeBanner.imageUrl || '/user-bg.jpg') || '/user-bg.jpg'}
+                  alt="Hero Preview"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => handleImageError(e, activeBanner.imageUrl, '/user-bg.jpg')}
+                  className={`w-full h-full ${isContain ? 'object-contain' : 'object-cover object-center'}`}
+                  loading="lazy"
+                />
                 {isOverlayEnabled && overlayOpacity > 0 && (
                   <div
                     className="absolute inset-0 pointer-events-none transition-all duration-300"
@@ -125,77 +144,107 @@ export default function HeroLivePreview({ config }) {
             </div>
           )}
 
-          {/* Text & Button Layer */}
-          <div
-            className={`relative z-10 p-6 sm:p-8 md:p-10 w-full h-full flex flex-col justify-center ${
-              isCenter ? 'items-center text-center' : 'items-start text-left'
-            } ${!isOverlayEnabled || overlayOpacity === 0 ? 'drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)]' : ''}`}
-          >
+          {/* Foreground Content */}
+          <div className="relative z-10 p-6 md:p-8 flex flex-col justify-center h-full max-w-2xl pointer-events-none">
             {/* Badge */}
-            {c.badge?.isActive && c.badge?.text && (
-              <div className="mb-3">
+            {activeBanner.badge?.isActive && activeBanner.badge?.text && (
+              <div className="mb-2">
                 <span
-                  className="inline-flex items-center px-2.5 py-1 rounded-md text-[11px] font-black uppercase tracking-wider shadow-xs"
+                  className="text-[10px] md:text-xs font-black px-2.5 py-0.5 rounded-sm tracking-wider uppercase inline-block shadow-xs"
                   style={{
-                    backgroundColor: `${c.badge.color || '#facc15'}25`,
-                    color: c.badge.color || '#facc15',
-                    border: `1px solid ${c.badge.color || '#facc15'}50`
+                    backgroundColor: activeBanner.badge.color || '#facc15',
+                    color: '#000'
                   }}
                 >
-                  {c.badge.text}
+                  {activeBanner.badge.text}
                 </span>
               </div>
             )}
 
             {/* Title */}
-            <h1
-              className={`text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold leading-[1.3] tracking-wide uppercase text-white max-w-2xl ${
-                c.subtitle?.isActive && c.subtitle?.text ? 'mb-3' : 'mb-6'
+            <div
+              className={`text-white font-extrabold text-base sm:text-xl md:text-2xl leading-tight drop-shadow-md ${
+                isCenter ? 'text-center' : 'text-left'
               }`}
               dangerouslySetInnerHTML={{
-                __html: c.title || '<span class="text-slate-400">ยังไม่มีข้อความ...</span>'
+                __html: activeBanner.title || 'ไม่มีข้อความ'
               }}
             />
 
             {/* Subtitle */}
-            {c.subtitle?.isActive && c.subtitle?.text && (
-              <p className="text-xs sm:text-sm text-slate-300 max-w-xl mb-6 font-medium leading-relaxed">
-                {c.subtitle.text}
+            {activeBanner.subtitle?.isActive && activeBanner.subtitle?.text && (
+              <p className={`text-slate-200 text-xs sm:text-sm mt-2 font-medium drop-shadow-sm ${
+                isCenter ? 'text-center' : 'text-left'
+              }`}>
+                {activeBanner.subtitle.text}
               </p>
             )}
 
             {/* Buttons */}
-            <div className={`flex flex-wrap gap-2.5 sm:gap-3 ${isCenter ? 'justify-center' : 'justify-start'}`}>
-              {c.primaryButton?.isActive && (
-                <div
-                  className={`px-5 py-2.5 font-bold rounded-lg text-xs md:text-sm uppercase tracking-wider transition-transform shadow-xs ${
-                    c.primaryButton.variant === 'outline'
-                      ? 'border-2 border-yellow-400 text-yellow-400 bg-transparent'
-                      : 'bg-yellow-400 text-slate-900'
+            <div className={`flex flex-wrap gap-2.5 mt-4 ${isCenter ? 'justify-center' : 'justify-start'}`}>
+              {activeBanner.primaryButton?.isActive && (
+                <button
+                  type="button"
+                  className={`px-3.5 py-1.5 rounded-[2px] font-black text-[11px] md:text-xs shadow-md ${
+                    activeBanner.primaryButton?.variant === 'outline'
+                      ? 'border border-amber-400 text-amber-300 bg-amber-400/10'
+                      : 'bg-amber-400 hover:bg-amber-300 text-slate-950'
                   }`}
                 >
-                  {c.primaryButton.label || 'PRIMARY BUTTON'}
-                </div>
+                  {activeBanner.primaryButton?.label || 'BOOK A SQUAD'}
+                </button>
               )}
-              {c.secondaryButton?.isActive && (
-                <div
-                  className={`px-5 py-2.5 font-bold rounded-lg text-xs md:text-sm uppercase tracking-wider transition-transform shadow-xs ${
-                    c.secondaryButton.variant === 'outline'
-                      ? 'border-2 border-white text-white bg-transparent'
-                      : 'bg-white text-slate-800'
+              {activeBanner.secondaryButton?.isActive && (
+                <button
+                  type="button"
+                  className={`px-3.5 py-1.5 rounded-[2px] font-black text-[11px] md:text-xs shadow-md ${
+                    activeBanner.secondaryButton?.variant === 'outline'
+                      ? 'border border-white/60 text-white bg-white/10'
+                      : 'bg-white hover:bg-slate-100 text-slate-900'
                   }`}
                 >
-                  {c.secondaryButton.label || 'SECONDARY BUTTON'}
-                </div>
+                  {activeBanner.secondaryButton?.label || 'SHOP SPARES'}
+                </button>
               )}
             </div>
           </div>
+
+          {/* Carousel Arrows & Indicator (If more than 1 banner) */}
+          {banners.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={handlePrev}
+                className="absolute left-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-black/50 hover:bg-black/75 text-white flex items-center justify-center transition-colors cursor-pointer"
+                title="ป้ายก่อนหน้า"
+              >
+                <ChevronLeft size={16} />
+              </button>
+              <button
+                type="button"
+                onClick={handleNext}
+                className="absolute right-2 top-1/2 -translate-y-1/2 z-20 w-7 h-7 rounded-full bg-black/50 hover:bg-black/75 text-white flex items-center justify-center transition-colors cursor-pointer"
+                title="ป้ายถัดไป"
+              >
+                <ChevronRight size={16} />
+              </button>
+
+              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5">
+                {banners.map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setCurrentSlideIndex(i)}
+                    className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                      i === currentSlideIndex ? 'w-4 bg-amber-400' : 'w-1.5 bg-white/50'
+                    }`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
         </div>
       </div>
-
-      <p className="text-[11px] text-slate-400 text-center">
-        จำลองผลลัพธ์แบบเรียลไทม์ตามโค้ดจริงของ B2B Storefront ทั้งการตัดขอบภาพ, ไล่สี, และรูปแบบฟอนต์
-      </p>
     </div>
   );
 }

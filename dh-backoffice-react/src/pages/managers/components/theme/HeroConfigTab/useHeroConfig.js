@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import toast from 'react-hot-toast';
-import { heroConfigService, DEFAULT_HERO_CONFIG } from '../../../../../firebase/heroConfigService';
-import { driveService } from '../../../../../firebase/driveService';
+import { heroConfigService, DEFAULT_HERO_CONFIG, DEFAULT_HERO_BANNER } from '../../../../../firebase/heroConfigService';
+import { bannerStorageService } from '../../../../../firebase/bannerStorageService';
 
 /**
  * Custom Hook for Hero Billboard Configuration State & Controller
- * Extracted according to Clean Architecture & SRP
+ * Implements Master-Detail pattern (List View <-> Edit View)
  */
 export function useHeroConfig() {
   const [isLoading, setIsLoading] = useState(true);
@@ -19,6 +19,10 @@ export function useHeroConfig() {
   const [previewDevice, setPreviewDevice] = useState('desktop'); // 'desktop' | 'mobile'
   const [originalConfig, setOriginalConfig] = useState(null);
   const [heroConfig, setHeroConfig] = useState({ ...DEFAULT_HERO_CONFIG });
+
+  // View Mode: 'list' (หน้ารวมรายการป้าย) vs 'edit' (หน้าปรับแต่งป้าย)
+  const [currentView, setCurrentView] = useState('list');
+  const [selectedBannerId, setSelectedBannerId] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -38,20 +42,139 @@ export function useHeroConfig() {
     fetchData();
   }, []);
 
-  const handleImageUpload = async (e) => {
+  // Compute currently active banner object in edit mode
+  const activeBanner = useMemo(() => {
+    if (!heroConfig.banners || heroConfig.banners.length === 0) {
+      return { ...DEFAULT_HERO_BANNER };
+    }
+    const found = heroConfig.banners.find(b => b.id === selectedBannerId);
+    return found ? { ...DEFAULT_HERO_BANNER, ...found } : { ...DEFAULT_HERO_BANNER, ...heroConfig.banners[0] };
+  }, [heroConfig.banners, selectedBannerId]);
+
+  // Master-Detail Handlers
+  const handleSelectBanner = (bannerId) => {
+    setSelectedBannerId(bannerId);
+    setCurrentView('edit');
+  };
+
+  const handleCreateBanner = () => {
+    const newId = `banner_${Date.now()}`;
+    const nextOrder = (heroConfig.banners?.length || 0) + 1;
+    const newBanner = {
+      ...DEFAULT_HERO_BANNER,
+      id: newId,
+      title: 'ป้ายโฆษณาใหม่',
+      titleSegments: [
+        { text: 'โปรโมชั่นพิเศษ ', color: '#facc15', isHighlight: true, isBold: true, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: false, breakAll: false },
+        { text: 'สำหรับลูกค้าคนสำคัญ', color: '', isHighlight: false, isBold: false, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: false, breakAll: false }
+      ],
+      order: nextOrder,
+      isActive: true,
+      imageUrl: ''
+    };
+
+    setHeroConfig(prev => ({
+      ...prev,
+      banners: [...(prev.banners || []), newBanner]
+    }));
+    setSelectedBannerId(newId);
+    setCurrentView('edit');
+    toast.success('สร้างป้ายโฆษณาใหม่เรียบร้อยแล้ว');
+  };
+
+  const handleDeleteBanner = (bannerId) => {
+    if ((heroConfig.banners?.length || 0) <= 1) {
+      toast.error('ไม่สามารถลบป้ายสุดท้ายได้ ต้องมีอย่างน้อย 1 ป้าย');
+      return;
+    }
+    if (!window.confirm('คุณต้องการลบป้ายโฆษณานี้ใช่หรือไม่?')) return;
+
+    setHeroConfig(prev => {
+      const filtered = prev.banners.filter(b => b.id !== bannerId);
+      return {
+        ...prev,
+        banners: filtered.map((b, idx) => ({ ...b, order: idx + 1 }))
+      };
+    });
+
+    if (selectedBannerId === bannerId) {
+      setCurrentView('list');
+      setSelectedBannerId(null);
+    }
+    toast.success('ลบป้ายโฆษณาเรียบร้อยแล้ว');
+  };
+
+  const handleToggleBannerStatus = (bannerId) => {
+    setHeroConfig(prev => ({
+      ...prev,
+      banners: (prev.banners || []).map(b => 
+        b.id === bannerId ? { ...b, isActive: !b.isActive } : b
+      )
+    }));
+  };
+
+  const handleMoveBanner = (bannerId, direction) => {
+    setHeroConfig(prev => {
+      const list = [...(prev.banners || [])];
+      const index = list.findIndex(b => b.id === bannerId);
+      if (index < 0) return prev;
+      const targetIndex = index + direction;
+      if (targetIndex < 0 || targetIndex >= list.length) return prev;
+
+      const temp = list[index];
+      list[index] = list[targetIndex];
+      list[targetIndex] = temp;
+
+      return {
+        ...prev,
+        banners: list.map((b, idx) => ({ ...b, order: idx + 1 }))
+      };
+    });
+  };
+
+  const handleUpdateActiveBanner = (updater) => {
+    setHeroConfig(prev => ({
+      ...prev,
+      banners: (prev.banners || []).map(b => {
+        if (b.id === activeBanner.id) {
+          const updated = typeof updater === 'function' ? updater(b) : { ...b, ...updater };
+          return updated;
+        }
+        return b;
+      })
+    }));
+  };
+
+  const handleUpdateGlobalSettings = (newSettings) => {
+    setHeroConfig(prev => ({
+      ...prev,
+      ...newSettings
+    }));
+  };
+
+  const handleBackToList = () => {
+    setCurrentView('list');
+  };
+
+  const handleImageUpload = async (e, targetBannerId) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
-      alert('❌ ไฟล์มีขนาดใหญ่เกินไป (สูงสุด 5MB)');
-      return;
-    }
-
+    const bId = targetBannerId || activeBanner?.id;
     setIsUploading(true);
     try {
-      const url = await driveService.uploadImage(file);
-      setHeroConfig(prev => ({ ...prev, imageUrl: url }));
-      toast.success('อัพโหลดรูปภาพสำเร็จ');
+      const result = await bannerStorageService.uploadBannerImage(file);
+      const { url, savedPercent, compressedSize } = result;
+      
+      setHeroConfig(prev => ({
+        ...prev,
+        banners: (prev.banners || []).map(b => 
+          b.id === bId ? { ...b, imageUrl: url } : b
+        )
+      }));
+
+      const kbSize = Math.round(compressedSize / 1024);
+      toast.success(`อัปโหลดสำเร็จ (ลดขนาด ${savedPercent}%, เหลือ ${kbSize} KB)`);
     } catch (error) {
       console.error("🔥 Error uploading hero image:", error);
       toast.error(error?.message || 'เกิดข้อผิดพลาดในการอัพโหลด');
@@ -66,44 +189,18 @@ export function useHeroConfig() {
     const diff = [];
     if (originalConfig) {
       if (heroConfig.isActive !== originalConfig.isActive) {
-        diff.push({ label: 'สถานะป้าย', oldVal: originalConfig.isActive ? 'เปิด' : 'ปิด', newVal: heroConfig.isActive ? 'เปิด' : 'ปิด' });
+        diff.push({ label: 'สถานะระบบสไลเดอร์', oldVal: originalConfig.isActive ? 'เปิด' : 'ปิด', newVal: heroConfig.isActive ? 'เปิด' : 'ปิด' });
       }
-      if (heroConfig.title !== originalConfig.title) {
-        diff.push({ label: 'ข้อความหลัก (Title)', oldVal: 'ค่าเดิม', newVal: 'อัพเดทใหม่' });
+      if (heroConfig.aspectRatio !== originalConfig.aspectRatio) {
+        diff.push({ label: 'อัตราส่วนกล่อง (Aspect Ratio)', oldVal: originalConfig.aspectRatio || '16:9', newVal: heroConfig.aspectRatio || '16:9' });
       }
-      if (heroConfig.badge?.text !== originalConfig.badge?.text || heroConfig.badge?.isActive !== originalConfig.badge?.isActive) {
-        diff.push({ label: 'ป้ายกำกับ (Badge)', oldVal: originalConfig.badge?.text || 'ไม่มี', newVal: heroConfig.badge?.text || 'ไม่มี' });
+      if (heroConfig.transitionEffect !== originalConfig.transitionEffect) {
+        diff.push({ label: 'เอฟเฟกต์สลับภาพ', oldVal: originalConfig.transitionEffect || 'slide', newVal: heroConfig.transitionEffect || 'slide' });
       }
-      if (heroConfig.subtitle?.text !== originalConfig.subtitle?.text || heroConfig.subtitle?.isActive !== originalConfig.subtitle?.isActive) {
-        diff.push({ label: 'คำโปรยย่อย (Subtitle)', oldVal: originalConfig.subtitle?.text || 'ไม่มี', newVal: heroConfig.subtitle?.text || 'ไม่มี' });
-      }
-      if (heroConfig.imageUrl !== originalConfig.imageUrl) {
-        diff.push({ label: 'รูปภาพพื้นหลัง', oldVal: originalConfig.imageUrl ? 'มีการตั้งค่า' : 'ไม่มี', newVal: heroConfig.imageUrl ? 'อัพเดทใหม่' : 'ไม่มี' });
-      }
-      if (heroConfig.imageLayout !== originalConfig.imageLayout) {
-        diff.push({ label: 'รูปแบบภาพพื้นหลัง', oldVal: originalConfig.imageLayout === 'full' ? 'ภาพเต็มผืน 100%' : 'แยกฝั่งขวา 70%', newVal: heroConfig.imageLayout === 'full' ? 'ภาพเต็มผืน 100%' : 'แยกฝั่งขวา 70%' });
-      }
-      if (heroConfig.overlay?.enabled !== originalConfig.overlay?.enabled) {
-        diff.push({ label: 'สถานะการไล่เฉดสี', oldVal: originalConfig.overlay?.enabled === false ? 'ปิด' : 'เปิด', newVal: heroConfig.overlay?.enabled === false ? 'ปิด' : 'เปิด' });
-      }
-      if (
-        heroConfig.overlay?.color !== originalConfig.overlay?.color ||
-        heroConfig.overlay?.opacity !== originalConfig.overlay?.opacity ||
-        heroConfig.overlay?.direction !== originalConfig.overlay?.direction
-      ) {
-        diff.push({ label: 'การไล่เฉดสี', oldVal: 'ค่าเดิม', newVal: 'ค่าใหม่' });
-      }
-      if (
-        heroConfig.primaryButton?.label !== originalConfig.primaryButton?.label ||
-        heroConfig.primaryButton?.link !== originalConfig.primaryButton?.link
-      ) {
-        diff.push({ label: 'ปุ่มหลัก', oldVal: originalConfig.primaryButton?.label || 'ไม่มี', newVal: heroConfig.primaryButton?.label || 'ไม่มี' });
-      }
-      if (
-        heroConfig.secondaryButton?.label !== originalConfig.secondaryButton?.label ||
-        heroConfig.secondaryButton?.link !== originalConfig.secondaryButton?.link
-      ) {
-        diff.push({ label: 'ปุ่มรอง', oldVal: originalConfig.secondaryButton?.label || 'ไม่มี', newVal: heroConfig.secondaryButton?.label || 'ไม่มี' });
+      const oldBannerCount = originalConfig.banners?.length || 1;
+      const newBannerCount = heroConfig.banners?.length || 1;
+      if (oldBannerCount !== newBannerCount) {
+        diff.push({ label: 'จำนวนป้ายโฆษณา', oldVal: `${oldBannerCount} ป้าย`, newVal: `${newBannerCount} ป้าย` });
       }
     }
     setChangesDiff(diff);
@@ -118,7 +215,7 @@ export function useHeroConfig() {
       await heroConfigService.updateHeroConfig(heroConfig, changesDiff);
       setOriginalConfig({ ...heroConfig });
       setSaveStatus('success');
-      toast.success('บันทึกการตั้งค่าป้ายต้อนรับ (Hero Banner) สำเร็จ!');
+      toast.success('บันทึกการตั้งค่าป้ายโฆษณา (Hero Banner) สำเร็จ!');
       setTimeout(() => {
         setIsModalOpen(false);
       }, 1000);
@@ -148,6 +245,18 @@ export function useHeroConfig() {
     setPreviewDevice,
     heroConfig,
     setHeroConfig,
+    currentView,
+    setCurrentView,
+    selectedBannerId,
+    activeBanner,
+    handleSelectBanner,
+    handleCreateBanner,
+    handleDeleteBanner,
+    handleToggleBannerStatus,
+    handleMoveBanner,
+    handleUpdateActiveBanner,
+    handleUpdateGlobalSettings,
+    handleBackToList,
     handleImageUpload,
     handlePreSave,
     handleConfirmSave

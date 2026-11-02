@@ -49,10 +49,58 @@ export const HeroOverlaySchema = z.object({
 });
 
 /**
+ * Zod Schema for Individual Banner Item in Hero Billboard Carousel
+ */
+export const HeroBannerItemSchema = z.object({
+  id: z.string().default(() => `banner_${Date.now()}`),
+  title: z.string().default(''),
+  titleSegments: z.array(HeroTitleSegmentSchema).default([]),
+  badge: z.object({
+    text: z.string().default(''),
+    isActive: z.boolean().default(false),
+    color: z.string().default('#facc15')
+  }).default({ text: '', isActive: false, color: '#facc15' }),
+  subtitle: z.object({
+    text: z.string().default(''),
+    isActive: z.boolean().default(false)
+  }).default({ text: '', isActive: false }),
+  imageUrl: z.string().default('https://images.unsplash.com/photo-1591405351990-4726e331f14c?w=1200&q=80'),
+  imageLayout: z.enum(['split', 'full', 'contain']).default('full'),
+  imageFit: z.enum(['contain', 'cover']).default('contain'), // 'contain' = เห็นครบทั้งภาพ, 'cover' = เต็มกล่อง
+  textAlignment: z.enum(['left', 'center']).default('left'),
+  isActive: z.boolean().default(true),
+  order: z.number().default(1),
+  primaryButton: HeroButtonSchema.default({
+    label: 'BOOK A SQUAD',
+    link: '/squad',
+    isActive: true,
+    variant: 'solid'
+  }),
+  secondaryButton: HeroButtonSchema.default({
+    label: 'SHOP SPARES',
+    link: '/categories',
+    isActive: true,
+    variant: 'solid'
+  }),
+  overlay: HeroOverlaySchema.default({
+    enabled: true,
+    color: '#1f2937',
+    opacity: 90,
+    direction: 'to-r'
+  })
+});
+
+/**
  * Zod Schema for Complete Hero Billboard Configuration (settings/hero_config)
  */
 export const HeroConfigSchema = z.object({
   isActive: z.boolean().default(true),
+  aspectRatio: z.enum(['16:9', '3:1', '21:9', 'auto']).default('16:9'),
+  autoplay: z.boolean().default(true),
+  autoplaySpeed: z.number().min(1000).max(30000).default(5000),
+  transitionEffect: z.enum(['slide', 'fade']).default('slide'),
+  banners: z.array(HeroBannerItemSchema).default([]),
+  // Legacy / fallback fields for single-banner compatibility
   title: z.string().default(''),
   titleSegments: z.array(HeroTitleSegmentSchema).default([]),
   badge: z.object({
@@ -66,6 +114,7 @@ export const HeroConfigSchema = z.object({
   }).default({ text: '', isActive: false }),
   imageUrl: z.string().default('https://images.unsplash.com/photo-1591405351990-4726e331f14c?w=1200&q=80'),
   imageLayout: z.enum(['split', 'full', 'contain']).default('split'),
+  imageFit: z.enum(['contain', 'cover']).default('contain'),
   bannerHeight: z.enum(['compact', 'standard', 'tall', 'large']).default('standard'),
   textAlignment: z.enum(['left', 'center']).default('left'),
   primaryButton: HeroButtonSchema.default({

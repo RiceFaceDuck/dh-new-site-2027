@@ -5,9 +5,53 @@ import { getCollectionPath } from 'dh-shared';
 
 const HERO_DOC = 'hero_config'; // 🖼️ อ้างอิงเอกสารสำหรับป้ายโฆษณาหน้าแรก
 
+// 💡 Single Banner Template
+export const DEFAULT_HERO_BANNER = {
+  id: 'banner_default_1',
+  title: '<span style="color: #facc15" class="font-black">DH:</span> จำหน่ายอะไหล่โน๊ตบุ๊คทุกชนิด <br class="hidden md:block" /> ราคาส่งสำหรับช่าง & <br class="hidden md:block" /> SPARES.',
+  titleSegments: [
+    { text: 'DH: ', color: '#facc15', isHighlight: true, isBold: true, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: false, breakAll: false },
+    { text: 'จำหน่ายอะไหล่โน๊ตบุ๊คทุกชนิด ', color: '', isHighlight: false, isBold: false, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: true, breakAll: false },
+    { text: 'ราคาส่งสำหรับช่าง & ', color: '', isHighlight: false, isBold: false, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: true, breakAll: false },
+    { text: 'SPARES.', color: '', isHighlight: false, isBold: false, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: false, breakAll: false }
+  ],
+  badge: { text: '', isActive: false, color: '#facc15' },
+  subtitle: { text: '', isActive: false },
+  imageUrl: '/user-bg.jpg',
+  imageLayout: 'full',
+  imageFit: 'contain',
+  textAlignment: 'left',
+  isActive: true,
+  order: 1,
+  primaryButton: {
+    label: 'BOOK A SQUAD',
+    link: '/squad',
+    isActive: true,
+    variant: 'solid'
+  },
+  secondaryButton: {
+    label: 'SHOP SPARES',
+    link: '/categories',
+    isActive: true,
+    variant: 'solid'
+  },
+  overlay: {
+    enabled: true,
+    color: '#1f2937',
+    opacity: 90,
+    direction: 'to-r'
+  }
+};
+
 // 💡 Default Hero Banner Config (Official DH Notebook Schema & Copy)
 export const DEFAULT_HERO_CONFIG = {
   isActive: true,
+  aspectRatio: '16:9',
+  autoplay: true,
+  autoplaySpeed: 5000,
+  transitionEffect: 'slide',
+  bannerHeight: 'standard',
+  banners: [DEFAULT_HERO_BANNER],
   badge: { text: '', isActive: false, color: '#facc15' },
   title: '<span style="color: #facc15" class="font-black">DH:</span> จำหน่ายอะไหล่โน๊ตบุ๊คทุกชนิด <br class="hidden md:block" /> ราคาส่งสำหรับช่าง & <br class="hidden md:block" /> SPARES.',
   titleSegments: [
@@ -17,9 +61,9 @@ export const DEFAULT_HERO_CONFIG = {
     { text: 'SPARES.', color: '', isHighlight: false, isBold: false, isItalic: false, isUnderline: false, isStrikethrough: false, breakDesktop: false, breakAll: false }
   ],
   subtitle: { text: '', isActive: false },
-  imageUrl: 'https://images.unsplash.com/photo-1591405351990-4726e331f14c?w=1200&q=80',
-  imageLayout: 'split',
-  bannerHeight: 'standard',
+  imageUrl: '/user-bg.jpg',
+  imageLayout: 'full',
+  imageFit: 'contain',
   textAlignment: 'left',
   primaryButton: {
     label: 'BOOK A SQUAD',
@@ -135,6 +179,26 @@ export const heroConfigService = {
         if ((data.title && !data.titleSegments) || (isCustomTitle && isDefaultSegments)) {
             merged.titleSegments = parseHtmlToSegments(data.title);
         }
+
+        // 🔄 Multi-Banner Migration: แปลงป้ายเดี่ยวเดิมเป็น Array of Banners
+        if (!Array.isArray(merged.banners) || merged.banners.length === 0) {
+          merged.banners = [{
+            id: 'banner_migrated_1',
+            title: merged.title || DEFAULT_HERO_BANNER.title,
+            titleSegments: merged.titleSegments || DEFAULT_HERO_BANNER.titleSegments,
+            badge: merged.badge || DEFAULT_HERO_BANNER.badge,
+            subtitle: merged.subtitle || DEFAULT_HERO_BANNER.subtitle,
+            imageUrl: merged.imageUrl || DEFAULT_HERO_BANNER.imageUrl,
+            imageLayout: merged.imageLayout || 'full',
+            imageFit: merged.imageFit || 'contain',
+            textAlignment: merged.textAlignment || 'left',
+            isActive: merged.isActive ?? true,
+            order: 1,
+            primaryButton: merged.primaryButton || DEFAULT_HERO_BANNER.primaryButton,
+            secondaryButton: merged.secondaryButton || DEFAULT_HERO_BANNER.secondaryButton,
+            overlay: merged.overlay || DEFAULT_HERO_BANNER.overlay
+          }];
+        }
         
         return merged;
       }
@@ -150,8 +214,36 @@ export const heroConfigService = {
       const docRef = doc(db, getCollectionPath('settings'), HERO_DOC);
       const cleanData = JSON.parse(JSON.stringify(heroConfig));
       
-      // Auto compile title from titleSegments
-      if (cleanData.titleSegments && Array.isArray(cleanData.titleSegments) && cleanData.titleSegments.length > 0) {
+      // Auto compile title for all banners
+      if (Array.isArray(cleanData.banners) && cleanData.banners.length > 0) {
+        cleanData.banners = cleanData.banners.map((b, idx) => {
+          const compiledTitle = (b.titleSegments && b.titleSegments.length > 0)
+            ? compileHeroTitle(b.titleSegments)
+            : (b.title || '');
+          return {
+            ...DEFAULT_HERO_BANNER,
+            ...b,
+            title: compiledTitle,
+            order: b.order !== undefined ? b.order : idx + 1
+          };
+        });
+
+        // Mirror first active (or first) banner to root properties for backward compatibility
+        const primaryBanner = cleanData.banners.find(b => b.isActive) || cleanData.banners[0];
+        if (primaryBanner) {
+          cleanData.title = primaryBanner.title;
+          cleanData.titleSegments = primaryBanner.titleSegments;
+          cleanData.badge = primaryBanner.badge;
+          cleanData.subtitle = primaryBanner.subtitle;
+          cleanData.imageUrl = primaryBanner.imageUrl;
+          cleanData.imageLayout = primaryBanner.imageLayout;
+          cleanData.imageFit = primaryBanner.imageFit;
+          cleanData.textAlignment = primaryBanner.textAlignment;
+          cleanData.primaryButton = primaryBanner.primaryButton;
+          cleanData.secondaryButton = primaryBanner.secondaryButton;
+          cleanData.overlay = primaryBanner.overlay;
+        }
+      } else if (cleanData.titleSegments && Array.isArray(cleanData.titleSegments) && cleanData.titleSegments.length > 0) {
         cleanData.title = compileHeroTitle(cleanData.titleSegments);
       }
 
