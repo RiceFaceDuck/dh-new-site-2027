@@ -1,8 +1,8 @@
 ﻿# DH Notebook - Deploy State Tracker
-# Updated: 2026-10-31 17:47:47
-dh-backoffice-react=1793442496
-dh-frontend=1793443667
+# Updated: 2026-11-02 14:19:14
+dh-backoffice-react=1793603843
+dh-frontend=1793603827
 dh-staff-app=1793251302
-functions=1793442637
+functions=1793603954
 rules=1793430396
 indexes=1793251320
