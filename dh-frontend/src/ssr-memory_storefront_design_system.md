@@ -70,4 +70,10 @@
    - **วิธีแก้**: แก้ไขข้อความเป็นภาษาไทยมาตรฐาน UTF-8 (`${Math.round(distanceKm * 1000)} เมตร` และ `${Math.floor(distanceKm)} กม.`) ตรวจสอบความถูกต้องของอักขระและ build ผ่าน 100%
 6. **ความสม่ำเสมอของปุ่มดูทั้งหมดบนหน้าแรก (Section View All Buttons)**:
    - ปุ่มลิงก์หัวข้อบนหน้าแรก (เช่น 'ดูช่างทั้งหมด' ใน SquadHighlight) ได้รับการปรับแต่งให้ใช้สไตล์ Card Button ขาว ขอบ `border-slate-300` พร้อมลูกศร `ArrowRight` เช่นเดียวกับ 'ดูทั้งหมด' ของ FeaturedSpares เพื่อรักษา Visual Balance และความสวยงามสม่ำเสมอ
+7. **การแสดงยอดผู้เข้าชมเว็บ All-Time ทั้งบน PC และ Mobile อย่างลงตัว (Visitor Counter Parity)**:
+   - **แหล่งข้อมูล**: ใช้ข้อมูลชุดเดียวกับหลังบ้าน (`settings/web_traffic` ฟิลด์ `allTime`)
+   - **Two-Tier Quota Discipline**: ใช้ `webTrafficClientService` แคชใน `sessionStorage` TTL 1 ชม. (Cold Start = 1 Read, Warm Cache = 0 Read)
+   - **ตำแหน่ง PC**: อยู่ใน Footer คอลัมน์แรก (`FooterBrand.jsx`) ใต้กรอบ 4 Trust Badges สไตล์ dark retro-tech
+   - **ตำแหน่ง Mobile/Tablet (< lg)**: เนื่องจาก Footer บนจอมือถือถูกซ่อนไว้ จึงวาง `VisitorCounterBadge` โหมด `mobile-card` ไว้ด้านล่างสุดของ `MainLayout.jsx` เหนือ BottomNav ให้เห็นสบายตาพอดีเมื่อเลื่อนลงมาล่างสุด
+   - **ความสอดคล้อง**: ขอบมนระดับ 0.1 (`rounded-[2px]`) และป้ายนิ่งสนิทตามหลัก Calm UI
 </pitfalls_and_solutions>

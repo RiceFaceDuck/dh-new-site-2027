@@ -1,0 +1,51 @@
+import React from 'react';
+import { Globe } from 'lucide-react';
+
+/**
+ * คอมโพเนนต์แสดงยอดผู้เข้าชมเว็บไซต์ All-Time (Pure UI Component)
+ * - Calm UI Invariant: ป้ายนิ่ง ไม่กระพริบ ไม่เคลื่อนไหวรบกวนสายตา
+ * - UI Border Radius Invariant: ใช้ความโค้งมนระดับ 0.1 (rounded-[2px])
+ * 
+ * @param {Object} props
+ * @param {string} props.count ตัวเลขยอดผู้เข้าชมที่จัดรูปแบบแล้ว
+ * @param {boolean} props.loading สถานะกำลังโหลด
+ * @param {'footer-dark' | 'mobile-card'} props.variant โหมดการแสดงผล
+ */
+export const VisitorCounterBadge = ({ count, loading = false, variant = 'footer-dark' }) => {
+  if (variant === 'mobile-card') {
+    return (
+      <div 
+        className="inline-flex items-center gap-2 bg-white/95 dark:bg-slate-900/95 backdrop-blur-xs border border-slate-200/90 dark:border-slate-800 px-3 py-1.5 rounded-[2px] shadow-xs select-none transition-all text-xs"
+        title="สถิติผู้เข้าชมเว็บไซต์ทั้งหมด (All-time)"
+      >
+        <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+          <Globe className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 shrink-0" />
+          <span className="text-[11px] font-medium tracking-tight">ผู้เข้าชม:</span>
+        </div>
+        <div className="flex items-baseline gap-1 font-mono font-bold text-sky-600 dark:text-sky-400">
+          <span className="text-xs tracking-tight">{loading ? '...' : count}</span>
+          <span className="text-[10px] font-normal text-slate-400 dark:text-slate-500 font-sans">ครั้ง</span>
+        </div>
+      </div>
+    );
+  }
+
+  // โหมด Default: footer-dark สำหรับแสดงใน Footer PC ใต้ Trust Badges
+  return (
+    <div 
+      className="flex items-center justify-between gap-3 bg-slate-800/80 border border-slate-700/80 px-3 py-2 rounded-[2px] shadow-xs select-none hover:border-slate-600 transition-colors"
+      title="สถิติผู้เข้าชมเว็บไซต์ทั้งหมด (All-time)"
+    >
+      <div className="flex items-center gap-2 text-slate-300">
+        <Globe className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+        <span className="text-[11px] font-medium tracking-tight text-slate-300">ผู้เข้าชมทั้งหมด:</span>
+      </div>
+      <div className="flex items-baseline gap-1 font-mono font-bold text-sky-400">
+        <span className="text-sm tracking-tight">{loading ? '...' : count}</span>
+        <span className="text-[10px] font-normal text-slate-400 font-sans">ครั้ง</span>
+      </div>
+    </div>
+  );
+};
+
+export default VisitorCounterBadge;

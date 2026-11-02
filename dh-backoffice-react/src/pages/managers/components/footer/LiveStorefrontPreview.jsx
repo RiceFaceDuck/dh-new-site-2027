@@ -1,4 +1,5 @@
-import { Eye, ChevronRight, MapPin, MessageCircle, Phone, Clock, ShieldCheck, Award, CheckCircle2, Truck } from 'lucide-react';
+import { Eye, ChevronRight, MapPin, MessageCircle, Phone, Clock, ShieldCheck, Award, CheckCircle2, Truck, Globe } from 'lucide-react';
+import { useWebTrafficStats } from '../../../../components/overview/hooks/useWebTrafficStats';
 
 const BADGE_ICONS = {
     b2bPartner: ShieldCheck,
@@ -38,6 +39,7 @@ const InstagramIcon = ({ className = 'w-4 h-4' }) => (
 );
 
 export default function LiveStorefrontPreview({ footerConfig }) {
+    const { stats, loading: trafficLoading } = useWebTrafficStats();
     if (!footerConfig) return null;
 
     const {
@@ -126,6 +128,23 @@ export default function LiveStorefrontPreview({ footerConfig }) {
                                     </div>
                                 </div>
                             )}
+
+                            {/* All-Time Web Traffic Counter in Preview */}
+                            <div className="pt-1">
+                                <div 
+                                    className="flex items-center justify-between gap-3 bg-slate-800/80 border border-slate-700/80 px-3 py-2 rounded-[2px] shadow-xs select-none"
+                                    title="สถิติผู้เข้าชมเว็บไซต์ทั้งหมด (All-time)"
+                                >
+                                    <div className="flex items-center gap-2 text-slate-300">
+                                        <Globe className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                                        <span className="text-[11px] font-medium tracking-tight text-slate-300">ผู้เข้าชมทั้งหมด:</span>
+                                    </div>
+                                    <div className="flex items-baseline gap-1 font-mono font-bold text-sky-400">
+                                        <span className="text-sm tracking-tight">{trafficLoading ? '...' : Number(stats?.allTime || 0).toLocaleString()}</span>
+                                        <span className="text-[10px] font-normal text-slate-400 font-sans">ครั้ง</span>
+                                    </div>
+                                </div>
+                            </div>
 
                             {/* Social Hub in Preview */}
                             {isSocialEnabled && (

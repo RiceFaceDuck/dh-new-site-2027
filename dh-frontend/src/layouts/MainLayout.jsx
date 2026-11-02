@@ -4,6 +4,8 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import BottomNav from '../components/navigation/BottomNav';
 import FloatingMessenger from '../components/chat/FloatingMessenger';
+import { useWebTrafficAllTime } from '../hooks/useWebTrafficAllTime';
+import VisitorCounterBadge from '../components/common/VisitorCounterBadge';
 
 // 🚀 นำเข้า Component ป้ายแบนเนอร์ผู้สนับสนุน
 
@@ -19,6 +21,7 @@ import { useStorefrontTheme } from '../hooks/useStorefrontTheme';
  */
 const MainLayout = ({ children }) => {
   const theme = useStorefrontTheme();
+  const { formattedCount, loading: trafficLoading } = useWebTrafficAllTime();
 
   // จัดการ Background ภาพแบบ Dynamic
   useEffect(() => {
@@ -64,7 +67,15 @@ const MainLayout = ({ children }) => {
       <div className="hidden lg:block mt-auto border-t border-slate-200">
         <Footer />
       </div>
-      
+      {/* 3.1 Mobile Visitor Bar: แสดงยอดผู้เข้าชมเว็บ All-Time สั้นกระชับ กึ่งกลางหน้าจอ ไม่บังปุ่มแชทลอยตัว */}
+      <div className="lg:hidden flex justify-center w-full px-4 pb-24 pt-2 mt-auto">
+        <VisitorCounterBadge 
+          variant="mobile-card" 
+          count={formattedCount} 
+          loading={trafficLoading} 
+        />
+      </div>
+
       {/* 4. Navigation: BottomNav สำหรับมือถือ (ยึดติดด้านล่างสุด) */}
       <BottomNav />
 

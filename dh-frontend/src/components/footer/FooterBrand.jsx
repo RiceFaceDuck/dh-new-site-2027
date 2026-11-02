@@ -1,5 +1,7 @@
 import { ShieldCheck, Award, CheckCircle2, Truck } from 'lucide-react';
 import { trackFooterClick } from '../../firebase/footerAnalyticsService';
+import { useWebTrafficAllTime } from '../../hooks/useWebTrafficAllTime';
+import VisitorCounterBadge from '../common/VisitorCounterBadge';
 
 const BADGE_ICONS = {
   b2bPartner: ShieldCheck,
@@ -39,6 +41,7 @@ const InstagramIcon = ({ className = 'w-4 h-4' }) => (
 );
 
 const FooterBrand = ({ companyConfig, trustBadgesConfig, socialHubConfig }) => {
+  const { formattedCount, loading: trafficLoading } = useWebTrafficAllTime();
   const isTrustBadgesEnabled = trustBadgesConfig?.enabled !== false;
   const activeBadges = (trustBadgesConfig?.badges || []).filter(b => b.active !== false);
   const isSocialEnabled = socialHubConfig?.enabled !== false && !!(
@@ -92,6 +95,15 @@ const FooterBrand = ({ companyConfig, trustBadgesConfig, socialHubConfig }) => {
           </div>
         </div>
       )}
+
+      {/* 📊 All-Time Web Traffic Counter (Desktop Footer) */}
+      <div className="pt-1">
+        <VisitorCounterBadge 
+          variant="footer-dark" 
+          count={formattedCount} 
+          loading={trafficLoading} 
+        />
+      </div>
 
       {/* Social Media Hub */}
       {isSocialEnabled && (
