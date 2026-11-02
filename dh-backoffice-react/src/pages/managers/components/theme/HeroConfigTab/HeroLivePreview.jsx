@@ -27,23 +27,23 @@ export default function HeroLivePreview({ config }) {
   const isFullLayout = c.imageLayout === 'full';
 
   return (
-    <div className="border border-slate-200 rounded-2xl overflow-hidden shadow-xs bg-white p-5 space-y-4">
+    <div className="border border-slate-300 rounded-[2px] overflow-hidden shadow-sm bg-white p-5 space-y-4">
       {/* Header & Device Switcher */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between border-b border-slate-200 pb-3">
         <div>
-          <h3 className="text-sm font-black text-slate-700 uppercase tracking-widest flex items-center gap-2">
+          <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
             <span>หน้าจอจำลอง (Live Preview)</span>
           </h3>
-          <span className="text-[11px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 inline-block mt-1">
+          <span className="text-[11px] font-bold text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded-[2px] border border-emerald-300 inline-block mt-1">
             100% Exact Storefront Match
           </span>
         </div>
-        <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200">
+        <div className="flex items-center bg-slate-200/80 p-0.5 rounded-[2px] border border-slate-300">
           <button
             type="button"
             onClick={() => setDevice('desktop')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-              device === 'desktop' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-500 hover:text-slate-700'
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[2px] transition-all cursor-pointer ${
+              device === 'desktop' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-800'
             }`}
           >
             <Monitor size={14} /> Desktop
@@ -51,8 +51,8 @@ export default function HeroLivePreview({ config }) {
           <button
             type="button"
             onClick={() => setDevice('mobile')}
-            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-              device === 'mobile' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-500 hover:text-slate-700'
+            className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-[2px] transition-all cursor-pointer ${
+              device === 'mobile' ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-600 hover:text-slate-800'
             }`}
           >
             <Smartphone size={14} /> Mobile
@@ -62,7 +62,7 @@ export default function HeroLivePreview({ config }) {
 
       {/* Inactive Notice */}
       {!c.isActive && (
-        <div className="flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold rounded-xl">
+        <div className="flex items-center gap-2 p-2.5 bg-amber-50 border border-amber-300 text-amber-900 text-xs font-bold rounded-[2px]">
           <EyeOff size={16} className="shrink-0 text-amber-600" />
           <span>สถานะป้ายถูก "ปิดใช้งาน" อยู่ — ลูกค้าหน้าเว็บจะเห็นแบนเนอร์รูปแบบดั้งเดิม</span>
         </div>
@@ -71,7 +71,7 @@ export default function HeroLivePreview({ config }) {
       {/* Preview Screen */}
       <div className={`w-full flex justify-center transition-all duration-300 ${device === 'mobile' ? 'max-w-[360px] mx-auto' : 'w-full'}`}>
         <div
-          className={`relative w-full rounded-2xl overflow-hidden flex flex-col justify-center border border-slate-700 shadow-xl ${heightClass}`}
+          className={`relative w-full rounded-[2px] overflow-hidden flex flex-col justify-center border border-slate-700 shadow-xl ${heightClass}`}
           style={{ backgroundColor: overlayColor }}
         >
           {/* Background Graphic */}

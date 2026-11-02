@@ -56,7 +56,7 @@ export default function HeroConfigTab() {
           <button
             type="button"
             onClick={() => setIsGuideOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-blue-800 bg-blue-100/70 border border-blue-300 rounded-[2px] hover:bg-blue-200 transition-colors cursor-pointer"
           >
             <BookOpen className="w-4 h-4" />
             คู่มือการใช้งาน

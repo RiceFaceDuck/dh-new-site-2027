@@ -10,24 +10,24 @@ export default function GlobalThemeSettings() {
 
     return (
         <div className="w-full p-4 sm:p-6 lg:p-8 space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-200 pb-4">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-300 pb-4">
                 <div className="flex flex-wrap gap-2">
                     <button 
                         onClick={() => setActiveTab('theme')}
-                        className={`flex items-center justify-center gap-2 px-6 py-3 font-bold text-sm rounded-xl transition-all ${activeTab === 'theme' ? 'bg-fuchsia-500 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}
+                        className={`flex items-center justify-center gap-2 px-6 py-3 font-bold text-sm rounded-[2px] transition-all border ${activeTab === 'theme' ? 'bg-fuchsia-600 text-white border-fuchsia-700 shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'}`}
                     >
                         <ImageIcon size={18} /> ธีมและพื้นหลังหน้าบ้าน
                     </button>
                     <button 
                         onClick={() => setActiveTab('hero')}
-                        className={`flex items-center justify-center gap-2 px-6 py-3 font-bold text-sm rounded-xl transition-all ${activeTab === 'hero' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-slate-600 hover:bg-slate-50 border border-slate-200'}`}
+                        className={`flex items-center justify-center gap-2 px-6 py-3 font-bold text-sm rounded-[2px] transition-all border ${activeTab === 'hero' ? 'bg-blue-600 text-white border-blue-700 shadow-sm' : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-slate-300'}`}
                     >
                         <MonitorPlay size={18} /> ป้ายโฆษณาหลัก (Hero Banner)
                     </button>
                 </div>
                 <button 
                     onClick={() => setIsGuideOpen(true)} 
-                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-slate-600 bg-slate-50 hover:bg-slate-100 rounded-xl transition-colors border border-slate-200 shadow-xs dh-active-press shrink-0"
+                    className="flex items-center gap-1.5 px-4 py-2 text-sm font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-[2px] transition-colors border border-slate-300 shadow-xs dh-active-press shrink-0"
                 >
                     <Settings2 size={16} /> คู่มือการใช้งาน
                 </button>

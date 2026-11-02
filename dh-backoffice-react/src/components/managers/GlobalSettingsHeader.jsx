@@ -13,11 +13,11 @@ export default function GlobalSettingsHeader({
     const navigate = useNavigate();
 
     return (
-        <div className="px-5 py-4 border-b border-slate-200 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 rounded-t-2xl shadow-xs z-20 relative">
+        <div className="px-5 py-4 border border-slate-300 bg-white flex flex-col sm:flex-row sm:items-center justify-between gap-4 shrink-0 rounded-[2px] shadow-sm z-20 relative">
             <div className="flex items-center gap-4">
                 <button 
                     onClick={() => navigate(-1)} 
-                    className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-xl transition-colors shrink-0"
+                    className="p-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-[2px] transition-colors shrink-0"
                     title="ย้อนกลับ"
                 >
                     <ArrowLeft size={18} strokeWidth={2.5} />
