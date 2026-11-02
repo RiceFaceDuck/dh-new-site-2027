@@ -2,10 +2,36 @@ import { Store, UploadCloud, Loader2, Clock, Image as ImageIcon } from 'lucide-r
 import LazyImage from '../../../common/LazyImage';
 import { MAX_GALLERY_IMAGES } from './hooks/useStoreProfile';
 
-const StoreProfileBasicInfo = ({ storeData, setStoreData, isAdPending, uploadingStoreImage, handleStoreImageUpload, uploadingGallery, handleGalleryImageUpload, handleRemoveGalleryImage }) => {
+const StoreProfileBasicInfo = ({ 
+  storeData, 
+  setStoreData, 
+  hasDraft = false,
+  isDraftSaving = false,
+  isAdPending, 
+  uploadingStoreImage, 
+  handleStoreImageUpload, 
+  uploadingGallery, 
+  handleGalleryImageUpload, 
+  handleRemoveGalleryImage 
+}) => {
   return (
     <div className="store-profile-basic-info-container">
-      <h4 className="font-black text-slate-800 flex items-center gap-2 border-b border-slate-200 pb-3 mb-5 uppercase tracking-wide text-sm"><ImageIcon size={18} className="text-indigo-500"/> รูปภาพและข้อมูลหลัก</h4>
+      <h4 className="font-black text-slate-800 flex items-center gap-2 border-b border-slate-200 pb-3 mb-5 uppercase tracking-wide text-sm">
+        <ImageIcon size={18} className="text-indigo-500"/>
+        <span>รูปภาพและข้อมูลหลัก</span>
+        {(hasDraft || isDraftSaving) && (
+          <span 
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-[2px] text-xs font-mono font-bold tracking-tight transition-all duration-200 select-none ${
+              isDraftSaving 
+                ? 'bg-amber-50 text-amber-700 border border-amber-200 shadow-2xs' 
+                : 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-2xs'
+            }`}
+            title={isDraftSaving ? 'กำลังจำข้อมูลแบบร่างชั่วคราว...' : 'ระบบจำข้อมูลแบบร่างชั่วคราวในเครื่องให้แล้ว'}
+          >
+            {isDraftSaving ? 'temp🔄️' : 'temp✅'}
+          </span>
+        )}
+      </h4>
       <div className="flex flex-col md:flex-row gap-8">
         {/* Store Image Upload */}
         <div className="w-full md:w-1/3 flex flex-col">

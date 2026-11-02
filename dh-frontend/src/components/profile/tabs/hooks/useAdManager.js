@@ -48,7 +48,7 @@ export const useAdManager = (user) => {
   const appId = typeof window !== 'undefined' && window.__app_id ? window.__app_id : 'default-app-id';
 
   // Store Profile Data (SRP Extracted)
-  const { storeData, setStoreData, hasDraft, discardDraft, commitSavedData } = useStoreProfileData(user);
+  const { storeData, setStoreData, hasDraft, isDraftSaving, discardDraft, commitSavedData } = useStoreProfileData(user);
 
   useEffect(() => {
     if (!user) {
@@ -344,6 +344,7 @@ export const useAdManager = (user) => {
     handleToggleAdStatus,
     handleResubmitAd,
     hasDraft,
+    isDraftSaving,
     discardDraft,
     commitSavedData
   };

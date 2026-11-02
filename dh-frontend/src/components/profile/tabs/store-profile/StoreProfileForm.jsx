@@ -17,6 +17,7 @@ const StoreProfileForm = ({
   fetchMyAds, 
   userCredit = 0,
   hasDraft = false,
+  isDraftSaving = false,
   discardDraft,
   commitSavedData
 }) => {
@@ -67,74 +68,89 @@ const StoreProfileForm = ({
   return (
     <div className="bg-white border border-slate-200/90 rounded-md shadow-md overflow-hidden animate-in fade-in duration-300">
       
-      <div className="bg-slate-100/90 p-6 flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-200/90">
-        <div>
-          <h3 className="text-lg font-black text-slate-900 flex items-center gap-2"><Store className="text-indigo-600"/> ศูนย์ข้อมูลร้านค้า (Store Profile)</h3>
-          <p className="text-[11px] text-slate-500 mt-1">ข้อมูลในหน้านี้จะถูกนำไปใช้สร้าง <b>"โฆษณานามบัตร"</b> และแสดงผลบนแผนที่เรดาร์อัตโนมัติ</p>
-        </div>
-        
-        <div className="flex flex-wrap sm:flex-nowrap items-center gap-3">
-          {/* 🌟 ปุ่มทางลัด [หน้าร้าน] เพื่อเข้าสู่หน้าโปรไฟล์ตัวเอง */}
+      {/* 🏛️ 2-Tier Dashboard Header */}
+      <div className="bg-slate-100/90 p-5 md:p-6 border-b border-slate-200/90 space-y-4">
+        {/* Tier 1: Title & Storefront Link */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h3 className="text-lg font-black text-slate-900 flex items-center gap-2">
+              <Store className="text-indigo-600" size={22} />
+              <span>ศูนย์ข้อมูลร้านค้า</span>
+              <span className="text-[11px] font-bold text-slate-500 bg-slate-200/80 px-2 py-0.5 rounded-[2px] tracking-wide">STORE PROFILE</span>
+            </h3>
+            <p className="text-xs text-slate-500 mt-1">
+              ข้อมูลในหน้านี้จะถูกนำไปใช้สร้าง <b className="text-slate-700">"โฆษณานามบัตร"</b> และแสดงผลบนแผนที่เรดาร์อัตโนมัติ
+            </p>
+          </div>
+          
+          {/* 🌟 ปุ่มทางลัด [ดูหน้าร้านของคุณ ↗] */}
           {user?.uid && (
             <a
               href={`/store/${user.uid}`}
               target="_blank"
               rel="noopener noreferrer"
               title="เปิดดูหน้าร้านของคุณในมุมมองลูกค้า (แท็บใหม่)"
-              className="bg-white hover:bg-slate-50 text-slate-800 hover:text-indigo-600 px-3.5 py-3 rounded-md flex items-center gap-2 border border-slate-200 shadow-2xs hover:border-indigo-300 transition-all text-xs font-bold active:scale-95 group shrink-0"
+              className="self-start sm:self-center bg-white hover:bg-slate-50 text-slate-800 hover:text-indigo-600 px-3.5 py-2 rounded-md flex items-center gap-2 border border-slate-300 shadow-2xs hover:border-indigo-400 transition-all text-xs font-bold active:scale-95 group shrink-0"
             >
-              <Store size={16} className="text-indigo-600 group-hover:scale-110 transition-transform" />
-              <span>หน้าร้าน</span>
+              <Store size={15} className="text-indigo-600 group-hover:scale-110 transition-transform" />
+              <span>ดูหน้าร้านของคุณ</span>
               <ExternalLink size={13} className="text-slate-400 group-hover:text-indigo-600 transition-colors" />
             </a>
           )}
+        </div>
 
-          {/* 🌟 แสดงยอดเข้าชมหน้าร้าน (Store Profile Visits) แยกชัดเจนจากป้ายโฆษณา */}
-          <div className="bg-white text-slate-800 px-3.5 py-2.5 rounded-md flex items-center gap-2 border border-slate-200 shadow-2xs shrink-0" title="ยอดเข้าชมหน้าร้านพาร์ทเนอร์ทั้งหมด">
-            <span className="text-[11px] font-bold text-slate-500 uppercase flex items-center gap-1">
-              <Eye size={14} className="text-indigo-600" /> ยอดเข้าชมหน้าร้าน (Store Profile Visits):
-            </span>
-            <span className="font-mono font-black text-indigo-700 text-xs">
-              {Number(storeData?.viewCount || 0).toLocaleString()}
-            </span>
-            <span className="text-[10px] text-slate-400 font-medium">ครั้ง</span>
-          </div>
-
-          <div className="bg-white p-3 rounded-md flex items-center gap-4 border border-slate-200 shadow-2xs">
-          <div className="text-right">
-            <div className="text-xs font-bold text-slate-800 uppercase tracking-widest">นามบัตรโฆษณา</div>
-            <div className="text-[10px]">
-              {businessCardAd?.status?.toUpperCase() === 'PAUSED' ? (
-                <span className="text-orange-600 font-bold">🟠 ถูกระงับการแสดงผล (Paused)</span>
-              ) : isAdPending ? (
-                <span className="text-amber-600 font-bold">🟡 รอตรวจสอบ (Pending)</span>
-              ) : isApprovedAndLive && hasNoCredit ? (
-                <span className="text-slate-500 font-bold">⚪ ไม่แสดง (No Credit)</span>
-              ) : isApprovedAndLive ? (
-                <span className="text-emerald-600 font-bold">🟢 โฆษณาทำงานอยู่ (Live)</span>
-              ) : businessCardAd?.status?.toUpperCase() === 'REJECTED' ? (
-                <span className="text-rose-600 font-bold">🔴 ไม่ผ่านอนุมัติ</span>
-              ) : isSwitchOn ? (
-                <span className="text-amber-600 font-bold">🟡 รอการบันทึก (กรุณากดบันทึกด้านล่าง)</span>
-              ) : (
-                <span className="text-slate-500">⚫ ปิดการแสดงผล</span>
-              )}
+        {/* Tier 2: Dedicated Metric & Ad Control Bar */}
+        <div className="bg-white/90 p-3 sm:px-4 sm:py-3 rounded-[2px] border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          {/* 🌟 ยอดเข้าชมหน้าร้าน (Store Profile Visits) */}
+          <div className="flex items-center gap-2" title="ยอดเข้าชมหน้าร้านพาร์ทเนอร์ทั้งหมด">
+            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-[2px] border border-indigo-100/80">
+              <Eye size={15} />
+            </div>
+            <div className="flex items-baseline gap-1.5">
+              <span className="text-xs font-bold text-slate-600">ยอดเข้าชมหน้าร้าน:</span>
+              <span className="font-mono font-black text-indigo-700 text-sm">
+                {Number(storeData?.viewCount || 0).toLocaleString()}
+              </span>
+              <span className="text-[11px] text-slate-400">ครั้ง</span>
             </div>
           </div>
-          
-          <label className={`relative inline-flex items-center ${isAdPending ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
-            <input 
-              type="checkbox" 
-              className="sr-only peer" 
-              checked={isSwitchOn} 
-              onChange={() => handleToggleSupport(!isSwitchOn)} 
-              disabled={isAdPending} 
-            />
-            <div className="w-14 h-7 bg-slate-600 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
-          </label>
+
+          {/* 🌟 สวิตช์และสถานะนามบัตรโฆษณา */}
+          <div className="flex items-center gap-3 self-end sm:self-center pl-2 sm:pl-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-slate-100 w-full sm:w-auto justify-between sm:justify-end">
+            <div className="text-left sm:text-right">
+              <div className="text-xs font-bold text-slate-800 uppercase tracking-wide">นามบัตรโฆษณา</div>
+              <div className="text-[11px] whitespace-nowrap">
+                {businessCardAd?.status?.toUpperCase() === 'PAUSED' ? (
+                  <span className="text-orange-600 font-bold">🟠 ถูกระงับการแสดงผล (Paused)</span>
+                ) : isAdPending ? (
+                  <span className="text-amber-600 font-bold">🟡 รอตรวจสอบ (Pending)</span>
+                ) : isApprovedAndLive && hasNoCredit ? (
+                  <span className="text-slate-500 font-bold">⚪ ไม่แสดง (No Credit)</span>
+                ) : isApprovedAndLive ? (
+                  <span className="text-emerald-600 font-bold">🟢 โฆษณาทำงานอยู่ (Live)</span>
+                ) : businessCardAd?.status?.toUpperCase() === 'REJECTED' ? (
+                  <span className="text-rose-600 font-bold">🔴 ไม่ผ่านอนุมัติ</span>
+                ) : isSwitchOn ? (
+                  <span className="text-amber-600 font-bold">🟡 รอการบันทึก (กรุณากดบันทึกด้านล่าง)</span>
+                ) : (
+                  <span className="text-slate-500">⚫ ปิดการแสดงผล</span>
+                )}
+              </div>
+            </div>
+            
+            <label className={`relative inline-flex items-center shrink-0 ${isAdPending ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
+              <input 
+                type="checkbox" 
+                className="sr-only peer" 
+                checked={isSwitchOn} 
+                onChange={() => handleToggleSupport(!isSwitchOn)} 
+                disabled={isAdPending} 
+              />
+              <div className="w-12 h-6 bg-slate-400 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 shadow-inner"></div>
+            </label>
+          </div>
         </div>
       </div>
-    </div>
 
       {/* 🛑 กล่องแจ้งเตือนเหตุผลการปฏิเสธจากผู้จัดการ */}
       {businessCardAd?.status?.toUpperCase() === 'REJECTED' && (
@@ -152,33 +168,13 @@ const StoreProfileForm = ({
         </div>
       )}
 
-      {/* 📝 กล่องแจ้งเตือนกู้คืนแบบร่างชั่วคราวอัตโนมัติ */}
-      {hasDraft && (
-        <div className="mx-6 md:mx-8 mt-6 p-3.5 bg-amber-50/90 border border-amber-200/90 rounded-[2px] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-2xs">
-          <div className="flex items-center gap-2.5 text-xs text-amber-900 font-medium">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0"></span>
-            <span>
-              <b>ระบบจำข้อมูลแบบร่างชั่วคราวให้แล้ว</b> (ข้อมูล รูปภาพ หรือพิกัด GPS ที่ทำค้างไว้ในเครื่องยังอยู่ครบ ไม่ต้องกรอกใหม่)
-            </span>
-          </div>
-          {discardDraft && (
-            <button
-              type="button"
-              onClick={discardDraft}
-              className="text-amber-700 hover:text-rose-600 text-xs font-bold underline cursor-pointer shrink-0 transition-colors flex items-center gap-1"
-            >
-              <RefreshCw size={12} />
-              <span>ยกเลิกแบบร่าง / คืนค่าข้อมูลเดิมจากระบบ</span>
-            </button>
-          )}
-        </div>
-      )}
-
       <form onSubmit={handleSaveStore} className="p-6 md:p-8 space-y-10">
         
         <StoreProfileBasicInfo 
           storeData={storeData} 
           setStoreData={setStoreData} 
+          hasDraft={hasDraft}
+          isDraftSaving={isDraftSaving}
           uploadingStoreImage={uploadingStoreImage} 
           handleStoreImageUpload={handleStoreImageUpload} 
           uploadingGallery={uploadingGallery}

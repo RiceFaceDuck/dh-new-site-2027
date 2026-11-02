@@ -48,6 +48,7 @@ export const useStoreProfileData = (user) => {
   const [serverStoreData, setServerStoreData] = useState(DEFAULT_STORE_DATA);
   const [loading, setLoading] = useState(true);
   const [hasDraft, setHasDraft] = useState(false);
+  const [isDraftSaving, setIsDraftSaving] = useState(false);
 
   const isInitialized = useRef(false);
   const debounceTimerRef = useRef(null);
@@ -175,6 +176,7 @@ export const useStoreProfileData = (user) => {
       clearTimeout(debounceTimerRef.current);
     }
 
+    setIsDraftSaving(true);
     debounceTimerRef.current = setTimeout(() => {
       try {
         const normalizedCurrent = normalizeStoreData(storeData);
@@ -190,6 +192,8 @@ export const useStoreProfileData = (user) => {
         }
       } catch (err) {
         console.warn('Unable to auto-save store profile draft:', err);
+      } finally {
+        setIsDraftSaving(false);
       }
     }, 400);
 
@@ -206,6 +210,7 @@ export const useStoreProfileData = (user) => {
     fetchStoreData, 
     loading, 
     hasDraft, 
+    isDraftSaving,
     clearDraft, 
     discardDraft, 
     commitSavedData 

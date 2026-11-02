@@ -45,6 +45,7 @@ const TabAdManager = ({ user }) => {
     handleToggleAdStatus,
     handleResubmitAd,
     hasDraft,
+    isDraftSaving,
     discardDraft,
     commitSavedData
   } = useAdManager(user);
@@ -108,6 +109,7 @@ const TabAdManager = ({ user }) => {
           fetchMyAds={fetchMyAds} 
           userCredit={userCredit}
           hasDraft={hasDraft}
+          isDraftSaving={isDraftSaving}
           discardDraft={discardDraft}
           commitSavedData={commitSavedData}
         />
