@@ -71,6 +71,10 @@ const visSyncCode = fs.readFileSync(path.join(MGMT_DIR, 'functions', 'marketing'
 assert(visSyncCode.includes('db.collection("users").doc(uid).collection("storeProfile").doc("main")'), 'partnerVisibilitySync reads real viewCount from storeProfile on partner restoration');
 assert(visSyncCode.includes('viewCount: realViewCount'), 'partnerVisibilitySync sets viewCount on restored partner');
 
+const storeProfilePageHook = fs.readFileSync(path.join(MGMT_DIR, 'dh-frontend', 'src', 'pages', 'StoreProfile', 'hooks', 'useStoreProfilePage.js'), 'utf8');
+assert(storeProfilePageHook.includes('viewCount: Number(uStore.viewCount'), 'useStoreProfilePage propagates viewCount from fallback storeProfile (Zero View Drop Guard)');
+assert(storeProfilePageHook.includes('likeCount: Number(uStore.likeCount'), 'useStoreProfilePage propagates likeCount from fallback storeProfile (Zero Like Drop Guard)');
+
 // -----------------------------------------------------------------------------
 // Test 3: UI Telemetry Boundaries (Pillars 1, 2, 3)
 // -----------------------------------------------------------------------------
