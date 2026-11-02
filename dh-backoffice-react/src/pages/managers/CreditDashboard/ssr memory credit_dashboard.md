@@ -26,6 +26,10 @@
 </cross_impact>
 
 <pitfalls_and_lessons>
+- 🎯 Ad View vs Click Dual Pricing Rule (Rules & Configs Invariant): หน้า `/managers/credit-dashboard` กำหนดกฎการตัดแต้มโฆษณา 2 มิติชัดเจน:
+  1) `AD IMPRESSION COST & RATE`: จำนวนครั้ง (Count) = 100 ครั้ง, แต้มที่หัก (Points) = 15 PT (หักล่วงหน้าเติมโควต้า 100 วิว)
+  2) `Ad Click Cost`: แต้มที่หัก ต่อการคลิกเข้าชมโปรไฟล์ 1 ครั้ง = 15 แต้ม (ตัดแต้มเมื่อมีการกดคลิกเข้าชมรายละเอียด)
+  *ห้ามเดาหรือถามผู้ใช้ซ้ำเรื่องราคาคลิก เพราะระบบผูกกับการตั้งค่าในหน้านี้ 100%*
 - ⚠️ Do NOT create a separate 4-col right rail: Hosting integrates Event Logs and Security tags inside the header banner to preserve 12-col full width for tabs.
 - ⚠️ Discrepancy Math: Mistaking `systemPoolMax - totalUserCredits` as discrepancy causes a catastrophic false 9.9M red alarm.
 - ⚠️ Realtime Snapshot Leaks: Do not use `onSnapshot` for heavy transaction history; use cached pagination + manual refresh button.
