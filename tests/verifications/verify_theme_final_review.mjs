@@ -1,6 +1,12 @@
 import { StorefrontThemeSchema, HeroConfigSchema } from '../../dh-backoffice-react/src/schemas/themeSchema.js';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const rootManagementSystem = path.resolve(__dirname, '../..');
+const resolvePath = (rel) => path.resolve(rootManagementSystem, rel);
 
 console.log('================================================================');
 console.log('🧪 OPERATION FINAL REVIEW: THEME & HERO BILLBOARD VERIFICATION');
@@ -60,7 +66,7 @@ assert(heroResult.success, 'Valid hero configuration matches HeroConfigSchema');
 // -------------------------------------------------------------
 console.log('\n👉 [2/6] Testing compileHeroTitle HTML Compiler from Service');
 
-const heroServicePath = path.resolve('Management System/dh-backoffice-react/src/firebase/heroConfigService.js');
+const heroServicePath = resolvePath('dh-backoffice-react/src/firebase/heroConfigService.js');
 const heroServiceSource = fs.readFileSync(heroServicePath, 'utf-8');
 
 assert(heroServiceSource.includes('compileHeroTitle'), 'heroConfigService exports compileHeroTitle');
@@ -126,14 +132,14 @@ assert(heroTitleFallback.includes('ยังไม่มีข้อความ
 // -------------------------------------------------------------
 console.log('\n👉 [4/6] Verifying Clean Architecture & SRP in Components');
 
-const heroIndexPath = path.resolve('Management System/dh-backoffice-react/src/pages/managers/components/theme/HeroConfigTab/index.jsx');
+const heroIndexPath = resolvePath('dh-backoffice-react/src/pages/managers/components/theme/HeroConfigTab/index.jsx');
 const heroIndexContent = fs.readFileSync(heroIndexPath, 'utf-8');
 
 assert(!heroIndexContent.includes('getDoc('), 'HeroConfigTab/index.jsx contains NO direct Firestore getDoc queries');
 assert(!heroIndexContent.includes('setDoc('), 'HeroConfigTab/index.jsx contains NO direct Firestore setDoc queries');
 assert(heroIndexContent.includes('useHeroConfig'), 'HeroConfigTab/index.jsx delegates state to useHeroConfig controller hook');
 
-const themeTabPath = path.resolve('Management System/dh-backoffice-react/src/pages/managers/components/theme/ThemeConfigTab.jsx');
+const themeTabPath = resolvePath('dh-backoffice-react/src/pages/managers/components/theme/ThemeConfigTab.jsx');
 const themeTabContent = fs.readFileSync(themeTabPath, 'utf-8');
 
 assert(!themeTabContent.includes('historyService.addLog'), 'ThemeConfigTab does NOT double-log to historyService (deduplicated)');
@@ -144,13 +150,13 @@ assert(themeTabContent.includes('useThemeSettings'), 'ThemeConfigTab delegates t
 // -------------------------------------------------------------
 console.log('\n👉 [5/6] Verifying Storefront Cache Contract');
 
-const storefrontServicePath = path.resolve('Management System/dh-frontend/src/firebase/storefrontSettingsService.js');
+const storefrontServicePath = resolvePath('dh-frontend/src/firebase/storefrontSettingsService.js');
 const storefrontServiceContent = fs.readFileSync(storefrontServicePath, 'utf-8');
 
 assert(storefrontServiceContent.includes('{ data, timestamp }'), 'storefrontSettingsService uses { data, timestamp } cache contract');
 assert(storefrontServiceContent.includes('CACHE_TTL = 15 * 60 * 1000'), 'storefrontSettingsService preserves 15-minute TTL cache');
 
-const storefrontHeroPath = path.resolve('Management System/dh-frontend/src/pages/Home/components/HeroSection.jsx');
+const storefrontHeroPath = resolvePath('dh-frontend/src/pages/Home/components/HeroSection.jsx');
 const storefrontHeroContent = fs.readFileSync(storefrontHeroPath, 'utf-8');
 
 assert(storefrontHeroContent.includes('parsed?.data || parsed'), 'Storefront HeroSection handles wrapped cache safely without corrupting cache TTL');
@@ -158,9 +164,9 @@ assert(storefrontHeroContent.includes('parsed?.data || parsed'), 'Storefront Her
 // -------------------------------------------------------------
 // Test 6: Local Grimoire Protocol Compliance
 // -------------------------------------------------------------
-console.log('\n👉 [6/6] Verifying Local Grimoire Protocol (ssr memory)');
+console.log('\n👉 [6/7] Verifying Local Grimoire Protocol (ssr memory)');
 
-const grimoirePath = path.resolve('Management System/dh-backoffice-react/src/pages/managers/components/theme/ssr memory theme_manager.md');
+const grimoirePath = resolvePath('dh-backoffice-react/src/pages/managers/components/theme/ssr memory theme_manager.md');
 assert(fs.existsSync(grimoirePath), 'Local grimoire file exists in theme folder');
 
 if (fs.existsSync(grimoirePath)) {
@@ -176,6 +182,56 @@ if (fs.existsSync(grimoirePath)) {
   assert(grimoireContent.includes('<cross_impact>'), 'Grimoire contains <cross_impact>');
   assert(grimoireContent.includes('<pitfalls_and_lessons>'), 'Grimoire contains <pitfalls_and_lessons>');
 }
+
+// -------------------------------------------------------------
+// Test 7: Multi-Banner, Carousel & Firebase Storage Pipeline
+// -------------------------------------------------------------
+console.log('\n👉 [7/7] Verifying Multi-Banner Carousel & Storage Pipeline');
+
+const bannerStoragePath = resolvePath('dh-backoffice-react/src/firebase/bannerStorageService.js');
+assert(fs.existsSync(bannerStoragePath), 'bannerStorageService.js exists');
+const bannerStorageContent = fs.readFileSync(bannerStoragePath, 'utf-8');
+assert(bannerStorageContent.includes('assets/banners/'), 'bannerStorageService uploads to assets/banners/ path');
+assert(bannerStorageContent.includes('compressImageWithCanvas'), 'bannerStorageService uses client-side canvas compression');
+assert(bannerStorageContent.includes('maxWidth: 1920'), 'bannerStorageService enforces 1920px max dimension');
+
+const heroListViewPath = resolvePath('dh-backoffice-react/src/pages/managers/components/theme/HeroConfigTab/HeroBannerListView.jsx');
+assert(fs.existsSync(heroListViewPath), 'HeroBannerListView.jsx exists (Master-Detail separation)');
+const heroListViewContent = fs.readFileSync(heroListViewPath, 'utf-8');
+assert(heroListViewContent.includes('rounded-[2px]'), 'HeroBannerListView adheres to UI Border Radius 0.1 invariant');
+
+const heroUploadPath = resolvePath('dh-backoffice-react/src/pages/managers/components/theme/HeroConfigTab/HeroImageUpload.jsx');
+const heroUploadContent = fs.readFileSync(heroUploadPath, 'utf-8');
+assert(heroUploadContent.includes('Firebase Storage'), 'HeroImageUpload displays Firebase Storage provider');
+assert(!heroUploadContent.includes('ไม่เกิน 5MB'), 'HeroImageUpload removed arbitrary 5MB blocker text');
+
+const multiBannerPayload = {
+  isActive: true,
+  aspectRatio: '16:9',
+  autoplay: true,
+  autoplaySpeed: 5000,
+  transitionEffect: 'slide',
+  banners: [
+    {
+      id: 'banner_1',
+      title: 'DH Notebook',
+      imageUrl: 'https://firebasestorage.googleapis.com/test.webp',
+      imageFit: 'contain',
+      order: 1,
+      isActive: true
+    },
+    {
+      id: 'banner_2',
+      title: 'Special Parts',
+      imageUrl: 'https://firebasestorage.googleapis.com/test2.webp',
+      imageFit: 'cover',
+      order: 2,
+      isActive: false
+    }
+  ]
+};
+const parsedMulti = HeroConfigSchema.safeParse(multiBannerPayload);
+assert(parsedMulti.success, 'Multi-banner configuration validates successfully against HeroConfigSchema');
 
 console.log('\n================================================================');
 console.log(`📊 FINAL RESULT: ${passedTests} PASSED, ${failedTests} FAILED`);
