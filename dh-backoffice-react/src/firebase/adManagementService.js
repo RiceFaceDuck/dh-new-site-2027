@@ -181,8 +181,10 @@ export const adManagementService = {
          const partnerId = adData.ownerId;
          const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), partnerId);
 
-         // Fetch user points from users/{partnerId}
+         // Fetch user points from users/{partnerId} and permanent storeProfile/main
          let points = 0;
+         let viewCount = 0;
+         let likeCount = 0;
          try {
            const userRef = doc(db, getCollectionPath('users'), partnerId);
            const userSnap = await getDoc(userRef);
@@ -190,8 +192,16 @@ export const adManagementService = {
              const uData = userSnap.data();
              points = Number(uData.creditPoints || uData.points || 0);
            }
+
+           const profileRef = doc(db, getCollectionPath('users'), partnerId, 'storeProfile', 'main');
+           const profileSnap = await getDoc(profileRef);
+           if (profileSnap.exists()) {
+             const pData = profileSnap.data();
+             viewCount = Number(pData.viewCount || 0);
+             likeCount = Number(pData.likeCount || 0);
+           }
          } catch (e) {
-           console.warn("Could not fetch user points for partner sync:", e);
+           console.warn("Could not fetch user points/profile for partner sync:", e);
          }
 
          const storeImage = adData.imageUrl || '';
@@ -236,6 +246,9 @@ export const adManagementService = {
             shopeeUrl: shopeeUrl,
             lazadaUrl: lazadaUrl,
             points: points,
+            viewCount: viewCount,
+            viewsCount: viewCount,
+            likeCount: likeCount,
             isActive: true,
             updatedAt: serverTimestamp()
          }, { merge: true });
@@ -269,7 +282,9 @@ export const adManagementService = {
                landmarks: landmarks,
                openHours: openHours,
                points: points,
-               viewsCount: Number(adData?.stats?.views || adData?.viewsCount || 0),
+               viewCount: viewCount,
+               viewsCount: viewCount > 0 ? viewCount : Number(adData?.stats?.views || adData?.viewsCount || 0),
+               likeCount: likeCount,
                stats: {
                  ...existingStats,
                  views: existingAd?.stats?.views || existingAd?.viewsCount || 0,
@@ -278,9 +293,13 @@ export const adManagementService = {
                isVerified: true,
                isActive: true
              };
-             // 🛡️ M3 Parity: ป้องกันการรีเซ็ตยอดวิวเดิมของร้านใน bundle
-             if (existingAd?.viewsCount || existingAd?.views || existingAd?.stats?.views) {
+             // 🛡️ M3 Parity: คืนค่ายอดวิวสะสมจริงจาก storeProfile/main หรือ existingAd
+             if (viewCount > 0) {
+               partnerItem.viewsCount = viewCount;
+               partnerItem.viewCount = viewCount;
+             } else if (existingAd?.viewsCount || existingAd?.views || existingAd?.stats?.views) {
                partnerItem.viewsCount = existingAd?.viewsCount || existingAd?.views || existingAd?.stats?.views || 0;
+               partnerItem.viewCount = partnerItem.viewsCount;
              }
              if (existingIdx >= 0) {
                items[existingIdx] = { ...items[existingIdx], ...partnerItem };

@@ -57,6 +57,15 @@ const restorePartnerForCredit = async (db, uid, credit, userData) => {
     const currentAp = { ...(apSnap.data() || {}), points: credit, isActive: true };
     await syncBundleItem(db, uid, toBundleItem(uid, currentAp));
   } else if (cardData) {
+    let realViewCount = 0;
+    try {
+      const spSnap = await db.collection("users").doc(uid).collection("storeProfile").doc("main").get();
+      if (spSnap.exists) {
+        realViewCount = Number(spSnap.data()?.viewCount || 0);
+      }
+    } catch (spErr) {
+      console.warn("Could not fetch storeProfile for " + uid + ":", spErr);
+    }
     const name = cardData.partnerName || cardData.title || userData?.storeName || userData?.accountName || userData?.displayName || "ร้านช่างพาร์ทเนอร์";
     const apData = {
       partnerId: uid,
@@ -82,7 +91,8 @@ const restorePartnerForCredit = async (db, uid, credit, userData) => {
       shopeeUrl: cardData.shopeeUrl || "",
       lazadaUrl: cardData.lazadaUrl || "",
       points: credit,
-      viewsCount: Number(cardData.stats?.views || 0),
+      viewCount: realViewCount,
+      viewsCount: realViewCount > 0 ? realViewCount : Number(cardData.stats?.views || 0),
       isActive: true,
       isVerified: true,
       updatedAt: FieldValue.serverTimestamp()

@@ -208,14 +208,16 @@ const commitTelemetryTransaction = async (db, adAggregates = {}, config = {}, st
       currentAllocated = Number(ledger.totalAllocated || 0);
     }
 
-    // 🏪 Read ActivePartners for store_view telemetry
+    // 🏪 Read ActivePartners and storeProfile/main for store_view telemetry (Dual-Sync)
     const storeRefs = storeIds.map((id) => db.collection("ActivePartners").doc(id));
+    const profileRefs = storeIds.map((id) => db.collection("users").doc(id).collection("storeProfile").doc("main"));
     const storeSnaps = storeRefs.length > 0 ? await Promise.all(storeRefs.map((ref) => transaction.get(ref))) : [];
+    const profileSnaps = profileRefs.length > 0 ? await Promise.all(profileRefs.map((ref) => transaction.get(ref))) : [];
 
     // B. Calculate Phase: คำนวณยอดเงินด้วยกฎธุรกิจที่บริสุทธิ์
     const ownerDeductions = adIds.length > 0 ? calculateAdDeductions(validAdMap, config) : {};
 
-    // C. Write Phase 1: บันทึกสถิติยอดเข้าชมหน้าร้านพาร์ทเนอร์ (ActivePartners/{store_id}.viewCount)
+    // C. Write Phase 1: บันทึกสถิติยอดเข้าชมหน้าร้านพาร์ทเนอร์ (Dual-Sync: ActivePartners + users/{uid}/storeProfile/main)
     storeSnaps.forEach((snap, idx) => {
       const storeId = storeIds[idx];
       const deltaViews = Number(storeAggregates[storeId]?.views || 0);
@@ -233,6 +235,22 @@ const commitTelemetryTransaction = async (db, adAggregates = {}, config = {}, st
             updatedAt: FieldValue.serverTimestamp()
           }, { merge: true });
         }
+
+        // 🛡️ Dual-Sync: บันทึก viewCount ลง Permanent SSOT (users/{uid}/storeProfile/main) เพื่อไม่ให้สถิติสูญหาย
+        const profileRef = profileRefs[idx];
+        const profileSnap = profileSnaps[idx];
+        if (profileSnap && profileSnap.exists) {
+          transaction.update(profileRef, {
+            viewCount: FieldValue.increment(deltaViews),
+            updatedAt: FieldValue.serverTimestamp()
+          });
+        } else {
+          transaction.set(profileRef, {
+            viewCount: deltaViews,
+            updatedAt: FieldValue.serverTimestamp()
+          }, { merge: true });
+        }
+
         totalStoresUpdated++;
       }
     });
