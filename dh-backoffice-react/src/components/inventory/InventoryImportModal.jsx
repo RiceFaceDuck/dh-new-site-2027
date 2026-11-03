@@ -1,5 +1,5 @@
-import { useRef } from 'react';
-import { X, UploadCloud, Database, CheckCircle, Loader2 } from 'lucide-react';
+import { useRef, useState } from 'react';
+import { X, UploadCloud, Database, CheckCircle, Loader2, Settings2 } from 'lucide-react';
 import { useExcelImport } from './hooks/useExcelImport';
 
 // Common Components
@@ -10,13 +10,15 @@ import ImportResultSummary from './import/ImportResultSummary';
 import ImportUploader from './import/ImportUploader';
 import ImportConfig from './import/ImportConfig';
 import ImportPreviewTable from './import/ImportPreviewTable';
+import ColumnMappingModal from './import/ColumnMappingModal';
 
 export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
   const {
-    file, headers, parsedData, conflictStrategy, isProcessing, analysisProgress, importProgress, importResult, hasError,
+    file, headers, parsedData, conflictStrategy, isProcessing, analysisProgress, importProgress, importResult, hasError, productsToImport,
     setConflictStrategy, handleDownloadTemplate, handleFileUpload, handleReset, handleConfirmImport
   } = useExcelImport(onSuccess);
 
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const fileInputRef = useRef(null);
 
   if (!isOpen) return null;
@@ -32,13 +34,24 @@ export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
               <Database size={20} className="text-dh-accent" />
               นำเข้าสินค้าด้วย Excel
             </h2>
+
+            {/* Column Mapping Settings Button */}
+            <button
+              type="button"
+              onClick={() => setIsSettingsOpen(true)}
+              className="flex items-center gap-1.5 text-xs font-bold text-slate-700 dark:text-slate-200 hover:text-dh-accent bg-slate-100 hover:bg-dh-accent/10 dark:bg-slate-800 dark:hover:bg-dh-accent/20 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 transition-colors cursor-pointer"
+              title="ตั้งค่าการจับคู่หัวคอลัมน์ Excel เช่น SKU, จำนวนการนับ"
+            >
+              <Settings2 size={15} className="text-dh-accent" />
+              <span>ตั้งค่าหัวคอลัมน์</span>
+            </button>
             
             {/* Compact File Info in Header */}
             {file && !importResult && (
-              <div className="flex items-center gap-3 bg-slate-50 px-3 py-1.5 rounded-lg border border-slate-200">
+              <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
                 <CheckCircle size={16} className="text-green-500" />
                 <div className="flex flex-col">
-                  <span className="text-xs font-bold text-slate-700 leading-tight max-w-[250px] truncate">{file.name}</span>
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-200 leading-tight max-w-[200px] truncate">{file.name}</span>
                   <span className="text-[10px] text-slate-500 leading-tight">{parsedData.length} แถว</span>
                 </div>
                 <button 
@@ -46,14 +59,14 @@ export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
                     handleReset(); 
                     if (fileInputRef.current) fileInputRef.current.value = ''; 
                   }}
-                  className="ml-2 text-[11px] font-bold text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 px-2 py-1 rounded transition-colors"
+                  className="ml-2 text-[11px] font-bold text-red-500 hover:text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 px-2 py-1 rounded transition-colors cursor-pointer"
                 >
                   เปลี่ยนไฟล์
                 </button>
               </div>
             )}
           </div>
-          <button onClick={onClose} className="p-1.5 text-dh-muted hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-colors outline-hidden"><X size={20}/></button>
+          <button onClick={onClose} className="p-1.5 text-dh-muted hover:bg-red-500/10 hover:text-red-500 rounded-lg transition-colors outline-hidden cursor-pointer"><X size={20}/></button>
         </div>
 
         {/* Body */}
@@ -127,6 +140,7 @@ export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
                     handleDownloadTemplate={handleDownloadTemplate}
                     handleFileUpload={handleFileUpload}
                     fileInputRef={fileInputRef}
+                    onOpenColumnSettings={() => setIsSettingsOpen(true)}
                   />
                 </div>
               )}
@@ -152,11 +166,11 @@ export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
             <div className="flex-1">
               {file && (
                 <div className="flex items-center gap-2 text-sm">
-                  <span className="font-bold text-slate-600">จัดการข้อมูลซ้ำ:</span>
+                  <span className="font-bold text-slate-600 dark:text-slate-300">จัดการข้อมูลซ้ำ:</span>
                   <select 
                     value={conflictStrategy}
                     onChange={(e) => setConflictStrategy(e.target.value)}
-                    className="px-3 py-1.5 bg-dh-base border border-slate-300 rounded-lg outline-hidden focus:ring-2 focus:ring-indigo-500 font-bold min-w-[150px]"
+                    className="px-3 py-1.5 bg-dh-base border border-slate-300 dark:border-slate-700 rounded-lg outline-hidden focus:ring-2 focus:ring-indigo-500 font-bold min-w-[150px]"
                   >
                     <option value="overwrite">เขียนทับ (Overwrite)</option>
                     <option value="skip">ข้าม (Skip)</option>
@@ -184,14 +198,14 @@ export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
                 type="button" 
                 onClick={onClose} 
                 disabled={isProcessing} 
-                className="px-6 py-2.5 text-dh-main font-bold rounded-xl bg-dh-base border border-dh-border hover:bg-dh-border transition-colors text-sm shadow-xs disabled:opacity-50"
+                className="px-6 py-2.5 text-dh-main font-bold rounded-xl bg-dh-base border border-dh-border hover:bg-dh-border transition-colors text-sm shadow-xs disabled:opacity-50 cursor-pointer"
               >
                 ยกเลิก
               </button>
               <button 
                 onClick={handleConfirmImport} 
-                disabled={!file || isProcessing || !headers.includes('SKU') || hasError}
-                className="px-8 py-2.5 bg-dh-accent text-white rounded-xl font-bold hover:bg-dh-accent-hover flex items-center gap-2 shadow-xs transition-transform active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={!file || isProcessing || (productsToImport && productsToImport.length === 0) || hasError}
+                className="px-8 py-2.5 bg-dh-accent text-white rounded-xl font-bold hover:bg-dh-accent-hover flex items-center gap-2 shadow-xs transition-transform active:scale-95 text-sm disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <UploadCloud size={16}/>}
                 {isProcessing ? 'กำลังบันทึกข้อมูล...' : 'ยืนยันนำเข้าข้อมูล'}
@@ -200,6 +214,17 @@ export default function InventoryImportModal({ isOpen, onClose, onSuccess }) {
           </div>
         )}
       </div>
+
+      {/* Column Mapping Settings Modal */}
+      <ColumnMappingModal 
+        isOpen={isSettingsOpen} 
+        onClose={() => setIsSettingsOpen(false)}
+        onSaved={() => {
+          if (file) {
+            handleFileUpload(file);
+          }
+        }}
+      />
     </div>
   );
 }

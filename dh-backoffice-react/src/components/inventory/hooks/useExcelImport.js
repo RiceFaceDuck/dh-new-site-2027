@@ -3,6 +3,11 @@ import * as XLSX from 'xlsx';
 import { inventoryService } from '../../../firebase/inventoryService';
 import toast from 'react-hot-toast';
 import { detectRowChanges } from '../import/excelDiffService';
+import { 
+  getColumnMappings, 
+  getValueByAliases, 
+  findMatchingHeader 
+} from '../import/columnMappingService';
 
 export const EXPECTED_HEADERS = [
   'SKU', 'Name', 'Category', 'Brand', 'Unit', 'Price (ราคาส่ง)', 'RetailPrice', 
@@ -41,7 +46,7 @@ export function useExcelImport(onSuccess) {
     XLSX.writeFile(wb, 'DH_Inventory_Import_Template.xlsx');
   };
 
-  const mapDataToSchema = (rawRow, isNew, existing = null) => {
+  const mapDataToSchema = (rawRow, isNew, existing = null, currentMappings = getColumnMappings()) => {
     const num = (val) => {
       if (val === undefined || val === '') return undefined;
       const n = Number(val);
@@ -57,7 +62,8 @@ export function useExcelImport(onSuccess) {
     };
 
     const mapped = {};
-    mapped.sku = String(rawRow['SKU'] || '').trim().toUpperCase();
+    const rawSku = getValueByAliases(rawRow, currentMappings.sku) || rawRow['SKU'];
+    mapped.sku = String(rawSku || '').trim().toUpperCase();
     
     const setIfDef = (key, val, defaultIfNew) => {
       if (val !== undefined) mapped[key] = val;
@@ -66,20 +72,40 @@ export function useExcelImport(onSuccess) {
 
     // 🛡️ Selective Column-Level Patching:
     // ช่องว่าง = ไม่แตะต้องข้อมูลเดิมในระบบ | มีค่า = เขียนทับเฉพาะคอลัมน์นั้น
-    setIfDef('name', str(rawRow['Name']), str(rawRow['SKU']) || '');
+    const rawName = getValueByAliases(rawRow, currentMappings.name) || rawRow['Name'];
+    setIfDef('name', str(rawName), str(rawSku) || '');
     setIfDef('category', str(rawRow['Category']), 'Other');
     setIfDef('brand', str(rawRow['Brand']), '');
     setIfDef('unit', str(rawRow['Unit']), 'ชิ้น');
     
-    // 🏷️ Smart Price Recognition: รองรับ 'Price (ราคาส่ง)', 'Price', 'ราคาส่ง'
-    const rawPrice = rawRow['Price (ราคาส่ง)'] ?? rawRow['Price(ราคาส่ง)'] ?? rawRow['Price'] ?? rawRow['price'] ?? rawRow['ราคาส่ง'];
+    // 🏷️ Smart Price Recognition: รองรับ 'Price (ราคาส่ง)', 'Price', 'ราคาส่ง' หรือตามที่ตั้งค่า
+    const rawPrice = getValueByAliases(rawRow, currentMappings.price) 
+      ?? rawRow['Price (ราคาส่ง)'] 
+      ?? rawRow['Price(ราคาส่ง)'] 
+      ?? rawRow['Price'] 
+      ?? rawRow['price'] 
+      ?? rawRow['ราคาส่ง'];
     setIfDef('Price', num(rawPrice), 0);
-    setIfDef('retailPrice', num(rawRow['RetailPrice']), 0);
+
+    const rawRetail = getValueByAliases(rawRow, currentMappings.retailPrice) ?? rawRow['RetailPrice'];
+    setIfDef('retailPrice', num(rawRetail), 0);
     
     // --- Stock Logic ---
-    // 📦 Smart Stock Recognition: รองรับ 'นับสต๊อค', 'นับสต๊อก', 'StockQuantity', 'Stock'
-    const rawSQ = rawRow['นับสต๊อค'] ?? rawRow['นับสต๊อก'] ?? rawRow['StockQuantity'] ?? rawRow['stockQuantity'] ?? rawRow['Stock'] ?? rawRow['stock'];
-    const rawAS = rawRow['AddStock'] ?? rawRow['addStock'] ?? rawRow['เพิ่มสต๊อก'] ?? rawRow['เพิ่มสต๊อค'];
+    // 📦 Smart Stock Recognition: รองรับ 'จำนวนการนับ', 'นับสต๊อค', 'นับสต๊อก', 'StockQuantity' หรือตามที่ตั้งค่า
+    const rawSQ = getValueByAliases(rawRow, currentMappings.stockQuantity)
+      ?? rawRow['นับสต๊อค'] 
+      ?? rawRow['นับสต๊อก'] 
+      ?? rawRow['จำนวนการนับ']
+      ?? rawRow['StockQuantity'] 
+      ?? rawRow['stockQuantity'] 
+      ?? rawRow['Stock'] 
+      ?? rawRow['stock'];
+
+    const rawAS = getValueByAliases(rawRow, currentMappings.addStock)
+      ?? rawRow['AddStock'] 
+      ?? rawRow['addStock'] 
+      ?? rawRow['เพิ่มสต๊อก'] 
+      ?? rawRow['เพิ่มสต๊อค'];
 
     const hasSQ = rawSQ !== undefined && rawSQ !== '';
     const hasAS = rawAS !== undefined && rawAS !== '';
@@ -190,11 +216,17 @@ export function useExcelImport(onSuccess) {
         const data = XLSX.utils.sheet_to_json(ws, { defval: '' });
         
         if (data.length > 0) {
-          setHeaders(Object.keys(data[0]));
+          const fileHeaders = Object.keys(data[0]);
+          setHeaders(fileHeaders);
           
-          // 🚀 ขั้นที่ 1: ตรวจนับแถวทั้งหมด และกรองเฉพาะแถวที่มี SKU เบื้องต้น
+          const currentMappings = getColumnMappings();
+
+          // 🚀 ขั้นที่ 1: ตรวจนับแถวทั้งหมด และกรองเฉพาะแถวที่มี SKU (ยืดหยุ่นตามหัวคอลัมน์ที่ตั้งค่าไว้)
           const totalRows = data.length;
-          const rowsWithSku = data.filter(r => String(r['SKU'] || '').trim() !== '');
+          const rowsWithSku = data.filter(r => {
+            const rawSku = getValueByAliases(r, currentMappings.sku) || r['SKU'];
+            return rawSku !== undefined && String(rawSku).trim() !== '';
+          });
           const totalValidSkus = rowsWithSku.length;
 
           setAnalysisProgress({
@@ -208,14 +240,17 @@ export function useExcelImport(onSuccess) {
           // ให้ UI ได้ขยับแสดงสถานะรอบแรก
           await new Promise(r => setTimeout(r, 60));
 
-          const skus = rowsWithSku.map(r => String(r['SKU'] || '').trim().toUpperCase());
+          const skus = rowsWithSku.map(r => {
+            const rawSku = getValueByAliases(r, currentMappings.sku) || r['SKU'];
+            return String(rawSku || '').trim().toUpperCase();
+          });
           const fetchedExistingMap = await inventoryService.fetchExistingProducts(skus);
           setExistingMap(fetchedExistingMap);
           
           // 🔍 ตรวจจับ SKU ซ้ำในไฟล์ Excel (Duplicate In-File Detection)
           const skuFrequency = new Map();
           rowsWithSku.forEach(r => {
-            const s = String(r['SKU'] || '').trim().toUpperCase();
+            const s = String(getValueByAliases(r, currentMappings.sku) || r['SKU'] || '').trim().toUpperCase();
             if (s) skuFrequency.set(s, (skuFrequency.get(s) || 0) + 1);
           });
 
@@ -228,19 +263,25 @@ export function useExcelImport(onSuccess) {
             const chunk = rowsWithSku.slice(i, i + CHUNK_SIZE);
             
             for (const rawRow of chunk) {
-              const sku = String(rawRow['SKU'] || '').trim().toUpperCase();
+              const sku = String(getValueByAliases(rawRow, currentMappings.sku) || rawRow['SKU'] || '').trim().toUpperCase();
               if (!sku) continue;
 
               const isNew = !fetchedExistingMap.has(sku);
               const existing = fetchedExistingMap.get(sku);
-              const item = mapDataToSchema(rawRow, isNew, existing);
+              const item = mapDataToSchema(rawRow, isNew, existing, currentMappings);
               
               const isDuplicateInFile = (skuFrequency.get(sku) || 0) > 1;
+
+              // หาชื่อคอลัมน์จริงที่ตรงกับ SKU ในไฟล์เพื่อ map ลง preview
+              const actualSkuKey = findMatchingHeader(rawRow, currentMappings.sku) || 'SKU';
+              const rawName = getValueByAliases(rawRow, currentMappings.name);
 
               // แสดงชื่อสินค้าเดิมในพรีวิวเมื่อ Excel ไม่มีคอลัมน์ชื่อ เพื่อความชัดเจนของแอดมิน
               const previewRow = {
                 ...rawRow,
-                Name: rawRow['Name'] || existing?.name || (isNew ? sku : ''),
+                SKU: sku, // Ensure 'SKU' is always accessible
+                [actualSkuKey]: sku,
+                Name: rawRow['Name'] || rawName || existing?.name || (isNew ? sku : ''),
                 _isDuplicateInFile: isDuplicateInFile,
                 _duplicateWarning: isDuplicateInFile ? `พบ SKU ${sku} ซ้ำอยู่ในไฟล์ กรุณาตรวจสอบ` : null
               };
@@ -355,7 +396,7 @@ export function useExcelImport(onSuccess) {
   };
 
   return {
-    file, headers, parsedData, conflictStrategy, isProcessing, analysisProgress, importProgress, importResult, hasError,
+    file, headers, parsedData, conflictStrategy, isProcessing, analysisProgress, importProgress, importResult, hasError, productsToImport,
     setConflictStrategy, handleDownloadTemplate, handleFileUpload, handleReset, handleConfirmImport
   };
 }

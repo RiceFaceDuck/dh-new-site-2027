@@ -1,9 +1,12 @@
 import React, { useMemo, useState } from 'react';
+import { getColumnMappings, isHeaderMatching } from './columnMappingService';
 
 export default function ImportPreviewTable({ headers, parsedData }) {
   const [currentPage, setCurrentPage] = useState(1);
   const [statusFilter, setStatusFilter] = useState('ALL'); // 'ALL' | 'NEW' | 'CHANGED' | 'UNCHANGED' | 'ERROR'
   const pageSize = 50;
+
+  const mappings = useMemo(() => getColumnMappings(), []);
 
   const STATUS_PRIORITY = useMemo(() => ({ ERROR: 0, NEW: 1, CHANGED: 2, UNCHANGED: 3 }), []);
 
@@ -24,7 +27,7 @@ export default function ImportPreviewTable({ headers, parsedData }) {
   const duplicateSkus = useMemo(() => {
     const list = [];
     parsedData.forEach(d => {
-      const s = String(d['SKU'] || '').trim().toUpperCase();
+      const s = String(d['SKU'] || (d._actualSkuHeader && d[d._actualSkuHeader]) || '').trim().toUpperCase();
       if (d._isDuplicateInFile && s && !list.includes(s)) {
         list.push(s);
       }
@@ -53,17 +56,18 @@ export default function ImportPreviewTable({ headers, parsedData }) {
     return filteredAndSortedData.slice(start, start + pageSize);
   }, [filteredAndSortedData, activePage, pageSize]);
 
-  const priority = useMemo(() => ['SKU', 'Name', 'นับสต๊อค', 'StockQuantity', 'AddStock', 'Price (ราคาส่ง)', 'Price', 'RetailPrice'], []);
   const sortedHeaders = useMemo(() => {
-    return [...headers].sort((a, b) => {
-      const idxA = priority.indexOf(a);
-      const idxB = priority.indexOf(b);
-      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
-      if (idxA !== -1) return -1;
-      if (idxB !== -1) return 1;
-      return 0;
-    });
-  }, [headers, priority]);
+    const getRank = (h) => {
+      if (isHeaderMatching(h, mappings.sku)) return 1;
+      if (isHeaderMatching(h, mappings.name)) return 2;
+      if (isHeaderMatching(h, mappings.stockQuantity)) return 3;
+      if (isHeaderMatching(h, mappings.addStock)) return 4;
+      if (isHeaderMatching(h, mappings.price)) return 5;
+      if (isHeaderMatching(h, mappings.retailPrice)) return 6;
+      return 99;
+    };
+    return [...headers].sort((a, b) => getRank(a) - getRank(b));
+  }, [headers, mappings]);
 
   const renderCell = (row, h) => {
     const val = String(row[h] || '').substring(0, 30);
@@ -72,9 +76,11 @@ export default function ImportPreviewTable({ headers, parsedData }) {
     // Check if this field was changed
     if (row._status === 'CHANGED' && row._changes) {
        const changeInfo = row._changes.find(c => {
-         if (['AddStock', 'เพิ่มสต๊อก', 'เพิ่มสต๊อค'].includes(h)) return c.field === 'AddStock' || (c.field === 'Stock' && c.type === 'add');
-         if (['นับสต๊อค', 'นับสต๊อก', 'StockQuantity', 'Stock', 'stock'].includes(h)) return c.field === h || (c.field === 'Stock' && c.type === 'adjustment');
-         if (['Price (ราคาส่ง)', 'Price(ราคาส่ง)', 'Price', 'price', 'ราคาส่ง'].includes(h)) return c.field === 'Price';
+         if (isHeaderMatching(h, mappings.addStock)) return c.field === 'AddStock' || (c.field === 'Stock' && c.type === 'add');
+         if (isHeaderMatching(h, mappings.stockQuantity)) return c.field === 'Stock' && c.type === 'adjustment';
+         if (isHeaderMatching(h, mappings.price)) return c.field === 'Price';
+         if (isHeaderMatching(h, mappings.retailPrice)) return c.field === 'RetailPrice';
+         if (isHeaderMatching(h, mappings.name)) return c.field === 'Name';
          return c.field === h;
        });
 

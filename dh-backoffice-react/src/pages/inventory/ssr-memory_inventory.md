@@ -186,5 +186,12 @@
       1) ใน `catalogShardSyncService.js` เพิ่มการจัดเก็บ `unit` ลง Shard เพื่อความสมบูรณ์
       2) ใน `excelDiffService.js` เพิ่ม Guard: หาก `existing.unit` ยังไม่มีในแคชเก่า หรือ `existing.fullDescription` ไม่มีในแคช Shards ไม่ให้นำมาฟ้องว่าเปลี่ยน
       3) ผลลัพธ์: รายการที่เป็นข้อมูลเดิมจะถูกมองเป็น `UNCHANGED` และเข้าสู่โหมด "ข้าม (100%)" ทันที ไม่เกิดการเขียนทับซ้ำซาก
+38. **ระบบตรวจจับหัวคอลัมน์ Excel แบบยืดหยุ่น และการแก้จุดคลิกกล่องอัพโหลด (Flexible Column Mapping & Upload Clickbox Fix):**
+    - *ปัญหา:* ไฟล์ Excel จากระบบอื่นใช้ชื่อหัวคอลัมน์ที่แตกต่าง (เช่น `*ชื่อSKU(ต้องระบุ)` และ `จำนวนการนับ` แทนที่จะเป็น `SKU` และ `นับสต๊อค`) ทำให้ระบบเดิมอ่านไม่ติด กลายเป็น 0 แถว และปุ่มกดยืนยันถูกล็อกเพราะเช็ค `headers.includes('SKU')` นอกจากนี้กล่องอัพโหลดคลิกโดนไอคอนหรือตัวหนังสือแล้วไม่ตอบสนองเพราะถูก DOM elements บังการคลิก
+    - *วิธีแก้:* 
+      1) สร้าง `columnMappingService.js` รองรับชื่อคอลัมน์ Alias หลากหลายรูปแบบ (ล้างอักขระพิเศษ `*`, `()`, ช่องว่าง และตัวพิมพ์เล็ก/ใหญ่) พร้อมระบบบันทึกความจำลง LocalStorage
+      2) สร้าง `ColumnMappingModal.jsx` เพิ่มปุ่ม "ตั้งค่าหัวคอลัมน์" บน Header และหน้า Import ให้ผู้ใช้เปิดเพิ่ม/ลบคำที่ยอมรับได้เองอย่างอิสระ
+      3) ใน `useExcelImport.js` และ `ImportPreviewTable.jsx` ใช้ `getValueByAliases` และ `isHeaderMatching` พร้อมปลดล็อกปุ่มยืนยันโดยเช็คจาก `productsToImport.length > 0`
+      4) ใน `ImportUploader.jsx` ใส่ `z-10` ที่ `<input type="file">` และใส่ `pointer-events-none` ให้ไอคอนและข้อความ ทำให้คลิกติดเต็มพื้นที่ 100%
 </pitfalls_and_solutions>
 
