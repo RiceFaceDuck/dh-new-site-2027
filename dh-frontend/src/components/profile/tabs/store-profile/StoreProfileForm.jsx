@@ -1,5 +1,5 @@
 import React from 'react';
-import { Store, ShieldAlert, ExternalLink, RefreshCw, Eye } from 'lucide-react';
+import { Store, ShieldAlert, ExternalLink, RefreshCw, Eye, Heart } from 'lucide-react';
 import StoreProfileBasicInfo from './StoreProfileBasicInfo';
 import StoreProfileSocialLinks from './StoreProfileSocialLinks';
 import StoreProfileLocation from './StoreProfileLocation';
@@ -65,6 +65,12 @@ const StoreProfileForm = ({
 
   const hasNoCredit = Number(userCredit || 0) <= 0;
 
+  // 📊 สถิตินามบัตรและหน้าร้าน 4 มิติ (Views, Visits, CTR, Likes)
+  const views = Math.max(0, Number(businessCardAd?.stats?.views || 0));
+  const visits = Math.max(0, Number(businessCardAd?.stats?.clicks ?? storeData?.viewCount ?? 0));
+  const ctr = views > 0 ? ((visits / views) * 100).toFixed(1) : '0.0';
+  const likes = Math.max(0, Number(storeData?.likeCount || 0));
+
   return (
     <div className="bg-white border border-slate-200/90 rounded-md shadow-md overflow-hidden animate-in fade-in duration-300">
       
@@ -100,18 +106,49 @@ const StoreProfileForm = ({
         </div>
 
         {/* Tier 2: Dedicated Metric & Ad Control Bar */}
-        <div className="bg-white/90 p-3 sm:px-4 sm:py-3 rounded-[2px] border border-slate-200/90 shadow-2xs flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-          {/* 🌟 ยอดเข้าชมหน้าร้าน (Store Profile Visits) */}
-          <div className="flex items-center gap-2" title="ยอดเข้าชมหน้าร้านพาร์ทเนอร์ทั้งหมด">
-            <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-[2px] border border-indigo-100/80">
-              <Eye size={15} />
-            </div>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xs font-bold text-slate-600">ยอดเข้าชมหน้าร้าน:</span>
-              <span className="font-mono font-black text-indigo-700 text-sm">
-                {Number(storeData?.viewCount || 0).toLocaleString()}
+        <div className="bg-white/90 p-3 sm:px-4 sm:py-3 rounded-[2px] border border-slate-200/90 shadow-2xs flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          {/* 🌟 สถิตินามบัตรและหน้าร้าน (Store & Ad Telemetry Metrics) */}
+          <div className="flex flex-wrap items-center gap-x-2 sm:gap-x-2.5 gap-y-1.5 text-xs">
+            {/* การมองเห็น */}
+            <div className="flex items-baseline gap-1" title="จำนวนครั้งที่นามบัตรโฆษณาแสดงผลในระบบ">
+              <span className="font-bold text-slate-600">การมองเห็น:</span>
+              <span className="font-mono font-black text-slate-800 text-sm">
+                {views.toLocaleString()}
               </span>
               <span className="text-[11px] text-slate-400">ครั้ง</span>
+            </div>
+
+            <span className="text-slate-300 font-light select-none">|</span>
+
+            {/* เข้าชมร้าน */}
+            <div className="flex items-baseline gap-1" title="จำนวนครั้งที่มีผู้เข้าชมหน้าร้าน">
+              <span className="font-bold text-slate-600">เข้าชมร้าน:</span>
+              <span className="font-mono font-black text-indigo-700 text-sm">
+                {visits.toLocaleString()}
+              </span>
+              <span className="text-[11px] text-slate-400">ครั้ง</span>
+            </div>
+
+            <span className="text-slate-300 font-light select-none">|</span>
+
+            {/* CTR */}
+            <div className="flex items-baseline gap-1" title="อัตราส่วนการคลิกเข้าชมเทียบกับการมองเห็น (Click-Through Rate)">
+              <span className="font-bold text-slate-600">CTR:</span>
+              <span className="font-mono font-black text-emerald-600 text-sm">
+                {ctr}%
+              </span>
+            </div>
+
+            <span className="text-slate-300 font-light select-none">|</span>
+
+            {/* ถูกใจ */}
+            <div className="flex items-baseline gap-1" title="ยอดผู้กดถูกใจร้านค้า">
+              <span className="font-bold text-slate-600 flex items-center gap-1">
+                <Heart size={13} className="text-rose-500 fill-rose-500 inline-block shrink-0" /> ถูกใจ:
+              </span>
+              <span className="font-mono font-black text-rose-600 text-sm">
+                {likes.toLocaleString()}
+              </span>
             </div>
           </div>
 
