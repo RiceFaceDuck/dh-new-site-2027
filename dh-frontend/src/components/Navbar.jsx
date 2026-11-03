@@ -1,5 +1,5 @@
-import { useState, useCallback, useEffect } from 'react';
-import { Search, ShoppingCart, User, LogOut, Wallet, LayoutDashboard, ChevronDown, Loader2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Search, ShoppingCart, User } from 'lucide-react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../hooks/useCart';
 import { useNavbarScroll } from '../hooks/useNavbarScroll';
@@ -45,11 +45,6 @@ const Navbar = () => {
   const {
     currentUser,
     loading,
-    isDropdownOpen,
-    setIsDropdownOpen,
-    isLoggingOut,
-    dropdownRef,
-    handleLogout,
     getInitial,
   } = useNavbarAuth();
 
@@ -68,12 +63,7 @@ const Navbar = () => {
     }
   }, [location.pathname, location.search]);
 
-  // ปิด Dropdown เมื่อ Scroll ลง
-  const handleScrollDown = useCallback(() => {
-    setIsDropdownOpen(false);
-  }, [setIsDropdownOpen]);
-
-  const { isVisible } = useNavbarScroll(handleScrollDown);
+  const { isVisible } = useNavbarScroll();
 
   // ค้นหาสินค้า
   const handleSearchSubmit = (e) => {
@@ -152,7 +142,7 @@ const Navbar = () => {
             <div className="h-6 w-px bg-white/20 hidden md:block mx-1"></div>
 
             {/* 🌟 User Profile / Auth Area (Desktop Only: md ขึ้นไป ส่วนมือถือใช้แถบเมนู BottomNav ด้านล่าง) 🌟 */}
-            <div className="relative hidden md:block" ref={dropdownRef}>
+            <div className="relative hidden md:block">
               {loading ? (
                 // 🌀 กำลังตรวจสอบสถานะ: แสดง Skeleton สวยงาม ป้องกัน Flash เข้าสู่ระบบ
                 <div className="w-20 sm:w-28 h-8 sm:h-9 bg-white/10 rounded-md animate-pulse border border-white/10" />
@@ -169,83 +159,32 @@ const Navbar = () => {
                       <span>เข้าสู่ระบบ</span>
                     </button>
                   ) : (
-                // 🟢 ล็อกอินแล้ว: แสดง Avatar และ Dropdown
-                <>
-                  <button 
-                    type="button"
-                    aria-haspopup="true"
-                    aria-expanded={isDropdownOpen}
-                    aria-label="เมนูโปรไฟล์ผู้ใช้งาน"
-                    onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                    className={`flex items-center gap-2.5 p-1.5 pr-3 rounded-md border transition-all duration-300 ${
-                      isDropdownOpen ? 'bg-white/10 border-brand-accent shadow-inner' : 'bg-transparent border-white/20 hover:border-brand-accent hover:bg-white/10 shadow-xs'
-                    }`}
-                  >
-                    <NavAvatar 
-                      photoURL={currentUser.photoURL}
-                      navAvatarError={navAvatarError}
-                      setNavAvatarError={setNavAvatarError}
-                      email={currentUser.email}
-                      getInitial={getInitial}
-                    />
-                    
-                    <div className="flex flex-col items-start">
-                      <span className="text-xs font-bold text-white truncate max-w-[100px] leading-none mb-0.5">
-                        {currentUser.displayName || 'พาร์ทเนอร์'}
-                      </span>
-                      <span className="text-[10px] text-brand-light font-medium leading-none">Online</span>
-                    </div>
-                    <ChevronDown size={14} className={`text-slate-300 transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
-                  </button>
-
-                  {/* 🔽 Dropdown Menu */}
-                  {isDropdownOpen && (
-                    <div className="absolute right-0 mt-3 w-64 bg-white rounded-md shadow-xl border border-slate-200 overflow-hidden transform origin-top-right transition-all animate-fade-in z-50">
+                    // 🟢 ล็อกอินแล้ว: แสดง Avatar และกดเพื่อไปหน้าโปรไฟล์ทันที
+                    <button 
+                      type="button"
+                      aria-label="ไปยังหน้าโปรไฟล์ผู้ใช้งาน"
+                      onClick={() => navigate('/profile')}
+                      onMouseEnter={() => import('../pages/Profile')}
+                      className="flex items-center gap-2.5 p-1.5 pr-3 rounded-md border border-white/20 hover:border-brand-accent hover:bg-white/10 shadow-xs transition-all duration-300 cursor-pointer active:scale-95"
+                    >
+                      <NavAvatar 
+                        photoURL={currentUser.photoURL}
+                        navAvatarError={navAvatarError}
+                        setNavAvatarError={setNavAvatarError}
+                        email={currentUser.email}
+                        getInitial={getInitial}
+                      />
                       
-                      {/* Header Info */}
-                      <div className="p-4 bg-slate-50/80 border-b border-slate-200">
-                        <p className="text-sm font-bold text-slate-800 truncate">{currentUser.displayName || 'ผู้ใช้งาน DH Notebook'}</p>
-                        <p className="text-xs text-slate-500 truncate mt-0.5">{currentUser.email}</p>
+                      <div className="flex flex-col items-start">
+                        <span className="text-xs font-bold text-white truncate max-w-[100px] leading-none mb-0.5">
+                          {currentUser.displayName || 'พาร์ทเนอร์'}
+                        </span>
+                        <span className="text-[10px] text-brand-light font-medium leading-none">Online</span>
                       </div>
-                      
-                      {/* Menu Links */}
-                      <div className="p-2 space-y-1">
-                        <Link 
-                          to="/profile?tab=overview" 
-                          onClick={() => setIsDropdownOpen(false)}
-                          className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-md transition-colors ${location.search.includes('tab=overview') || !location.search ? 'bg-brand-light/30 text-brand' : 'text-slate-600 hover:bg-slate-50 hover:text-brand'}`}
-                        >
-                          <LayoutDashboard size={18} className={location.search.includes('tab=overview') || !location.search ? 'text-brand' : 'text-slate-400'} /> 
-                          แดชบอร์ดส่วนตัว
-                        </Link>
-                        
-                        <Link 
-                          to="/profile?tab=wallet" 
-                          onClick={() => setIsDropdownOpen(false)}
-                          className={`flex items-center gap-3 px-3 py-2.5 text-sm font-medium rounded-md transition-colors ${location.search.includes('tab=wallet') ? 'bg-brand-light/30 text-brand' : 'text-slate-600 hover:bg-slate-50 hover:text-brand'}`}
-                        >
-                          <Wallet size={18} className={location.search.includes('tab=wallet') ? 'text-brand' : 'text-slate-400'} /> 
-                          เครดิต & กระเป๋าเงิน
-                        </Link>
-                      </div>
-
-                      {/* Footer Actions */}
-                      <div className="p-2 border-t border-slate-200 bg-slate-50/50">
-                        <button 
-                          onClick={handleLogout}
-                          disabled={isLoggingOut}
-                          className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-rose-600 hover:bg-rose-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        >
-                          {isLoggingOut ? 'กำลังออกจากระบบ...' : 'ออกจากระบบ'}
-                          {isLoggingOut ? <Loader2 size={16} className="animate-spin" /> : <LogOut size={16} />}
-                        </button>
-                      </div>
-                    </div>
+                    </button>
                   )}
                 </>
               )}
-            </>
-          )}
             </div>
 
           </div>
