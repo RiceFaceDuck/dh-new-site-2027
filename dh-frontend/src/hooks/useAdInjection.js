@@ -3,6 +3,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { marketingService } from '../firebase/marketingService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { safeJsonParse } from 'dh-shared';
 import { fetchAllActivePartners } from '../firebase/partnerLocationService';
 import { calculateDistance } from '../utils/geoUtils';
 
@@ -38,11 +39,38 @@ export const useAdInjection = (regularProducts, adLimit = 20) => {
     try {
       setLoadingAds(true);
       
-      // 📥 1. ดึงการตั้งค่า Ratio จากระบบหลังบ้าน (Marketing Settings)
-      const settingsSnap = await getDoc(doc(db, getCollectionPath('settings'), 'marketing'));
-      if (settingsSnap.exists() && settingsSnap.data().displayRatio) {
-        const ratio = Number(settingsSnap.data().displayRatio);
-        if (ratio > 0) setDisplayRatio(ratio);
+      // 📥 1. ดึงการตั้งค่า Ratio จากระบบหลังบ้าน (Marketing Settings) พร้อม SessionStorage Shield
+      let ratioLoaded = false;
+      if (typeof window !== 'undefined' && window.sessionStorage) {
+        try {
+          const cachedRatioStr = sessionStorage.getItem('dh_marketing_ratio_cache');
+          if (cachedRatioStr) {
+            const parsed = safeJsonParse(cachedRatioStr);
+            if (parsed && (Date.now() - (parsed.timestamp || 0)) < 30 * 60 * 1000) {
+              const ratio = Number(parsed.ratio || 10);
+              if (ratio > 0) setDisplayRatio(ratio);
+              ratioLoaded = true;
+            }
+          }
+        } catch (e) {}
+      }
+
+      if (!ratioLoaded) {
+        const settingsSnap = await getDoc(doc(db, getCollectionPath('settings'), 'marketing'));
+        if (settingsSnap.exists() && settingsSnap.data().displayRatio) {
+          const ratio = Number(settingsSnap.data().displayRatio);
+          if (ratio > 0) {
+            setDisplayRatio(ratio);
+            if (typeof window !== 'undefined' && window.sessionStorage) {
+              try {
+                sessionStorage.setItem('dh_marketing_ratio_cache', JSON.stringify({
+                  timestamp: Date.now(),
+                  ratio
+                }));
+              } catch (e) {}
+            }
+          }
+        }
       }
 
       // 📥 2. ดึงข้อมูลโฆษณา 3 ประเภท + พาร์ทเนอร์ทั้งหมด (อาศัย LocalStorage Tier 1 = 0 Reads)

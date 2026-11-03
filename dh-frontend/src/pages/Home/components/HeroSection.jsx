@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../firebase/config';
 import { DEFAULT_HERO_CONFIG } from '../../../firebase/storefrontSettingsService';
 import { getRenderableImageUrl } from '../../../utils/imageUtils';
@@ -34,27 +34,56 @@ const HeroSection = () => {
   const touchEndX = useRef(0);
 
   useEffect(() => {
-    const docRef = doc(db, getCollectionPath('settings'), HERO_DOC);
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const newConfig = { ...DEFAULT_HERO_CONFIG, ...docSnap.data() };
-        setConfig(newConfig);
-        try {
-          localStorage.setItem(CACHE_KEY, JSON.stringify({
-            data: newConfig,
-            timestamp: Date.now()
-          }));
-        } catch (e) {
-          // ignore
+    let isMounted = true;
+    const now = Date.now();
+    const HERO_CACHE_TTL = 60 * 60 * 1000; // 1 ชั่วโมง (Warm Cache Shield: 0 Read)
+
+    // 1. ตรวจสอบว่าใน LocalStorage มีข้อมูลที่ยังไม่หมดอายุหรือไม่
+    try {
+      const cached = localStorage.getItem(CACHE_KEY);
+      if (cached) {
+        const parsed = safeJsonParse(cached);
+        const isFresh = (now - (parsed?.timestamp || 0)) < HERO_CACHE_TTL;
+        if (isFresh && parsed?.data) {
+          setIsLoading(false);
+          return; // Warm Cache Shield: 0 Read
         }
       }
-      setIsLoading(false);
-    }, (error) => {
-      console.error("🔥 Error listening to hero config:", error);
-      setIsLoading(false);
-    });
+    } catch (e) {
+      // LocalStorage access guard
+    }
 
-    return () => unsubscribe();
+    // 2. ถ้าไม่มีแคชหรือแคชหมดอายุ จึงอ่าน getDoc ครั้งเดียว (Cold Start: 1 Read)
+    const fetchHeroConfig = async () => {
+      try {
+        const docRef = doc(db, getCollectionPath('settings'), HERO_DOC);
+        const docSnap = await getDoc(docRef);
+        if (isMounted && docSnap.exists()) {
+          const newConfig = { ...DEFAULT_HERO_CONFIG, ...docSnap.data() };
+          setConfig(newConfig);
+          try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+              data: newConfig,
+              timestamp: Date.now()
+            }));
+          } catch (e) {
+            // ignore
+          }
+        }
+      } catch (error) {
+        console.error("🔥 Error fetching hero config:", error);
+      } finally {
+        if (isMounted) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchHeroConfig();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const isSystemActive = config?.isActive !== false;

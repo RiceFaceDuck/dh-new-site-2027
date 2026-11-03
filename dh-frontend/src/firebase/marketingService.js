@@ -6,6 +6,7 @@ import {
 
 import { trackAdView, trackAdClick, logImpression, logClick } from './marketingAnalyticsService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { safeJsonParse } from 'dh-shared';
 import { userProfileCache } from './user/userDocumentSubscriptionManager';
 
 // 🚀 HOTFIX: แยก Cache ตามประเภทโฆษณาเพื่อป้องกันการจำค่าทับซ้อนกัน
@@ -15,6 +16,10 @@ const CACHE_LIFETIME = 5 * 60 * 1000;
 // 🛡️ Quota Shield: แคชโฆษณาตามรายผู้ใช้เพื่อป้องกันการยิง 3 Collection ซ้ำซ้อน
 const userAdsCache = new Map();
 const USER_ADS_CACHE_TTL = 3 * 60 * 1000; 
+
+// 🛡️ Prismatic Quota Shield: SessionStorage Shield (30 นาที) + Single-Flight Concurrency Control
+const SESSION_ADS_CACHE_TTL = 30 * 60 * 1000;
+const singleFlightAdsMap = new Map(); 
 
 export const marketingService = {
   
@@ -34,88 +39,133 @@ export const marketingService = {
     const now = Date.now();
     const lastFetchTime = activeAdsCache.lastFetch[adType] || 0;
     
-    // ใช้ Cache ถ้ายังไม่หมดอายุ
+    // 1. Tier 1: In-Memory Singleton Cache (0 Read Quota)
     if (activeAdsCache.data[adType] && (now - lastFetchTime) < CACHE_LIFETIME) {
       return activeAdsCache.data[adType];
     }
-    
-    try {
-      // 🚀 SSOT Optimization: ใช้ partner_ads เป็น Single Source of Truth รวมทุกประเภทโฆษณา
-      const collectionName = 'partner_ads';
-      const adsRef = collection(db, getCollectionPath(collectionName));
-      // 🛡️ Quota Shield: ดึงเท่าที่แสดงผลจริง 30 รายการ เพื่อประหยัดโควต้าอ่าน Firestore
-      const q = query(adsRef, where('status', 'in', ['active', 'ACTIVE']), where('type', '==', adType), limit(30));
-      const snapshot = await getDocs(q);
-      
-      const adsList = snapshot.docs.map(doc => ({ 
-        id: doc.id, 
-        _collection: collectionName,
-        ...doc.data() 
-      }));
 
-      // 🛡️ Credit Point Protection: ไม่เรียก/ไม่นำส่งโฆษณาจาก Account ที่ credit point เหลือ 0
-      const validAds = [];
-      const currentUid = auth.currentUser?.uid;
-
-      for (const ad of adsList) {
-        // 1. กรองจากสถานะบนตัวเอกสารโฆษณาโดยตรงก่อน (0 Read Quota)
-        if (ad.status === 'OUT_OF_CREDIT' || ad.isActive === false) {
-          continue;
-        }
-        if (ad.creditPoints !== undefined && Number(ad.creditPoints) <= 0) {
-          continue;
-        }
-
-        if (!ad.ownerId) {
-          validAds.push(ad);
-          continue;
-        }
-
-        // 2. ตรวจสอบจาก Cache ก่อน (0 Read Quota Shield)
-        const cachedUser = userProfileCache.getProfile(ad.ownerId);
-        if (cachedUser) {
-          if (Number(cachedUser.creditPoints || 0) <= 0) {
-            continue; // ข้าม ไม่แสดงโฆษณา
-          }
-          validAds.push(ad);
-          continue;
-        }
-
-        // 3. 🛡️ Permission Guard: ถ้าเป็นเจ้าของบัญชีตัวเอง สามารถอ่านเพื่ออัปเดตแคชได้
-        // แต่ถ้าเป็นผู้เข้าชมทั่วไป (Guest) ห้ามยิงอ่าน users/{ownerId} เพราะจะติด Rule Permission Denied 30 ครั้ง
-        if (currentUid && currentUid === ad.ownerId) {
-          try {
-            const userRef = doc(db, getCollectionPath('users'), ad.ownerId);
-            const userSnap = await getDoc(userRef);
-            if (userSnap.exists()) {
-              const userData = userSnap.data();
-              userProfileCache.setProfile(ad.ownerId, userData);
-              if (Number(userData.creditPoints || 0) <= 0) {
-                continue; // ข้าม ไม่แสดงโฆษณา
-              }
-            }
-          } catch (e) {
-            // ปล่อยผ่านอย่างปลอดภัย
+    // 2. Tier 2: SessionStorage Shield (0 Read Quota ข้ามการ Refresh / New Tab ในเซสชันเดิม)
+    const sessionKey = `dh_ads_cache_${adType}`;
+    if (typeof window !== 'undefined' && window.sessionStorage) {
+      try {
+        const cachedStr = sessionStorage.getItem(sessionKey);
+        if (cachedStr) {
+          const parsed = safeJsonParse(cachedStr);
+          if (parsed && (now - (parsed.timestamp || 0)) < SESSION_ADS_CACHE_TTL && Array.isArray(parsed.data)) {
+            // คืนค่าลง Memory Cache เพื่อความเร็วสูงสุดในรอบถัดไป
+            activeAdsCache.data[adType] = parsed.data;
+            activeAdsCache.lastFetch[adType] = now;
+            return parsed.data;
           }
         }
-
-        validAds.push(ad);
+      } catch (e) {
+        // SessionStorage access guard
       }
-
-      validAds.sort((a, b) => {
-        const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (new Date(a.createdAt).getTime() || 0);
-        const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (new Date(b.createdAt).getTime() || 0);
-        return timeB - timeA;
-      });
-      const limitedAds = validAds; // โชว์โฆษณาสูงสุด 30 ตัวต่อรอบ
-
-      activeAdsCache.data[adType] = limitedAds;
-      activeAdsCache.lastFetch[adType] = now;
-      return limitedAds;
-    } catch (error) {
-      console.error(`❌ Error fetching active ${adType}:`, error);
-      return []; 
     }
+
+    // 3. Single-Flight Concurrency Control: ป้องกันคำขอคู่ขนานซ้ำซ้อน
+    if (singleFlightAdsMap.has(adType)) {
+      return singleFlightAdsMap.get(adType);
+    }
+
+    const fetchPromise = (async () => {
+      try {
+        // 🚀 SSOT Optimization: ใช้ partner_ads เป็น Single Source of Truth รวมทุกประเภทโฆษณา
+        const collectionName = 'partner_ads';
+        const adsRef = collection(db, getCollectionPath(collectionName));
+        // 🛡️ Quota Shield: ดึงเท่าที่แสดงผลจริง 30 รายการ เพื่อประหยัดโควต้าอ่าน Firestore
+        const q = query(adsRef, where('status', 'in', ['active', 'ACTIVE']), where('type', '==', adType), limit(30));
+        const snapshot = await getDocs(q);
+        
+        const adsList = snapshot.docs.map(doc => ({ 
+          id: doc.id, 
+          _collection: collectionName,
+          ...doc.data() 
+        }));
+
+        // 🛡️ Credit Point Protection: ไม่เรียก/ไม่นำส่งโฆษณาจาก Account ที่ credit point เหลือ 0
+        const validAds = [];
+        const currentUid = auth.currentUser?.uid;
+
+        for (const ad of adsList) {
+          // 1. กรองจากสถานะบนตัวเอกสารโฆษณาโดยตรงก่อน (0 Read Quota)
+          if (ad.status === 'OUT_OF_CREDIT' || ad.isActive === false) {
+            continue;
+          }
+          if (ad.creditPoints !== undefined && Number(ad.creditPoints) <= 0) {
+            continue;
+          }
+
+          if (!ad.ownerId) {
+            validAds.push(ad);
+            continue;
+          }
+
+          // 2. ตรวจสอบจาก Cache ก่อน (0 Read Quota Shield)
+          const cachedUser = userProfileCache.getProfile(ad.ownerId);
+          if (cachedUser) {
+            if (Number(cachedUser.creditPoints || 0) <= 0) {
+              continue; // ข้าม ไม่แสดงโฆษณา
+            }
+            validAds.push(ad);
+            continue;
+          }
+
+          // 3. 🛡️ Permission Guard: ถ้าเป็นเจ้าของบัญชีตัวเอง สามารถอ่านเพื่ออัปเดตแคชได้
+          // แต่ถ้าเป็นผู้เข้าชมทั่วไป (Guest) ห้ามยิงอ่าน users/{ownerId} เพราะจะติด Rule Permission Denied 30 ครั้ง
+          if (currentUid && currentUid === ad.ownerId) {
+            try {
+              const userRef = doc(db, getCollectionPath('users'), ad.ownerId);
+              const userSnap = await getDoc(userRef);
+              if (userSnap.exists()) {
+                const userData = userSnap.data();
+                userProfileCache.setProfile(ad.ownerId, userData);
+                if (Number(userData.creditPoints || 0) <= 0) {
+                  continue; // ข้าม ไม่แสดงโฆษณา
+                }
+              }
+            } catch (e) {
+              // ปล่อยผ่านอย่างปลอดภัย
+            }
+          }
+
+          validAds.push(ad);
+        }
+
+        validAds.sort((a, b) => {
+          const timeA = a.createdAt?.toMillis ? a.createdAt.toMillis() : (new Date(a.createdAt).getTime() || 0);
+          const timeB = b.createdAt?.toMillis ? b.createdAt.toMillis() : (new Date(b.createdAt).getTime() || 0);
+          return timeB - timeA;
+        });
+        const limitedAds = validAds; // โชว์โฆษณาสูงสุด 30 ตัวต่อรอบ
+
+        // บันทึกลง Memory Cache
+        activeAdsCache.data[adType] = limitedAds;
+        activeAdsCache.lastFetch[adType] = now;
+
+        // บันทึกลง SessionStorage Shield
+        if (typeof window !== 'undefined' && window.sessionStorage) {
+          try {
+            sessionStorage.setItem(sessionKey, JSON.stringify({
+              timestamp: now,
+              data: limitedAds
+            }));
+          } catch (storageErr) {
+            // Storage quota guard
+          }
+        }
+
+        return limitedAds;
+      } catch (error) {
+        console.error(`❌ Error fetching active ${adType}:`, error);
+        return []; 
+      } finally {
+        singleFlightAdsMap.delete(adType);
+      }
+    })();
+
+    singleFlightAdsMap.set(adType, fetchPromise);
+    return fetchPromise;
   },
 
   submitPartnerAd: async (userId, adType, adData, creditLimitVal) => {
