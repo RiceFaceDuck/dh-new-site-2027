@@ -207,8 +207,10 @@ const ProductDetail = () => {
               handleAddToCart={handleAddToCart}
               handleBuyNow={handleBuyNow}
               calculateEarnedPoints={calculateEarnedPoints}
-              shopeeUrl={product.shopeeUrl}
-              lazadaUrl={product.lazadaUrl}
+              shopeeUrl={product.shopeeUrl || product.externalLinks?.shopee}
+              lazadaUrl={product.lazadaUrl || product.externalLinks?.lazada}
+              tiktokUrl={product.tiktokUrl || product.externalLinks?.tiktok}
+              facebookUrl={product.facebookUrl || product.externalLinks?.facebook}
               lineAddFriendUrl={footerConfig?.company?.lineAddFriendUrl}
               variantOptions={product.variantOptions}
               variants={product.variants}

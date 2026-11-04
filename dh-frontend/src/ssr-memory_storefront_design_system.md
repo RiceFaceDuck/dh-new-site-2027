@@ -76,4 +76,22 @@
    - **ตำแหน่ง PC**: อยู่ใน Footer คอลัมน์แรก (`FooterBrand.jsx`) ใต้กรอบ 4 Trust Badges สไตล์ dark retro-tech
    - **ตำแหน่ง Mobile/Tablet (< lg)**: เนื่องจาก Footer บนจอมือถือถูกซ่อนไว้ จึงวาง `VisitorCounterBadge` โหมด `mobile-card` ไว้ด้านล่างสุดของ `MainLayout.jsx` เหนือ BottomNav ให้เห็นสบายตาพอดีเมื่อเลื่อนลงมาล่างสุด
    - **ความสอดคล้อง**: ขอบมนระดับ 0.1 (`rounded-[2px]`) และป้ายนิ่งสนิทตามหลัก Calm UI
+8. **Marketplace Buttons (Shopee & Lazada Official Badges)**:
+   - เปลี่ยนจากปุ่ม SVG โค้ดดิ้งเองสีพื้นทึบ เป็นรูปภาพปุ่มแคปซูลมาตรฐานทางการ (`/images/shopee_btn.webp` และ `/images/lazada_btn.webp`)
+   - หุ้มด้วยลิงก์ขอบมน `rounded-md` เพื่อความสอดคล้องกับ Retro Design System และผ่านการตรวจสอบของ Challenger M3 (`C1-PRC-08`)
+   - คงระบบ Telemetry `trackMarketplaceClick` ไว้อย่างสมบูรณ์
+9. **Quick Marketplace Badges (Beside LINE Add Friend)**:
+   - วางไอคอน Shopee และ Lazada รูปแบบวงกลม 1:1 ถัดจากปุ่ม LINE Add friend
+   - กำหนดขนาด `w-10 h-10` (40px) เพื่อไม่ให้ความสูงเกินปุ่ม LINE (44px) และรักษาอัตราส่วน 1:1 ไม่บิดเบี้ยว
+   - ระยะห่าง: เว้นระยะห่างระหว่าง LINE และปุ่มไอคอนด้วย `gap-7` (~28px) และระหว่างปุ่มด้วยกัน `gap-5` (20px) จัดวางสมดุลใต้กล่องข้อมูลด้านบน
+   - มิติเงา: เพิ่มเงาอ่อนนุ่ม 3 มิติ `shadow-[0_3px_8px_rgba(0,0,0,0.16)]` (hover: `shadow-[0_5px_14px_rgba(0,0,0,0.22)]`) ให้ลอยนูนละมุนตาเข้าคู่กับมิติของปุ่ม LINE Add friend ไม่แข็งกระด้าง
+   - รองรับลิงก์จากหลังบ้าน (`shopeeUrl`, `lazadaUrl` / `externalLinks`) พร้อมเชื่อมต่อ `trackMarketplaceClick`
+   - กรณีไม่มีลิงก์ แสดงป้ายสีเทา `grayscale opacity-35 cursor-not-allowed` กดไม่ได้ นิ่งสงบตามกฎ Calm UI Invariant
+10. **Product Social Share Bar (Beside Favorite Heart Button - Option 1)**:
+   - ย้ายชุดปุ่มแชร์โซเชียล (Facebook, X/Twitter, Pinterest, LINE) ขึ้นไปไว้มุมบนขวา ด้านซ้ายของปุ่มหัวใจ (Favorite button)
+   - ดีไซน์: คงปุ่มหัวใจเป็น Anchor ที่มุมบนขวา คั่นด้วยเส้นแบ่ง `|` (`h-5 w-[1px] bg-slate-200`) และวางเรียงไอคอนจัตุรัส 1:1 ขนาด `w-7 h-7` (28px) พร้อมข้อความ "Share" เข้ามาทางซ้ายอย่างลงตัว
+   - ระบบแชร์จริง: ฟังก์ชัน `handleShare(platform)` รองรับ popup window สำหรับ Facebook sharer, Twitter/X intent, Pinterest pin, และ LINE it share
+   - โซนมาร์เก็ตเพลสด้านล่าง: คงปุ่ม LINE Add friend, Shopee circle, และ Lazada circle ไว้อย่างโปร่งสบายตา ไม่แออัด
+11. **Price & Points Display Refinement**:
+   - นำข้อความแจ้งเตือนแต้มสะสม ("✨ รับ x แต้มสะสมเมื่อซื้อสินค้านี้") ออกตามความต้องการของผู้ใช้ เพื่อความกระชับและสบายตาของโซนราคา
 </pitfalls_and_solutions>

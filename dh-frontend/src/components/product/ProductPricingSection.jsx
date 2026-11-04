@@ -26,6 +26,8 @@ export default function ProductPricingSection({
   calculateEarnedPoints,
   shopeeUrl,
   lazadaUrl,
+  tiktokUrl,
+  facebookUrl,
   lineAddFriendUrl,
   variantOptions,
   variants,
@@ -59,10 +61,39 @@ export default function ProductPricingSection({
     }
   };
 
+  const handleShare = (platform) => {
+    if (typeof window === 'undefined') return;
+    const url = window.location.href;
+    const title = name || model || 'DH Notebook สินค้าคุณภาพ';
+    const image = product?.images?.[0] || product?.imageUrl || '';
+    
+    let shareUrl = '';
+    switch (platform) {
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+        break;
+      case 'x':
+        shareUrl = `https://twitter.com/intent/tweet?url=${encodeURIComponent(url)}&text=${encodeURIComponent(title)}`;
+        break;
+      case 'pinterest':
+        shareUrl = `https://pinterest.com/pin/create/button/?url=${encodeURIComponent(url)}&description=${encodeURIComponent(title)}&media=${encodeURIComponent(image)}`;
+        break;
+      case 'line':
+        shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(url)}`;
+        break;
+      default:
+        break;
+    }
+    
+    if (shareUrl) {
+      window.open(shareUrl, '_blank', 'width=600,height=500,scrollbars=yes,resizable=yes');
+    }
+  };
+
   return (
     <div className="p-6 md:p-10 flex flex-col">
-      <div className="mb-2 flex items-center justify-between">
-        <span className="text-sm font-tech text-slate-500 font-bold flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-md">
+      <div className="mb-2 flex items-center justify-between gap-3 flex-wrap">
+        <span className="text-sm font-tech text-slate-500 font-bold flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-md shrink-0">
           <Cpu size={14} className="text-slate-400" /> DH-SKU: {model}
           <button 
             type="button"
@@ -75,19 +106,74 @@ export default function ProductPricingSection({
           </button>
         </span>
 
-        {/* Favorite Button (ย้ายมาไว้มุมขวาบน) */}
-        <button 
-          type="button"
-          onClick={() => product && toggleFavorite(product)}
-          className={`w-9 h-9 md:w-10 md:h-10 border rounded-md flex items-center justify-center transition-colors shadow-xs shrink-0 cursor-pointer ${
-            isFav 
-              ? 'bg-red-50 border-red-300 text-red-500' 
-              : 'bg-white border-slate-200 text-slate-400 hover:border-red-300 hover:text-red-500 hover:bg-red-50'
-          }`}
-          aria-label={isFav ? "ลบออกจากรายการโปรด" : "เพิ่มในรายการโปรด"}
-        >
-          <Heart size={18} className={isFav ? "fill-current text-red-500" : ""} />
-        </button>
+        {/* Top Right Action Group: Share Bar + Heart Button */}
+        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 ml-auto">
+          {/* 🔗 Social Share Bar */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs font-semibold text-slate-400 select-none mr-0.5">Share</span>
+            
+            {/* Facebook */}
+            <button
+              type="button"
+              onClick={() => handleShare('facebook')}
+              className="w-7 h-7 inline-flex items-center justify-center rounded-sm hover:opacity-90 hover:scale-105 active:scale-95 transition-all shadow-xs cursor-pointer"
+              title="แชร์ไปยัง Facebook"
+              aria-label="Share on Facebook"
+            >
+              <img src="/images/share_fb.png" alt="Facebook" className="w-full h-full object-contain rounded-sm" />
+            </button>
+
+            {/* X */}
+            <button
+              type="button"
+              onClick={() => handleShare('x')}
+              className="w-7 h-7 inline-flex items-center justify-center rounded-sm hover:opacity-90 hover:scale-105 active:scale-95 transition-all shadow-xs cursor-pointer"
+              title="แชร์ไปยัง X (Twitter)"
+              aria-label="Share on X"
+            >
+              <img src="/images/share_x.png" alt="X" className="w-full h-full object-contain rounded-sm" />
+            </button>
+
+            {/* Pinterest */}
+            <button
+              type="button"
+              onClick={() => handleShare('pinterest')}
+              className="w-7 h-7 inline-flex items-center justify-center rounded-sm hover:opacity-90 hover:scale-105 active:scale-95 transition-all shadow-xs cursor-pointer"
+              title="แชร์ไปยัง Pinterest"
+              aria-label="Share on Pinterest"
+            >
+              <img src="/images/share_pinterest.png" alt="Pinterest" className="w-full h-full object-contain rounded-sm" />
+            </button>
+
+            {/* LINE */}
+            <button
+              type="button"
+              onClick={() => handleShare('line')}
+              className="w-7 h-7 inline-flex items-center justify-center rounded-sm hover:opacity-90 hover:scale-105 active:scale-95 transition-all shadow-xs cursor-pointer"
+              title="แชร์ไปยัง LINE"
+              aria-label="Share on LINE"
+            >
+              <img src="/images/share_line.png" alt="LINE" className="w-full h-full object-contain rounded-sm" />
+            </button>
+          </div>
+
+          {/* Divider before Heart */}
+          <div className="h-5 w-[1px] bg-slate-200"></div>
+
+          {/* Favorite Button (ย้ายมาไว้มุมขวาบน) */}
+          <button 
+            type="button"
+            onClick={() => product && toggleFavorite(product)}
+            className={`w-9 h-9 md:w-10 md:h-10 border rounded-md flex items-center justify-center transition-colors shadow-xs shrink-0 cursor-pointer ${
+              isFav 
+                ? 'bg-red-50 border-red-300 text-red-500' 
+                : 'bg-white border-slate-200 text-slate-400 hover:border-red-300 hover:text-red-500 hover:bg-red-50'
+            }`}
+            aria-label={isFav ? "ลบออกจากรายการโปรด" : "เพิ่มในรายการโปรด"}
+          >
+            <Heart size={18} className={isFav ? "fill-current text-red-500" : ""} />
+          </button>
+        </div>
       </div>
 
       <h1 className="text-xl md:text-2xl font-semibold text-slate-700 leading-tight mb-3">
@@ -113,15 +199,6 @@ export default function ProductPricingSection({
         )}
       </div>
       
-      {/* Earn Points Alert (Subtle) */}
-      {!isOutOfStock && creditConfig && calculateEarnedPoints && (
-        <div className="mb-6 flex items-center gap-1.5 text-[13px] text-slate-500">
-          <span className="text-amber-400">✨</span>
-          <span>
-            รับ <span className="font-bold text-slate-700">{calculateEarnedPoints(salePrice || price, creditConfig, [{ sku: model }]).toLocaleString()}</span> แต้มสะสมเมื่อซื้อสินค้านี้
-          </span>
-        </div>
-      )}
 
       {/* Variant Selectors (SRP Component) */}
       <VariantSelector 
@@ -152,14 +229,15 @@ export default function ProductPricingSection({
         </div>
       </div>
 
-      {/* 💬 LINE Add Friend Button (Official Original Image with Premium UX) */}
-      <div className="mb-5 flex justify-start">
+      {/* 💬 LINE Add Friend & Quick Marketplace Badges */}
+      <div className="mb-5 flex items-center justify-start gap-7">
+        {/* LINE Add Friend */}
         <a 
           href={lineAddFriendUrl || "https://line.me/ti/p/"} 
           target="_blank" 
           rel="noopener noreferrer" 
           onClick={() => trackMarketplaceClick('line', product)}
-          className="relative inline-block group hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 rounded-lg"
+          className="relative inline-block group hover:scale-[1.03] active:scale-[0.98] transition-all duration-300 rounded-lg shrink-0"
         >
           {/* Subtle pulse glow effect behind the button */}
           <div className="absolute inset-0 bg-[#00B900] opacity-20 group-hover:opacity-40 blur-md rounded-full transition-opacity duration-300 animate-pulse"></div>
@@ -168,8 +246,72 @@ export default function ProductPricingSection({
             src="https://scdn.line-apps.com/n/line_add_friends/btn/en.png" 
             alt="LINE Add Friends" 
             className="h-[44px] object-contain drop-shadow-md relative z-10" 
-           loading="lazy" />
+            loading="lazy" 
+          />
         </a>
+
+        {/* Quick Marketplace Badges (Circle Icons) */}
+        <div className="flex items-center gap-5">
+          {/* Shopee Quick Badge (Circle) */}
+          {(shopeeUrl || product?.externalLinks?.shopee || product?.shopeeUrl) ? (
+            <a
+              href={shopeeUrl || product?.externalLinks?.shopee || product?.shopeeUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackMarketplaceClick('shopee', product)}
+              className="relative inline-flex items-center justify-center rounded-full hover:scale-[1.08] active:scale-[0.95] transition-all duration-200 shrink-0 shadow-[0_3px_8px_rgba(0,0,0,0.16)] hover:shadow-[0_5px_14px_rgba(0,0,0,0.22)]"
+              title="สั่งซื้อผ่าน Shopee"
+            >
+              <img 
+                src="/images/shopee_circle.png" 
+                alt="Shopee" 
+                className="w-10 h-10 object-contain rounded-full" 
+              />
+            </a>
+          ) : (
+            <div 
+              className="relative inline-flex items-center justify-center rounded-full grayscale opacity-35 cursor-not-allowed select-none shrink-0 shadow-[0_2px_4px_rgba(0,0,0,0.08)]"
+              title="ยังไม่มีลิงก์จำหน่ายบน Shopee"
+              aria-disabled="true"
+            >
+              <img 
+                src="/images/shopee_circle.png" 
+                alt="Shopee" 
+                className="w-10 h-10 object-contain pointer-events-none rounded-full" 
+              />
+            </div>
+          )}
+
+          {/* Lazada Quick Badge (Circle) */}
+          {(lazadaUrl || product?.externalLinks?.lazada || product?.lazadaUrl) ? (
+            <a
+              href={lazadaUrl || product?.externalLinks?.lazada || product?.lazadaUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackMarketplaceClick('lazada', product)}
+              className="relative inline-flex items-center justify-center rounded-full hover:scale-[1.08] active:scale-[0.95] transition-all duration-200 shrink-0 shadow-[0_3px_8px_rgba(0,0,0,0.16)] hover:shadow-[0_5px_14px_rgba(0,0,0,0.22)]"
+              title="สั่งซื้อผ่าน Lazada"
+            >
+              <img 
+                src="/images/lazada_quick_badge.png" 
+                alt="Lazada" 
+                className="w-10 h-10 object-contain rounded-full" 
+              />
+            </a>
+          ) : (
+            <div 
+              className="relative inline-flex items-center justify-center rounded-full grayscale opacity-35 cursor-not-allowed select-none shrink-0 shadow-[0_2px_4px_rgba(0,0,0,0.08)]"
+              title="ยังไม่มีลิงก์จำหน่ายบน Lazada"
+              aria-disabled="true"
+            >
+              <img 
+                src="/images/lazada_quick_badge.png" 
+                alt="Lazada" 
+                className="w-10 h-10 object-contain pointer-events-none rounded-full" 
+              />
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Insert children here (Knowledge & Full Description) */}
@@ -244,40 +386,133 @@ export default function ProductPricingSection({
         </div>
       </div>
 
-      {/* 🛍️ Marketplace Buttons (Modern UI with Telemetry) */}
-      {(shopeeUrl || lazadaUrl) && (
-        <div className="mt-6 flex flex-col sm:flex-row gap-3">
-          {shopeeUrl && (
+      {/* 🛍️ Marketplace Buttons (Official Brand Badges with Telemetry) */}
+      <div className="mt-6 flex flex-col gap-2.5">
+        <div className="text-sm md:text-base font-semibold text-slate-700">
+          สั่งซื้อ <span className="text-brand font-bold">{model || product?.sku || product?.id}</span> จากแพลตฟอร์มอื่นๆ
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+          {/* 1. Shopee */}
+          {(shopeeUrl || product?.externalLinks?.shopee || product?.shopeeUrl) ? (
             <a 
               href={shopeeUrl} 
               target="_blank" 
               rel="noopener noreferrer" 
               onClick={() => trackMarketplaceClick('shopee', product)}
-              className="flex-1 flex items-center justify-center gap-2 bg-[#ee4d2d] hover:bg-[#d74325] text-white font-bold text-lg py-3.5 rounded-md shadow-xs hover:shadow-md transition-all duration-300"
+              className="flex items-center justify-center rounded-md transition-all duration-300 hover:opacity-90 hover:scale-[1.03] active:scale-[0.98] w-full"
+              title="สั่งซื้อผ่าน Shopee"
             >
-              <svg className="w-6 h-6 fill-current drop-shadow-xs" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M15.9414 17.9633c.229-1.879-.981-3.077-4.1758-4.0969-1.548-.528-2.277-1.22-2.26-2.1719.065-1.056 1.048-1.825 2.352-1.85a5.2898 5.2898 0 0 1 2.8838.89c.116.072.197.06.263-.039.09-.145.315-.494.39-.62.051-.081.061-.187-.068-.281-.185-.1369-.704-.4149-.983-.5319a6.4697 6.4697 0 0 0-2.5118-.514c-1.909.008-3.4129 1.215-3.5389 2.826-.082 1.1629.494 2.1078 1.73 2.8278.262.152 1.6799.716 2.2438.892 1.774.552 2.695 1.5419 2.478 2.6969-.197 1.047-1.299 1.7239-2.818 1.7439-1.2039-.046-2.2878-.537-3.1278-1.19l-.141-.11c-.104-.08-.218-.075-.287.03-.05.077-.376.547-.458.67-.077.108-.035.168.045.234.35.293.817.613 1.134.775a6.7097 6.7097 0 0 0 2.8289.727 4.9048 4.9048 0 0 0 2.0759-.354c1.095-.465 1.8029-1.394 1.9449-2.554zM11.9986 1.4009c-2.068 0-3.7539 1.95-3.8329 4.3899h7.6657c-.08-2.44-1.765-4.3899-3.8328-4.3899zm7.8516 22.5981-.08.001-15.7843-.002c-1.074-.04-1.863-.91-1.971-1.991l-.01-.195L1.298 6.2858a.459.459 0 0 1 .45-.494h4.9748C6.8448 2.568 9.1607 0 11.9996 0c2.8388 0 5.1537 2.5689 5.2757 5.7898h4.9678a.459.459 0 0 1 .458.483l-.773 15.5883-.007.131c-.094 1.094-.979 1.9769-2.0709 2.0059z"/>
-              </svg>
-              <span className="tracking-wide drop-shadow-xs">Shopee</span>
+              <img 
+                src="/images/shopee_btn.png" 
+                alt="Shopee" 
+                className="w-full h-auto max-h-10 sm:max-h-9 object-contain cursor-pointer transition-all duration-300"
+              />
             </a>
+          ) : (
+            <div 
+              className="flex items-center justify-center rounded-md grayscale opacity-35 cursor-not-allowed select-none transition-all duration-300 w-full"
+              title="ยังไม่มีลิงก์จำหน่ายบน Shopee"
+              aria-disabled="true"
+            >
+              <img 
+                src="/images/shopee_btn.png" 
+                alt="Shopee" 
+                className="w-full h-auto max-h-10 sm:max-h-9 object-contain pointer-events-none"
+              />
+            </div>
           )}
-          
-          {lazadaUrl && (
+
+          {/* 2. Lazada */}
+          {(lazadaUrl || product?.externalLinks?.lazada || product?.lazadaUrl) ? (
             <a 
               href={lazadaUrl} 
               target="_blank" 
               rel="noopener noreferrer" 
               onClick={() => trackMarketplaceClick('lazada', product)}
-              className="flex-1 flex items-center justify-center gap-2 bg-[#0f146d] hover:bg-[#0c105c] text-white font-bold text-lg py-3.5 rounded-md shadow-xs hover:shadow-md transition-all duration-300"
+              className="flex items-center justify-center rounded-md transition-all duration-300 hover:opacity-90 hover:scale-[1.03] active:scale-[0.98] w-full"
+              title="สั่งซื้อผ่าน Lazada"
             >
-              <svg className="w-6 h-6 fill-current drop-shadow-xs" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-              </svg>
-              <span className="tracking-wide drop-shadow-xs">Lazada</span>
+              <img 
+                src="/images/lazada_btn.png" 
+                alt="Lazada" 
+                className="w-full h-auto max-h-10 sm:max-h-9 object-contain cursor-pointer transition-all duration-300"
+              />
             </a>
+          ) : (
+            <div 
+              className="flex items-center justify-center rounded-md grayscale opacity-35 cursor-not-allowed select-none transition-all duration-300 w-full"
+              title="ยังไม่มีลิงก์จำหน่ายบน Lazada"
+              aria-disabled="true"
+            >
+              <img 
+                src="/images/lazada_btn.png" 
+                alt="Lazada" 
+                className="w-full h-auto max-h-10 sm:max-h-9 object-contain pointer-events-none"
+              />
+            </div>
+          )}
+
+          {/* 3. TikTok */}
+          {(tiktokUrl || product?.externalLinks?.tiktok || product?.tiktokUrl) ? (
+            <a 
+              href={tiktokUrl || product?.externalLinks?.tiktok || product?.tiktokUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              onClick={() => trackMarketplaceClick('tiktok', product)}
+              className="flex items-center justify-center rounded-md transition-all duration-300 hover:opacity-90 hover:scale-[1.03] active:scale-[0.98] w-full"
+              title="สั่งซื้อผ่าน TikTok Shop"
+            >
+              <img 
+                src="/images/tiktok_btn.png" 
+                alt="TikTok" 
+                className="w-full h-auto max-h-10 sm:max-h-9 object-contain cursor-pointer transition-all duration-300"
+              />
+            </a>
+          ) : (
+            <div 
+              className="flex items-center justify-center rounded-md grayscale opacity-35 cursor-not-allowed select-none transition-all duration-300 w-full"
+              title="ยังไม่มีลิงก์จำหน่ายบน TikTok Shop"
+              aria-disabled="true"
+            >
+              <img 
+                src="/images/tiktok_btn.png" 
+                alt="TikTok" 
+                className="w-full h-auto max-h-10 sm:max-h-9 object-contain pointer-events-none"
+              />
+            </div>
+          )}
+
+          {/* 4. Facebook */}
+          {(facebookUrl || product?.externalLinks?.facebook || product?.facebookUrl) ? (
+            <a 
+              href={facebookUrl || product?.externalLinks?.facebook || product?.facebookUrl} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              onClick={() => trackMarketplaceClick('facebook', product)}
+              className="flex items-center justify-center rounded-md transition-all duration-300 hover:opacity-90 hover:scale-[1.03] active:scale-[0.98] w-full"
+              title="สั่งซื้อผ่าน Facebook Shop"
+            >
+              <img 
+                src="/images/facebook_btn.png" 
+                alt="Facebook" 
+                className="w-full h-auto max-h-10 sm:max-h-9 object-contain cursor-pointer transition-all duration-300"
+              />
+            </a>
+          ) : (
+            <div 
+              className="flex items-center justify-center rounded-md grayscale opacity-35 cursor-not-allowed select-none transition-all duration-300 w-full"
+              title="ยังไม่มีลิงก์จำหน่ายบน Facebook"
+              aria-disabled="true"
+            >
+              <img 
+                src="/images/facebook_btn.png" 
+                alt="Facebook" 
+                className="w-full h-auto max-h-10 sm:max-h-9 object-contain pointer-events-none"
+              />
+            </div>
           )}
         </div>
-      )}
+      </div>
     </div>
   );
 }
