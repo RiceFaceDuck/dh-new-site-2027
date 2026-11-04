@@ -247,11 +247,43 @@ export const productService = {
     const specs = getVal(raw, ['specifications', 'specs', 'features']) || {};
 
     // Media
-    let rawImg = getVal(raw, ['imageurl', 'image', 'picture', 'photo', 'img', 'images', 'cover']);
-    const images = Array.isArray(rawImg) ? rawImg : (rawImg ? [rawImg] : []);
-    const imageUrl = images.length > 0 ? images[0] : null;
+    // 🛡️ Robust Multi-Image Discovery Protocol:
+    // 1. Primary: array in images or imageMetadata
+    let candidateImages = [];
+    if (Array.isArray(raw.images) && raw.images.length > 0) {
+      candidateImages = raw.images;
+    } else if (Array.isArray(raw.imageMetadata) && raw.imageMetadata.length > 0) {
+      candidateImages = raw.imageMetadata.map(m => (typeof m === 'object' && m !== null ? m.url : m)).filter(Boolean);
+    } else {
+      // Fallback: look for other potential image holders (image, imageUrl, picture, etc.)
+      const fallbackVal = getVal(raw, ['image', 'imageUrl', 'picture', 'photo', 'img', 'cover', 'imageurl']);
+      if (Array.isArray(fallbackVal)) {
+        candidateImages = fallbackVal;
+      } else if (typeof fallbackVal === 'string' && fallbackVal.trim()) {
+        candidateImages = fallbackVal.includes(',')
+          ? fallbackVal.split(',').map(s => s.trim()).filter(Boolean)
+          : [fallbackVal.trim()];
+      }
+    }
+
+    // Clean and sanitize string URLs
+    const images = candidateImages
+      .map(item => (typeof item === 'string' ? item.trim() : (item?.url ? String(item.url).trim() : '')))
+      .filter(Boolean);
+
+    // Primary Cover Image: Check explicit single image pointers first, otherwise first image in array
+    const rawCover = raw.image || raw.imageUrl || raw.picture || raw.photo || raw.img || raw.cover;
+    const imageUrl = (typeof rawCover === 'string' && rawCover.trim() && !rawCover.includes(','))
+      ? rawCover.trim()
+      : (images.length > 0 ? images[0] : null);
+
+    // Ensure cover image is included at the head of gallery if not already present
+    if (imageUrl && !images.includes(imageUrl)) {
+      images.unshift(imageUrl);
+    }
+
     const hiddenImagesKey = Object.keys(raw || {}).find(k => k.toLowerCase() === 'hiddenimages');
-    const hiddenImages = hiddenImagesKey ? (raw[hiddenImagesKey] || []) : [];
+    const hiddenImages = hiddenImagesKey && Array.isArray(raw[hiddenImagesKey]) ? raw[hiddenImagesKey] : [];
     const youtubeUrl = getVal(raw, ['youtubeUrl', 'videoUrl', 'youtube', 'video']);
     const videoId = this.extractYouTubeId(youtubeUrl);
 

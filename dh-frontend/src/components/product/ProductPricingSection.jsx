@@ -312,6 +312,14 @@ export default function ProductPricingSection({
             </div>
           )}
         </div>
+
+        {/* 👈🏼 ข้อความแนะนำสั่งซื้อ (บรรทัดตรง ตัวหนังสือเอียง italic เด่นชัด) */}
+        <div className="flex items-center gap-1.5 select-none">
+          <span className="text-xl md:text-2xl filter drop-shadow-xs">👈🏼</span>
+          <span className="text-sm md:text-base font-black italic tracking-tight text-[#f04e69]">
+            กดสั่งตรงนี้ได้เลยค่ะ!
+          </span>
+        </div>
       </div>
 
       {/* Insert children here (Knowledge & Full Description) */}
@@ -323,44 +331,44 @@ export default function ProductPricingSection({
       <div className="pt-4 flex flex-col gap-3">
         <div className="flex items-center gap-3">
           {/* Quantity Stepper */}
-          <div className="flex items-center border border-slate-200 rounded-md overflow-hidden bg-slate-50 h-12 md:h-14 shrink-0 shadow-xs">
+          <div className="flex items-center border border-slate-200 rounded-full bg-slate-50 h-10 md:h-11 shrink-0 shadow-xs px-1">
             <button 
               type="button"
               onClick={decreaseQuantity}
               disabled={isOutOfStock || quantity <= 1}
-              className="w-10 md:w-12 h-full flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-8 md:w-9 h-8 md:h-9 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               aria-label="ลดจำนวน"
             >
-              <Minus size={16} />
+              <Minus size={15} />
             </button>
-            <span className="w-10 md:w-12 text-center font-bold text-slate-800 text-sm md:text-base select-none">
+            <span className="w-8 md:w-9 text-center font-bold text-slate-800 text-sm md:text-base select-none">
               {quantity}
             </span>
             <button 
               type="button"
               onClick={increaseQuantity}
               disabled={isOutOfStock || (availableStock > 0 && quantity >= availableStock)}
-              className="w-10 md:w-12 h-full flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+              className="w-8 md:w-9 h-8 md:h-9 rounded-full flex items-center justify-center text-slate-600 hover:bg-slate-200 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               aria-label="เพิ่มจำนวน"
             >
-              <Plus size={16} />
+              <Plus size={15} />
             </button>
           </div>
 
-          {/* Add to Cart Button */}
+          {/* Add to Cart Button (แบบทึบขอบเทา ตามภาพตัวอย่างบน) */}
           <button 
             onClick={handleAddToCart}
             disabled={isOutOfStock || isAdding || addSuccess}
-            className={`flex-1 h-12 md:h-14 rounded-md font-bold text-sm md:text-base tracking-wide flex items-center justify-center gap-2 transition-all duration-300 shadow-xs ${
+            className={`flex-1 h-10 md:h-11 rounded-full font-bold text-sm md:text-base tracking-wide flex items-center justify-center gap-2 transition-all duration-300 border-[3.5px] cursor-pointer active:scale-[0.98] ${
               isOutOfStock 
-                ? 'bg-slate-100 text-slate-400 cursor-not-allowed border border-slate-200'
+                ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
                 : addSuccess
-                  ? 'bg-emerald-50 text-cyber-emerald border border-cyber-emerald'
-                  : 'bg-slate-800 text-white hover:bg-slate-900 hover:shadow-md'
+                  ? 'bg-emerald-50 text-cyber-emerald border-cyber-emerald'
+                  : 'bg-[#f04e69] text-white border-slate-200 hover:border-slate-300 hover:bg-[#e03b57] shadow-sm hover:shadow-md'
             }`}
           >
             {isAdding ? (
-              <><div className="w-4 h-4 border-2 border-cyber-emerald border-t-transparent rounded-full animate-spin"></div> กำลังประมวลผล</>
+              <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> กำลังประมวลผล</>
             ) : addSuccess ? (
               <><CheckCircle2 size={18} strokeWidth={2.5} /> เพิ่มลงตะกร้าแล้ว</>
             ) : isOutOfStock ? (
@@ -372,12 +380,12 @@ export default function ProductPricingSection({
             )}
           </button>
 
-          {/* Buy Now Button (Quick checkout) - ย้ายมาแทนที่ปุ่มหัวใจ */}
+          {/* Buy Now Button (แบบกรอบชมพูขอบหนา ตามภาพตัวอย่างล่าง) */}
           {!isOutOfStock && (
             <button
               onClick={handleBuyNow}
               disabled={isAdding}
-              className="flex-1 h-12 md:h-14 rounded-md font-bold text-sm md:text-base tracking-wide flex items-center justify-center gap-2 bg-brand text-white hover:bg-brand-dark transition-all duration-300 shadow-xs hover:shadow-md cursor-pointer active:scale-[0.98]"
+              className="flex-1 h-10 md:h-11 rounded-full font-bold text-sm md:text-base tracking-wide flex items-center justify-center gap-2 border-[3.5px] border-[#f04e69] bg-slate-100 text-[#f04e69] hover:bg-[#f04e69] hover:text-white transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer active:scale-[0.98]"
             >
               <Zap size={18} className="fill-current" />
               ซื้อเลย
@@ -387,7 +395,7 @@ export default function ProductPricingSection({
       </div>
 
       {/* 🛍️ Marketplace Buttons (Official Brand Badges with Telemetry) */}
-      <div className="mt-6 flex flex-col gap-2.5">
+      <div className="mt-8 md:mt-10 flex flex-col gap-3">
         <div className="text-sm md:text-base font-semibold text-slate-700">
           สั่งซื้อ <span className="text-brand font-bold">{model || product?.sku || product?.id}</span> จากแพลตฟอร์มอื่นๆ
         </div>

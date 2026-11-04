@@ -18,8 +18,14 @@ export default function ProductImageSection({ product, imageUrl: defaultImageUrl
     setImageError(false);
   }, [product?.id]);
 
-  const rawImages = product?.images || product?.imageurl || [];
-  const imagesArray = Array.isArray(rawImages) ? rawImages : (rawImages ? [rawImages] : []);
+  const rawImages = (Array.isArray(product?.images) && product.images.length > 0)
+    ? product.images
+    : (defaultImageUrl ? [defaultImageUrl] : (product?.imageurl || []));
+  const imagesArray = Array.isArray(rawImages)
+    ? rawImages
+    : (typeof rawImages === 'string' && rawImages.trim()
+        ? (rawImages.includes(',') ? rawImages.split(',').map(s => s.trim()).filter(Boolean) : [rawImages.trim()])
+        : []);
   
   // Find hiddenImages robustly (ignore case)
   const hiddenImagesKey = Object.keys(product || {}).find(k => k.toLowerCase() === 'hiddenimages');
@@ -122,7 +128,7 @@ export default function ProductImageSection({ product, imageUrl: defaultImageUrl
         )}
       </div>
 
-      {imagesArray.length > 1 && finalImages.length > 0 && (
+      {finalImages.length > 1 && (
         <div className="flex gap-2 w-full max-w-md overflow-x-auto pb-2 custom-scrollbar">
           {finalImages.map((img, idx) => (
             <button
