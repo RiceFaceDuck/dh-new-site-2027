@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { AlertTriangle, Plus, X, Copy, Check } from 'lucide-react';
+import ProductDescriptionEditor from './ProductDescriptionEditor';
 
 export default function ProductBasicInfo({
   form, setForm,
@@ -368,10 +369,10 @@ export default function ProductBasicInfo({
             </div>
           </div>
           <div className="md:col-span-4">
-            <label className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-1.5 block">Full Description (รายละเอียดเชิงลึก)</label>
-            <textarea value={form.description || form.fullDescription || ''} placeholder="ลงรายละเอียดสินค้าเพิ่มเติม..."
-              onChange={e => setForm({...form, description: e.target.value, fullDescription: e.target.value})}
-              className="w-full p-3 border border-slate-300 dark:border-slate-600 rounded-[2px] bg-white dark:bg-slate-900 focus:border-slate-800 dark:focus:border-orange-500 outline-hidden resize-none h-[88px] text-sm font-medium text-slate-900 dark:text-slate-100 placeholder:text-slate-400 transition-all custom-scrollbar" />
+            <ProductDescriptionEditor 
+              value={form.description || form.fullDescription || ''}
+              onChange={(val) => setForm({ ...form, description: val, fullDescription: val })}
+            />
           </div>
         </div>
       </div>

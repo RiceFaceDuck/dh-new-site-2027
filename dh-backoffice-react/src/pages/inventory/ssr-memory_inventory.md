@@ -193,5 +193,9 @@
       2) สร้าง `ColumnMappingModal.jsx` เพิ่มปุ่ม "ตั้งค่าหัวคอลัมน์" บน Header และหน้า Import ให้ผู้ใช้เปิดเพิ่ม/ลบคำที่ยอมรับได้เองอย่างอิสระ
       3) ใน `useExcelImport.js` และ `ImportPreviewTable.jsx` ใช้ `getValueByAliases` และ `isHeaderMatching` พร้อมปลดล็อกปุ่มยืนยันโดยเช็คจาก `productsToImport.length > 0`
       4) ใน `ImportUploader.jsx` ใส่ `z-10` ที่ `<input type="file">` และใส่ `pointer-events-none` ให้ไอคอนและข้อความ ทำให้คลิกติดเต็มพื้นที่ 100%
+39. **การจัดระเบียบเนื้อหานำเสนอสินค้าและกล่องแก้ไขขยายกว้าง (Rich Full Description & Expandable Editor):**
+    - *ปัญหา:* กล่อง Full Description ใน Modal เคยถูกล็อกไว้ที่ `resize-none h-[88px]` ทำให้พื้นที่แคบพิมพ์จัดหน้ายาวๆ ลำบาก และไม่มีเครื่องมือช่วยจัดระเบียบเนื้อหา
+    - *วิธีแก้:* แตกคอมโพเนนต์ `ProductDescriptionEditor.jsx` เพิ่มแถบเครื่องมือ Toolbar (ตัวหนา, ตัวเอียง, หัวข้อ, รายการจุด/ตัวเลข, เส้นคั่น, ย่อหน้า), ปลดล็อก `resize-y`, เพิ่มแท็บสลับดูตัวอย่างจริง (Live Preview) และปุ่ม "ขยายดูกว้างขึ้น ⛶" (Split-view Zen Mode) สำหรับจัดหน้านำเสนอสินค้ายาวๆ ได้อย่างสบายตา
 </pitfalls_and_solutions>
+
 
