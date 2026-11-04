@@ -4,6 +4,7 @@ import { useProductDetail } from './hooks/useProductDetail';
 import { calculateEarnedPoints } from '../firebase/creditService';
 import { ChevronLeft, ShieldAlert, ShoppingCart, CheckCircle2, Zap } from 'lucide-react';
 
+import useMediaQuery from '../hooks/useMediaQuery';
 import PartnerSupportBox from '../components/partner/PartnerSupportBox';
 import {
   ProductImageSection,
@@ -20,6 +21,7 @@ const ProductDetail = () => {
   const { id } = useParams();
   const location = useLocation();
   const navigate = useNavigate();
+  const isDesktop = useMediaQuery('(min-width: 768px)');
   
   const {
     product,
@@ -184,6 +186,15 @@ const ProductDetail = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
           <div className="flex flex-col bg-white">
             <ProductImageSection product={product} imageUrl={product.imageUrl} name={product.name} />
+            {isDesktop && (
+              <div className="flex-1 flex flex-col md:border-r border-slate-200">
+                <ProductCommunitySection 
+                  productId={product.id} 
+                  reviewCount={product.reviewCount || 0} 
+                  averageRating={product.averageRating || 0} 
+                />
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col bg-white">
@@ -247,14 +258,16 @@ const ProductDetail = () => {
           specs={product.specs} 
         />
 
-        {/* 💬 Community & Reviews Section: Unified single mount for 100% quota reduction */}
-        <div className="border-t border-slate-200 bg-white">
-          <ProductCommunitySection 
-            productId={product.id} 
-            reviewCount={product.reviewCount || 0} 
-            averageRating={product.averageRating || 0} 
-          />
-        </div>
+        {/* 💬 Community & Reviews Section: Only rendered at bottom for Mobile/Tablet */}
+        {!isDesktop && (
+          <div className="border-t border-slate-200 bg-white">
+            <ProductCommunitySection 
+              productId={product.id} 
+              reviewCount={product.reviewCount || 0} 
+              averageRating={product.averageRating || 0} 
+            />
+          </div>
+        )}
 
         {/* 🛍️ Related Products */}
         <RelatedProducts 

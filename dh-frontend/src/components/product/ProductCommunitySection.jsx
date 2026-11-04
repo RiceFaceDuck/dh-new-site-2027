@@ -1,4 +1,4 @@
-import { Star, MessageCircle, Heart, Share2, Loader2, Send, ThumbsUp, MoreHorizontal, Sparkles } from 'lucide-react';
+import { Star, MessageCircle, Loader2, Send, ThumbsUp, MoreHorizontal, Sparkles } from 'lucide-react';
 import { useProductReviews } from '../../pages/hooks/useProductReviews';
 import useInView from '../../hooks/useInView';
 
@@ -36,39 +36,41 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
   } = useProductReviews(productId, reviewCount, inView);
 
   return (
-    <div ref={inViewRef} className="bg-slate-50/30 p-6 md:p-8 flex flex-col h-full border-t border-slate-200 mt-0 shadow-inner">
+    <div ref={inViewRef} className="bg-slate-50/50 p-4 md:p-6 flex flex-col h-full border-t border-slate-200 mt-0">
       
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-linear-to-tr from-cyber-blue to-indigo-500 flex items-center justify-center text-white shadow-md">
-            <MessageCircle size={20} />
+      <div className="flex items-center justify-between mb-5 pb-3 border-b border-slate-200">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-[4px] bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center shrink-0 shadow-2xs">
+            <MessageCircle size={16} />
           </div>
           <div>
-            <h3 className="font-bold text-slate-800 text-lg flex items-center gap-2">
-              Community & Reviews
-              <span className="bg-cyber-blue/10 text-cyber-blue text-xs px-2 py-0.5 rounded-full font-bold">{reviewCount}</span>
-            </h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-bold text-slate-800 text-sm md:text-base leading-tight">
+                ความคิดเห็นและรีวิว
+              </h3>
+              <span className="px-2 py-0.5 text-[11px] font-bold rounded-full bg-slate-100 text-slate-600 border border-slate-200 leading-none">
+                {reviewCount}
+              </span>
+            </div>
             <div className="flex items-center gap-2 mt-0.5">
-              <StarDisplay val={Math.round(averageRating)} />
-              <p className="text-xs font-bold text-slate-700">{Number(averageRating || 0).toFixed(1)} <span className="text-slate-400 font-normal">/ 5.0</span></p>
+              {reviewCount > 0 ? (
+                <>
+                  <StarDisplay val={Math.round(averageRating)} />
+                  <p className="text-xs font-bold text-slate-700">
+                    {Number(averageRating || 0).toFixed(1)} <span className="text-slate-400 font-normal">/ 5.0</span>
+                  </p>
+                </>
+              ) : (
+                <p className="text-[11px] text-slate-400">ยังไม่มีรีวิว ร่วมแชร์ประสบการณ์เป็นคนแรก</p>
+              )}
             </div>
           </div>
-        </div>
-        
-        {/* Top Actions */}
-        <div className="flex items-center gap-2">
-          <button className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors group">
-            <Heart size={20} className="group-hover:scale-110 transition-transform" />
-          </button>
-          <button className="p-2 text-slate-400 hover:text-cyber-blue hover:bg-blue-50 rounded-full transition-colors group">
-            <Share2 size={20} className="group-hover:scale-110 transition-transform" />
-          </button>
         </div>
       </div>
 
       {/* Input Box */}
-      <div className="bg-white rounded-xl border border-slate-300 p-4 mb-8 shadow-md">
+      <div className="bg-white rounded-md border border-slate-200 p-3.5 mb-6 shadow-xs">
         <div className="flex items-center justify-between mb-4">
           <span className="text-sm font-bold text-slate-700">ให้คะแนนสินค้าชิ้นนี้</span>
           <div className="flex gap-1 cursor-pointer">
@@ -89,8 +91,8 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
           </div>
         </div>
         <div className="relative group">
-          <div className="absolute inset-0 bg-linear-to-r from-cyber-blue/20 to-indigo-500/20 rounded-xl blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-          <div className="relative bg-white rounded-xl border border-slate-200 p-1 flex items-center shadow-xs focus-within:border-cyber-blue focus-within:ring-1 focus-within:ring-cyber-blue transition-all">
+          
+          <div className="relative bg-white rounded-md border border-slate-200 p-1 flex items-center shadow-xs focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
             <div className="w-8 h-8 rounded-full bg-slate-200 overflow-hidden ml-2 shrink-0 border border-slate-100">
               <img 
                 src={currentUser?.photoURL || `https://ui-avatars.com/api/?name=${currentUser?.displayName || 'U'}&background=0D8ABC&color=fff`} 
@@ -109,7 +111,7 @@ export default function ProductCommunitySection({ productId, reviewCount = 0, av
             <button 
               onClick={handleSubmit}
               disabled={submitting || !currentUser}
-              className="bg-cyber-blue text-white p-2.5 rounded-lg mr-1 hover:bg-blue-600 transition-colors flex items-center gap-2 group/btn disabled:opacity-50 disabled:cursor-not-allowed"
+              className="bg-blue-600 text-white p-2 rounded-md mr-1 hover:bg-blue-700 transition-colors flex items-center gap-2 group/btn disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? (
                 <Loader2 size={16} className="animate-spin" />
