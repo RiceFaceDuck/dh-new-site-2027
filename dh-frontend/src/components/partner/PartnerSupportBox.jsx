@@ -184,7 +184,7 @@ const PartnerSupportBox = () => {
             </div>
           </div>
 
-          {/* Row 2: ชื่อร้าน และ คำอธิบายร้าน (แทนที่ ยืนยันตัวตนแล้ว) */}
+          {/* Row 2: ชื่อร้าน และ คำอธิบายร้าน */}
           <div className="min-w-0">
             <h2 className="text-sm sm:text-base font-black text-slate-800 leading-snug truncate group-hover:text-indigo-700 transition-colors duration-300">
               {partner.storeName}
