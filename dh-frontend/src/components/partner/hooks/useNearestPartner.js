@@ -62,9 +62,21 @@ export const useNearestPartner = () => {
             
             if (adSnap.exists()) {
               const adData = adSnap.data();
-              if (adData.imageUrl) nearest.fallbackAdImage = adData.imageUrl;
+              if (adData.imageUrl) {
+                nearest.imageUrl = adData.imageUrl;
+                nearest.fallbackAdImage = adData.imageUrl;
+              }
+              if (!nearest.storeImage && adData.imageUrl) {
+                nearest.storeImage = adData.imageUrl;
+              }
+              if (!nearest.description && (adData.description || adData.richDescription)) {
+                nearest.description = adData.description || adData.richDescription;
+              }
               if (!nearest.lineUrl && adData.lineUrl) nearest.lineUrl = adData.lineUrl;
               if (!nearest.messengerUrl && adData.messengerUrl) nearest.messengerUrl = adData.messengerUrl;
+              if (adData.galleryImages && Array.isArray(adData.galleryImages)) {
+                nearest.galleryImages = adData.galleryImages;
+              }
             }
           } catch (imgError) {
             console.error("Failed to fetch fallback ad image:", imgError);
