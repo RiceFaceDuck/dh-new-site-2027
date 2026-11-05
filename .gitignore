@@ -39,3 +39,6 @@ PROJECT_SETTINGS.md
 _Backups/
 
 
+
+# Migration mapping cache files (Local only)
+*mapping*.json
