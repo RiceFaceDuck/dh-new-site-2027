@@ -196,6 +196,9 @@
 39. **การจัดระเบียบเนื้อหานำเสนอสินค้าและกล่องแก้ไขขยายกว้าง (Rich Full Description & Expandable Editor):**
     - *ปัญหา:* กล่อง Full Description ใน Modal เคยถูกล็อกไว้ที่ `resize-none h-[88px]` ทำให้พื้นที่แคบพิมพ์จัดหน้ายาวๆ ลำบาก และไม่มีเครื่องมือช่วยจัดระเบียบเนื้อหา
     - *วิธีแก้:* แตกคอมโพเนนต์ `ProductDescriptionEditor.jsx` เพิ่มแถบเครื่องมือ Toolbar (ตัวหนา, ตัวเอียง, หัวข้อ, รายการจุด/ตัวเลข, เส้นคั่น, ย่อหน้า), ปลดล็อก `resize-y`, เพิ่มแท็บสลับดูตัวอย่างจริง (Live Preview) และปุ่ม "ขยายดูกว้างขึ้น ⛶" (Split-view Zen Mode) สำหรับจัดหน้านำเสนอสินค้ายาวๆ ได้อย่างสบายตา
+40. **การย้ายท่ออัปโหลดภาพสินค้าหลังบ้านเข้า Firebase Storage และคุมขนาด WebP (Phase 1):**
+    - *ปัญหา:* เดิม `ProductImageUpload.jsx` เรียก `driveService.uploadImage` ส่ง Base64 เข้า Google Apps Script (GAS) เพื่อบันทึกเข้า Google Drive ทำให้ช้า มีคอขวด และเสี่ยงโดนบล็อก
+    - *วิธีแก้:* สร้าง `productStorageService.js` บีบอัดภาพด้วย `browser-image-compression` (<=300KB, <=1200px, quality 0.7, WebP) และอัปโหลดตรงเข้า Firebase Storage (`products/{sku}/...`) พร้อมสร้าง `useProductImageUpload.js` แยกหน้าที่ตาม Clean Architecture & SRP และใส่ `referrerPolicy="no-referrer"` ป้องกัน Google CDN 429 [สถานะ: ส่งมอบเฟส 1 เรียบร้อย]
 </pitfalls_and_solutions>
 
 

@@ -38,8 +38,9 @@ Write-Host ""
 $sourceRoot = "C:\_DH Notebook"
 $localLatest = "C:\_DH Notebook\backup save\latest"
 $localBackupSave = "C:\_DH Notebook\backup save"
+$externalBase = if (Test-Path "D:\DH Notebook Project") { "D:\DH Notebook Project" } else { "D:\" }
 $externalDrive = "D:\"
-$externalFolder = "D:\DH_Notebook_System"
+$externalFolder = Join-Path $externalBase "DH_Notebook_System"
 
 # Ensure directories exist
 if (-not (Test-Path $localLatest)) {
@@ -98,7 +99,7 @@ if ($hasDriveD) {
     if (-not (Test-Path $externalFolder)) {
         New-Item -ItemType Directory -Path $externalFolder -Force | Out-Null
     }
-    Sync-CleanFolder -TargetDir $externalFolder -TargetName "D:\DH_Notebook_System"
+    Sync-CleanFolder -TargetDir $externalFolder -TargetName "$externalFolder"
 } else {
     Write-Host "[WARN] Drive D:\ not found, skipping external folder sync." -ForegroundColor Yellow
 }
@@ -129,13 +130,13 @@ if (Test-Path $localZipPath) {
 
 # Step 4: Copy ZIP to External D:
 if ($hasDriveD -and (Test-Path $localZipPath)) {
-    $externalZipPath = Join-Path $externalDrive $zipFileName
+    $externalZipPath = Join-Path $externalBase $zipFileName
     if (Test-Path $externalZipPath) {
         Remove-Item $externalZipPath -Force
     }
     Copy-Item -Path $localZipPath -Destination $externalZipPath -Force
     $extSize = [Math]::Round(((Get-Item $externalZipPath).Length / 1MB), 2)
-    Write-Host "[OK] External ZIP copied to D:\: $externalZipPath ($extSize MB)" -ForegroundColor Green
+    Write-Host "[OK] External ZIP copied to ${externalBase}: $externalZipPath ($extSize MB)" -ForegroundColor Green
 }
 
 Write-Host ""
