@@ -6,6 +6,7 @@ import useDebounce from '../../hooks/useDebounce';
 import { inventoryService } from '../../firebase/inventoryService';
 import { inventoryStatsService } from '../../firebase/inventory/inventoryStatsService';
 import { catalogHydrationService } from '../../firebase/catalogHydrationService';
+import { productStorageService } from '../../firebase/productStorageService.js';
 import { INVENTORY_MASTER_SHEET_URL } from '../../constants/inventoryConstants';
 import toast from 'react-hot-toast';
 
@@ -121,6 +122,24 @@ export default function useInventoryController() {
 
       // 🚀 Sync with Local POS Cache (Zero-Read Invariant)
       catalogHydrationService.updateCatalogCacheWithProducts([mergedProduct]).catch(() => null);
+
+      // 🗑️ Physical Storage Cleanup on Commit: ลบไฟล์จริงออกจาก Storage หากถูกลบออกจากสินค้าที่บันทึก
+      if (isEdit && editingProduct) {
+        const prevImages = [
+          ...(Array.isArray(editingProduct.images) ? editingProduct.images : []),
+          ...(editingProduct.image ? [editingProduct.image] : []),
+          ...(editingProduct.imageUrl ? [editingProduct.imageUrl] : [])
+        ];
+        const currentImages = [
+          ...(Array.isArray(productData.images) ? productData.images : []),
+          ...(productData.image ? [productData.image] : []),
+          ...(productData.imageUrl ? [productData.imageUrl] : [])
+        ];
+        const removedImages = prevImages.filter(url => !currentImages.includes(url));
+        if (removedImages.length > 0) {
+          Promise.allSettled(removedImages.map(url => productStorageService.deleteProductImage(url))).catch(() => null);
+        }
+      }
 
       setIsModalOpen(false);
     } catch (error) {
