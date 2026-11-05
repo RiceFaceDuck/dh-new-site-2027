@@ -146,7 +146,7 @@ export default function ProductImageSection({ product, imageUrl: defaultImageUrl
                 alt={`${name} thumbnail ${idx}`} 
                 className="w-full h-full object-contain rounded-sm shadow-xs opacity-90 hover:opacity-100"
                 onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100?text=Err'; }} 
-               loading="lazy" />
+                referrerPolicy="no-referrer" />
             </button>
           ))}
         </div>

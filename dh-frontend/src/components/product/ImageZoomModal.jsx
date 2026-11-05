@@ -170,6 +170,7 @@ export default function ImageZoomModal({
                   src={watermarkedImage} 
                   alt={`${productName} - Zoomed`} 
                   className="max-w-full max-h-[90vh] object-contain shadow-2xl rounded-sm transition-transform duration-300"
+                  referrerPolicy="no-referrer"
                   onContextMenu={(e) => {
                     // Prevent right click only if we couldn't watermark it properly
                     // If it's watermarked, they can download it
@@ -241,6 +242,7 @@ export default function ImageZoomModal({
                   src={getRenderableImageUrl(img)} 
                   alt="thumbnail" 
                   className="w-full h-full object-contain"
+                  referrerPolicy="no-referrer"
                 />
               </button>
             ))}

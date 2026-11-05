@@ -48,6 +48,7 @@ const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock = 2 }
               width={32} 
               height={32} 
               className="w-full h-full object-cover" 
+              referrerPolicy="no-referrer"
               onError={(e) => handleImageError(e, imgCandidate)} 
               loading="lazy" 
             />

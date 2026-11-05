@@ -136,6 +136,7 @@ const CartItemCard = ({ item, index, updatingId, itemError, maxQty, onUpdateQty,
           width={112}
           height={112}
           className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
+          referrerPolicy="no-referrer"
           onError={(e) => e.target.src='/logo.png'}
         />
         {/* Glow effect ข้างหลังรูปเวลา Error */}
