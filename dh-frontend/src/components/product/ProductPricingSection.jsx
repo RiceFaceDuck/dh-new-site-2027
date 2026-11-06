@@ -91,7 +91,7 @@ export default function ProductPricingSection({
   };
 
   return (
-    <div className="p-6 md:p-10 flex flex-col">
+    <div className="px-6 pt-4 pb-6 md:px-8 md:pt-5 md:pb-8 flex flex-col">
       <div className="mb-2 flex items-center justify-between gap-3 flex-wrap">
         <span className="text-sm font-tech text-slate-500 font-bold flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-md shrink-0">
           <Cpu size={14} className="text-slate-400" /> DH-SKU: {model}
