@@ -1,7 +1,108 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getAuth } from 'firebase/auth';
-import { Plus, CheckCircle2, ShieldAlert, Layers } from 'lucide-react';
+import { Plus, CheckCircle2, ShieldAlert, Layers, ChevronDown, ChevronUp } from 'lucide-react';
 import { productKnowledgeService } from '../../firebase/productKnowledgeService';
+
+function ExpandableBadgeList({ items = [], emptyText = "ยังไม่มีข้อมูล" }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [hasOverflow, setHasOverflow] = useState(false);
+  const containerRef = useRef(null);
+  const wrapperRef = useRef(null);
+
+  // ขีดจำกัด 8 บรรทัด:
+  // ความสูงแท็ก (~30px) + ระยะห่าง gap-2 (8px) = ~38px ต่อบรรทัด โดย 8 บรรทัด ≈ 304px - 315px
+  const COLLAPSED_MAX_HEIGHT = 315;
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+
+    const checkOverflow = () => {
+      if (el) {
+        setHasOverflow(el.scrollHeight > COLLAPSED_MAX_HEIGHT + 10);
+      }
+    };
+
+    checkOverflow();
+    const observer = new ResizeObserver(checkOverflow);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [items]);
+
+  // เมื่อกางออก แล้วผู้ใช้คลิกที่อื่นบนหน้าจอ ให้ย่อหุบกลับอัตโนมัติ
+  useEffect(() => {
+    if (!isExpanded) return;
+
+    const handleClickOutside = (event) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(event.target)) {
+        setIsExpanded(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [isExpanded]);
+
+  const handleToggle = () => {
+    if (isExpanded && containerRef.current) {
+      containerRef.current.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+    setIsExpanded(!isExpanded);
+  };
+
+  if (!items || items.length === 0) {
+    return <p className="text-sm text-slate-400 italic">{emptyText}</p>;
+  }
+
+  return (
+    <div ref={wrapperRef} className="space-y-2">
+      <div 
+        ref={containerRef}
+        style={{
+          maxHeight: isExpanded ? 'none' : (hasOverflow ? `${COLLAPSED_MAX_HEIGHT}px` : 'none')
+        }}
+        className="relative overflow-hidden transition-all duration-300 ease-in-out"
+      >
+        <div className="flex flex-wrap gap-2">
+          {items.map((item, idx) => (
+            <span 
+              key={idx} 
+              className="bg-white border border-slate-300 shadow-xs text-slate-700 font-medium px-3 py-1 rounded-[2px] text-sm"
+            >
+              {item}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {hasOverflow && (
+        <div className="flex justify-center pt-1">
+          <button
+            type="button"
+            onClick={handleToggle}
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-blue-600 bg-white hover:bg-blue-50 border border-slate-300 shadow-xs transition-all active:scale-95 cursor-pointer"
+          >
+            {isExpanded ? (
+              <>
+                <span>ย่อข้อมูล</span>
+                <ChevronUp size={14} />
+              </>
+            ) : (
+              <>
+                <span>แสดงทั้งหมด ({items.length} รายการ)</span>
+                <ChevronDown size={14} />
+              </>
+            )}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function ProductKnowledgeSection({ 
   product, 
@@ -115,17 +216,10 @@ export default function ProductKnowledgeSection({
             </button>
           </div>
           
-          {modelsList.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {modelsList.map((model, idx) => (
-                <span key={idx} className="bg-white border border-slate-300 shadow-xs text-slate-700 font-medium px-3 py-1 rounded-md text-sm">
-                  {model}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-slate-400 italic">ยังไม่มีข้อมูลรุ่นที่รองรับ</p>
-          )}
+          <ExpandableBadgeList 
+            items={modelsList} 
+            emptyText="ยังไม่มีข้อมูลรุ่นที่รองรับ" 
+          />
 
           {showForm === 'models' && (
             <form onSubmit={handleSubmit} className="mt-4 flex gap-2 animate-in slide-in-from-top-2">
@@ -140,7 +234,7 @@ export default function ProductKnowledgeSection({
                     if (!inputValue.trim()) setShowForm(null);
                   }
                 }}
-                className="flex-1 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                className="flex-1 border border-slate-300 rounded-[2px] px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 disabled={isSubmitting}
                 required
               />
@@ -174,17 +268,10 @@ export default function ProductKnowledgeSection({
             </button>
           </div>
           
-          {partsList.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {partsList.map((part, idx) => (
-                <span key={idx} className="bg-white border border-slate-300 shadow-xs text-slate-700 font-medium px-3 py-1 rounded-md text-sm">
-                  {part}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-slate-400 italic">ยังไม่มีข้อมูลรหัสพาร์ทที่รองรับ</p>
-          )}
+          <ExpandableBadgeList 
+            items={partsList} 
+            emptyText="ยังไม่มีข้อมูลรหัสพาร์ทที่รองรับ" 
+          />
 
           {showForm === 'parts' && (
             <form onSubmit={handleSubmit} className="mt-4 flex gap-2 animate-in slide-in-from-top-2">
@@ -199,7 +286,7 @@ export default function ProductKnowledgeSection({
                     if (!inputValue.trim()) setShowForm(null);
                   }
                 }}
-                className="flex-1 border border-slate-300 rounded-md px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
+                className="flex-1 border border-slate-300 rounded-[2px] px-3 py-2 text-sm focus:outline-hidden focus:ring-2 focus:ring-blue-500"
                 disabled={isSubmitting}
                 required
               />
