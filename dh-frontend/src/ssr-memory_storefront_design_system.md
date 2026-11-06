@@ -42,6 +42,7 @@
   - `--radius-xl` ถึง `--radius-4xl`: ถูก clamp ไว้ที่ `0.5rem` (8px)
   - Universal border reset: `border-slate-200` (`#e2e8f0`)
   - Body canvas: `bg-slate-50` (`#f8fafc`)
+  - Global Typography Tokens: `--font-sans` และ `--font-mitr` กำหนดให้ใช้ Google Fonts `Mitr` เป็นฟอนต์หลักทั้งระบบ พร้อม Fallback เป็น `Sarabun`, `system-ui`
 - Primary Test Suites:
   - `tests/verifications/verify_storefront_retro_design.mjs` (28/28 assertions PASS)
   - `tests/e2e/e2e_storefront_retro_journey.mjs` (19/19 journey steps PASS)
@@ -109,4 +110,7 @@
    - ปรับปุ่มติดต่อ LINE ใน `ProductPricingSection.jsx`: เปลี่ยนจากรูปภาพภายนอก `Add friend` เป็นปุ่มสีเขียว `#06C755` ข้อความภาษาไทย **"สั่งกับแอดมิน"**
    - แก้ปัญหาเฉดสีพื้นหลังไอคอนขัดแย้งกับเนื้อปุ่ม (Anti-Box Nesting): ใช้ Vector SVG ไดคัทเฉพาะก้อนบอลลูนคำพูดสีขาว (`fill="#ffffff"`) และฉลุตัวอักษร LINE ให้โปร่งใส เพื่อให้สีเขียวของเนื้อปุ่มแสดงผ่านตัวอักษรโดยตรง เนียนกริบ 100% ไร้รอยต่อ
    - ปรับข้อความชี้เป้าสั่งซื้อ: จากเดิม `กดสั่งตรงนี้ได้เลยค่ะ!` เป็น **"กดสั่ง ตรงนี้ได้นะคะ"**
+15. **การกำหนดฟอนต์กลางและการจับคู่ฟอนต์ (Font Pairing: Prompt + Mitr)**:
+    - **สาเหตุเดิม**: ใน `index.html` โหลด Sarabun ไว้ แต่ใน `index.css` ประกาศเป็น `--font-sarabun` ลอยๆ ไม่ได้ผูกกับ `--font-sans` ทำให้ `body` แสดงผลด้วยฟอนต์ระบบประจำเครื่อง (เช่น Windows แสดง Segoe UI / Leelawadee UI) และเมื่อปรับ Mitr ทั้งหมดพบว่าตัวหนา (`font-bold`) ของ Mitr มีโครงสร้างบวมตันเทอะทะ
+    - **วิธีแก้**: ใช้เทคนิค Font Pairing สไตล์โมเดิร์น โดยผูก **Prompt** (คม เหลี่ยม สไตล์ Bauhaus) สำหรับหัวข้อและตัวหนา (`h1..h6`, `.font-heading`) และใช้ **Mitr** สำหรับเนื้อหาทั่วไปและปุ่ม (`body`, `--font-sans`) ใน `src/index.css` ทำให้เว็บอ่านง่าย ละมุนตา และหัวข้อคมชัดพรีเมียม
 </pitfalls_and_solutions>
