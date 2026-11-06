@@ -41,17 +41,15 @@ const Home = () => {
         </ScrollReveal>
 
         {/* ========================================================
-            Section 4: Featured Spares (อะไหล่แนะนำ)
+            Section 4: Featured Spares (อะไหล่แนะนำ) - แสดงทันที ไม่ต้องรอ Effect โหลด
             ======================================================= */}
         {isActive && (
-          <ScrollReveal direction="up" delay={300}>
-            <FeaturedSpares 
-              products={products} 
-              loading={loading} 
-              error={error} 
-              isSlowConnection={isSlowConnection} 
-            />
-          </ScrollReveal>
+          <FeaturedSpares 
+            products={products} 
+            loading={loading} 
+            error={error} 
+            isSlowConnection={isSlowConnection} 
+          />
         )}
 
       </div>

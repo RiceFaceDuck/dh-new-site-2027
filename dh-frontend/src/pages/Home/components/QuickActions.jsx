@@ -22,8 +22,8 @@ const QuickActions = () => {
       id: 'book-service',
       title: 'AI Search & โปรแกรมเช็ค ID',
       subtitle: 'AI Intelligent Scan • สแกนและเทียบอะไหล่',
-      titleClass: 'text-[13.5px] md:text-[14.5px] lg:text-[16px]',
-      subtitleClass: 'text-[10px] md:text-[11px]',
+      titleClass: 'text-[13px] md:text-[14px] lg:text-[15px]',
+      subtitleClass: 'text-[10px] md:text-[10.5px]',
       icon: (
         <img
           src={aiSparklesImg}
@@ -81,10 +81,10 @@ const QuickActions = () => {
                 </span>
               </div>
 
-              {/* ป้ายสถานะ กำลังพัฒนา */}
+              {/* ป้ายสถานะ กำลังพัฒนา ขนาดกะทัดรัดพอดีสายตาบน PC */}
               {action.badge && (
-                <div className="absolute top-2 right-2.5 z-20">
-                  <span className="inline-flex items-center px-2 py-0.5 rounded-[2px] text-[10px] md:text-xs font-bold bg-amber-500/15 text-amber-800 border border-amber-300/80 shadow-2xs whitespace-nowrap">
+                <div className="absolute top-1.5 right-2 md:top-2 md:right-2 z-20">
+                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-[2px] text-[9px] md:text-[9.5px] font-bold bg-amber-500/15 text-amber-800 border border-amber-300/80 shadow-2xs whitespace-nowrap">
                     {action.badge}
                   </span>
                 </div>
