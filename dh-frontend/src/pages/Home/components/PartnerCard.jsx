@@ -79,14 +79,14 @@ const PartnerCard = ({ partner, placement = 'home_squad_highlight' }) => {
         
         {/* Distance Display */}
         {displayDistance ? (
-          <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-bold bg-linear-to-r from-indigo-50 to-emerald-50 text-indigo-700 px-2.5 py-1 rounded-md w-fit max-w-full border border-slate-200 shadow-xs">
+          <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-normal bg-linear-to-r from-indigo-50 to-emerald-50 text-indigo-700 px-2.5 py-1 rounded-md w-fit max-w-full border border-slate-200 shadow-xs">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1.5 text-emerald-500 shrink-0" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
             </svg>
             <span className="truncate">เดินทาง {displayDistance}</span>
           </div>
         ) : (
-          <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-bold bg-slate-50 text-slate-500 px-2.5 py-1 rounded-md w-fit max-w-full border border-slate-200 shadow-xs">
+          <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-normal bg-slate-50 text-slate-500 px-2.5 py-1 rounded-md w-fit max-w-full border border-slate-200 shadow-xs">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1.5 text-slate-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
             </svg>
@@ -94,9 +94,9 @@ const PartnerCard = ({ partner, placement = 'home_squad_highlight' }) => {
           </div>
         )}
         
-        <Link onClick={handleClick} to={`/store/${partner.id || partner.userId}`} className="px-3.5 py-1.5 md:px-4 md:py-2 bg-slate-800 text-white rounded-md font-bold text-xs md:text-sm hover:bg-indigo-600 active:scale-95 transition-all duration-300 w-fit max-w-full shadow-md hover:shadow-indigo-500/30 flex items-center justify-center gap-1.5 md:gap-2">
+        <Link onClick={handleClick} to={`/store/${partner.id || partner.userId}`} className="px-3.5 py-1.5 md:px-4 md:py-2 bg-slate-800 text-white rounded-md font-normal text-xs md:text-sm hover:bg-indigo-600 active:scale-95 transition-all duration-300 w-fit max-w-full shadow-md hover:shadow-indigo-500/30 flex items-center justify-center gap-1.5 md:gap-2">
           <span>ติดต่อช่าง</span>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 shrink-0 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 shrink-0 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
         </Link>

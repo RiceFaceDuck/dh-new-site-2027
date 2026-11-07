@@ -20,9 +20,9 @@ const QuickActions = () => {
     },
     {
       id: 'book-service',
-      title: 'AI Search & โปรแกรมเช็ค ID',
+      title: 'Model No. Checker (AI)',
       subtitle: 'AI Intelligent Scan • สแกนและเทียบอะไหล่',
-      titleClass: 'text-[13px] md:text-[14px] lg:text-[15px]',
+      titleClass: 'text-[14.5px] md:text-[15.5px] lg:text-[16.5px]',
       subtitleClass: 'text-[10px] md:text-[10.5px]',
       icon: (
         <img
@@ -73,7 +73,7 @@ const QuickActions = () => {
                 {action.icon}
               </div>
               <div className={`relative z-10 flex flex-col min-w-0 flex-1 ${action.badge ? 'pr-16 md:pr-20' : ''}`}>
-                <span className={`font-black text-slate-900 tracking-tight leading-tight mb-0.5 whitespace-nowrap ${action.titleClass || 'text-lg md:text-[19px] lg:text-[21px]'}`}>
+                <span className={`font-bold text-slate-900 tracking-wide [text-shadow:none] leading-tight mb-0.5 whitespace-nowrap ${action.titleClass || 'text-xl md:text-[21px] lg:text-[23px]'}`}>
                   {action.title}
                 </span>
                 <span className={`text-slate-600 leading-snug whitespace-nowrap ${action.subtitleClass || 'text-xs'}`}>
