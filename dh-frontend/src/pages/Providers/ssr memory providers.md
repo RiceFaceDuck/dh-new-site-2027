@@ -57,5 +57,6 @@
       2) กำหนด Proximity Ceiling รัศมีไม่เกิน 30-50 กม. หรือแสดงป้าย '📦 มีบริการรับส่งพัสดุซ่อม' หากเป็นร้านไกลข้ามจังหวัด
       3) รองรับสเกล 2,000+ ร้าน: ใช้ Slim Bundle (~200 bytes/ร้าน) รวม ~400 KB กิน 1 Read / 0 Read แคชคงเดิม, เมื่อแตะ 5,000+ ร้าน ค่อยขยับไป Geo-Partition Chunks หรือ Geohash Bounding Box.
     - 🛡️ Calm UI Location Filter & Silent Permission Denial (FIXED): ใน `useProvidersList.js` และ `ProvidersFilterBar.jsx` ปรับปรุงให้การกดปุ่ม "เรียงตามร้านใกล้ฉัน" ทำการขอพิกัดกับ Browser ใหม่เสมอทุกครั้ง และยกเลิกการแสดงข้อความแจ้งเตือนข้อผิดพลาด/แถบสีส้ม `locationError` เมื่อไม่ได้รับอนุญาตสิทธิ์เข้าถึงพิกัด ให้หน้าจอนิ่ง สะอาดตา และคงความพร้อมของปุ่มให้กดใหม่ได้ตลอดเวลา.
+    - 🎨 Distance Sort Helper Notice (ProvidersFilterBar.jsx): เพิ่มข้อความบอกทาง '👈🏼 หาก ไม่ขึ้นระยะทาง ให้กดปุ่มนี้' ด้วยฟอนต์สีส้มแดง (`text-orange-600 font-medium`) ถัดจากปุ่มสลับระยะทาง โดยจะแสดงเฉพาะกรณีที่ยังไม่ได้เรียงตามระยะทาง (`!userLocation`) และจะซ่อนอัตโนมัติทันทีเมื่อขึ้นว่า 'เรียงตามระยะทางแล้ว'.
   </pitfalls_and_lessons>
 </ssr_memory>

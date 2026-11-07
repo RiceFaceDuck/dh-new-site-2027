@@ -26,10 +26,10 @@ const ProvidersFilterBar = ({
 
       {/* GPS Toggle & Status */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-        <div className="flex items-center">
+        <div className="flex items-center flex-wrap gap-2.5">
           <button
             onClick={() => requestLocation(true)}
-            className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+            className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors shrink-0 ${
               userLocation 
                 ? 'bg-[#C8EFD4] text-slate-800 border border-[#B3E1C1]' 
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'
@@ -47,6 +47,11 @@ const ProvidersFilterBar = ({
               </>
             )}
           </button>
+          {!userLocation && (
+            <span className="text-xs sm:text-sm font-medium text-orange-600 flex items-center">
+              👈🏼 หาก ไม่ขึ้นระยะทาง ให้กดปุ่มนี้
+            </span>
+          )}
         </div>
         
         {locationError && (
