@@ -166,41 +166,36 @@ const PartnerSupportBox = () => {
         </div>
       </div>
 
-      {/* 🔴 ฝั่งขวา: ป้ายชิดขอบบน ปรับขนาดเล็กลง 1 ระดับ และแทนที่ด้วยคำอธิบายร้าน */}
-      <div className="flex-1 min-w-0 pt-1 pb-2 px-2 sm:pt-1.5 sm:pb-2.5 sm:px-3 flex flex-col justify-between">
+      {/* 🔴 ฝั่งขวา: รายละเอียดร้านชัดเจน ขยายขนาดให้อ่านง่าย */}
+      <div className="flex-1 min-w-0 pt-1.5 pb-2 px-2.5 sm:pt-2 sm:pb-2.5 sm:px-3 flex flex-col justify-between">
         
-        <div className="min-w-0 space-y-0.5">
-          {/* Row 1: ป้ายสายรุ้ง "ผู้ให้บริการ ใกล้คุณ" ชิดบน และเล็กลง 1 ระดับ */}
+        <div className="min-w-0 space-y-1">
+          {/* Row 1: ป้ายสายรุ้ง "ผู้ให้บริการ ใกล้คุณ" (ปรับความหนาให้อ่านสบายตา ไม่หนาเกินไป) */}
           <div className="inline-flex max-w-full">
             <div className="p-[1px] rounded-[2px] bg-linear-to-r from-violet-500 via-pink-500 via-amber-400 via-emerald-400 to-cyan-500 shadow-xs max-w-full">
               <div className="flex items-center gap-1 bg-white/95 backdrop-blur-xs px-1.5 py-[1px] rounded-[2px] max-w-full">
                 <MapPin size={10} className="text-violet-600 shrink-0" />
-                <span className="text-[9px] sm:text-[10px] font-black text-indigo-950 tracking-tight truncate">
+                <span className="text-[10px] sm:text-[11px] font-semibold text-slate-700 tracking-tight truncate">
                   ผู้ให้บริการ ใกล้คุณ {partner.formattedDistance && (
-                    <span className="text-violet-700 ml-0.5">{partner.formattedDistance}</span>
+                    <span className="text-violet-700 font-bold ml-0.5">{partner.formattedDistance}</span>
                   )}
                 </span>
               </div>
             </div>
           </div>
 
-          {/* Row 2: ชื่อร้าน และ คำอธิบายร้าน */}
+          {/* Row 2: ชื่อร้าน และ รายละเอียดร้าน (ขยายตัวหนังสือให้อ่านง่าย มองเห็นได้ดี) */}
           <div className="min-w-0">
-            <h2 className="text-sm sm:text-base font-black text-slate-800 leading-snug truncate group-hover:text-indigo-700 transition-colors duration-300">
+            <h2 className="text-sm sm:text-base font-bold text-slate-800 leading-snug truncate group-hover:text-indigo-700 transition-colors duration-300">
               {partner.storeName}
             </h2>
-            <p className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate leading-tight mt-0.5" title={partner.description || partner.richDescription || partner.services}>
+            <p className="text-xs sm:text-[13px] text-slate-600 font-normal line-clamp-2 leading-relaxed mt-0.5" title={partner.description || partner.richDescription || partner.services}>
               {partner.description || partner.richDescription || partner.services || "บริการตรวจเช็คและซ่อมด่วน"}
             </p>
           </div>
-
-          {/* Row 3: บริการ (จำกัดความสูงไม่ให้ดันการ์ดยืด) */}
-          <div className="flex flex-wrap gap-1 max-h-5 overflow-hidden pt-0.5">
-            <PartnerServiceBadges servicesText={partner.services} />
-          </div>
         </div>
 
-        {/* Row 4: ปุ่มติดต่อ อยู่ในแถวเดียวเสมอ ไม่ตกบรรทัด */}
+        {/* Row 3: ปุ่มติดต่อ อยู่ในแถวเดียวเสมอ ไม่ตกบรรทัด */}
         <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-100 shrink-0">
           <button 
             onClick={handleContactClick}
