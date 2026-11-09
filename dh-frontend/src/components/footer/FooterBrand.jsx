@@ -3,6 +3,17 @@ import { ShieldCheck, Award, CheckCircle2, Truck } from 'lucide-react';
 import { trackFooterClick } from '../../firebase/footerAnalyticsService';
 import { useWebTrafficAllTime } from '../../hooks/useWebTrafficAllTime';
 import VisitorCounterBadge from '../common/VisitorCounterBadge';
+import b2bBadgeImg from '../../assets/footer/badge-b2b-partner.png';
+import dbdBadgeImg from '../../assets/footer/badge-dbd-registered.png';
+import warrantyBadgeImg from '../../assets/footer/badge-genuine-warranty.png';
+import deliveryBadgeImg from '../../assets/footer/badge-express-delivery.png';
+
+const BADGE_IMAGES = {
+  b2bPartner: b2bBadgeImg,
+  dbdRegistered: dbdBadgeImg,
+  genuineWarranty: warrantyBadgeImg,
+  expressDelivery: deliveryBadgeImg,
+};
 
 const BADGE_ICONS = {
   b2bPartner: ShieldCheck,
@@ -74,14 +85,33 @@ const FooterBrand = ({ companyConfig, trustBadgesConfig, socialHubConfig }) => {
       {/* Dynamic Trust Badges Grid */}
       {isTrustBadgesEnabled && activeBadges.length > 0 && (
         <div className="space-y-2 pt-1">
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2.5">
             {activeBadges.map((badge) => {
               const IconComponent = BADGE_ICONS[badge.id] || ShieldCheck;
+              const badgeImg = BADGE_IMAGES[badge.id];
               const labelOverrides = {
                 genuineWarranty: 'สินค้ามีการรับประกัน',
                 expressDelivery: 'ส่งออกภายในวันทันที'
               };
               const displayLabel = badge.label || labelOverrides[badge.id] || '';
+
+              if (badgeImg) {
+                return (
+                  <div 
+                    key={badge.id}
+                    className="overflow-hidden select-none cursor-default"
+                    title={badge.description || displayLabel}
+                  >
+                    <img 
+                      src={badgeImg} 
+                      alt={displayLabel} 
+                      className="w-full h-auto object-contain filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]" 
+                      loading="lazy" 
+                    />
+                  </div>
+                );
+              }
+
               return (
                 <div 
                   key={badge.id}

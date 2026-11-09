@@ -25,7 +25,12 @@
   - `contact-line-oa.png` (LINE OA - สี่เหลี่ยมมนเขียวครอปขอบโปร่งใสส่วนเกินออก)
   - `contact-phone-call.png` (เบอร์โทรศัพท์ - วงกลม Teal หูโทรศัพท์ขาว)
   - `contact-business-clock.png` (เวลาทำการ - วงแหวนแดง หน้าปัดขาว)
+  - `badge-b2b-partner.png` (ป้าย VERIFIED B2B PARTNER - ไดคัตโปร่งใส 600x138)
+  - `badge-dbd-registered.png` (ป้าย DBD REGISTERED - ไดคัตโปร่งใส 600x138)
+  - `badge-genuine-warranty.png` (ป้าย สินค้ามีการรับประกัน - ไดคัตโปร่งใส 600x138)
+  - `badge-express-delivery.png` (ป้าย ส่งออกภายในวันทันที - ไดคัตโปร่งใส 600x138)
 - Icon Size: `w-7 h-7 md:w-8 md:h-8` (28px - 32px) พร้อม `shrink-0 object-contain drop-shadow`
+- Trust Badges: แสดงผลปุ่มภาพกราฟิกไดคัตเต็มชิ้นแทนกล่อง CSS เดิม พร้อม hover scale 105%
 - Tests Hub:
   - `tests/verifications/verify_footer_settings_parity.mjs`
   - `tests/verifications/verify_footer_final_review.mjs`
