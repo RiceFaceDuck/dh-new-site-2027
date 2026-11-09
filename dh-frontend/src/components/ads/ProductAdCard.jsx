@@ -135,7 +135,7 @@ const ProductAdCard = ({ ad, placement = 'product_grid_card' }) => {
                 ฿{Number(ad.price).toLocaleString()}
               </div>
             )}
-            <button type="button" className={`w-full py-2 rounded-md flex items-center justify-center transition-all duration-300 shadow-md z-20 text-xs md:text-sm font-bold active:scale-95 ${isProduct ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white uppercase tracking-wider' : 'bg-slate-800 text-white hover:bg-indigo-600 hover:shadow-indigo-500/30'}`}>
+            <button type="button" className={`w-full py-2 rounded-md flex items-center justify-center transition-all duration-300 shadow-md z-20 text-xs md:text-sm font-medium active:scale-95 ${isProduct ? 'bg-indigo-50 text-indigo-700 hover:bg-indigo-600 hover:text-white uppercase tracking-wider' : 'bg-slate-800 text-white hover:bg-indigo-600 hover:shadow-indigo-500/30'}`}>
               {isProduct ? 'เข้าชมสินค้า' : 'ติดต่อทันที'}
             </button>
           </div>

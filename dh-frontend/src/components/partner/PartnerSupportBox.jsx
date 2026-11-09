@@ -199,10 +199,10 @@ const PartnerSupportBox = () => {
         <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-100 shrink-0">
           <button 
             onClick={handleContactClick}
-            className="flex-1 min-w-0 px-2.5 py-1.5 bg-linear-to-r from-[#0870B8] to-[#0A85D9] hover:from-[#065A96] hover:to-[#0870B8] text-white font-bold rounded-[2px] shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1 active:scale-95 border border-[#0870B8]/20 cursor-pointer"
+            className="flex-1 min-w-0 px-2.5 py-1.5 bg-linear-to-r from-[#0870B8] to-[#0A85D9] hover:from-[#065A96] hover:to-[#0870B8] text-white font-medium rounded-[2px] shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95 border border-[#0870B8]/20 cursor-pointer"
           >
             <Phone size={13} className="shrink-0" /> 
-            <span className="tracking-wide text-[11px] sm:text-xs font-bold whitespace-nowrap">โทรติดต่อทันที</span>
+            <span className="tracking-normal text-xs sm:text-[13px] font-medium whitespace-nowrap">โทรติดต่อทันที</span>
           </button>
 
           <button 

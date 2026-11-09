@@ -46,7 +46,7 @@ const ProductCard = ({ product, hasStock, addingState, onAddToCart }) => {
           <button 
             onClick={(e) => onAddToCart(e, product)}
             disabled={!hasStock || addingState === 'success'}
-            className={`px-3.5 py-1.5 rounded-sm flex items-center justify-center gap-1.5 transition-all duration-300 shadow-xs z-20 text-xs font-bold ${
+            className={`px-3.5 py-1.5 rounded-sm flex items-center justify-center gap-1.5 transition-all duration-300 shadow-xs z-20 text-xs font-medium ${
               addingState === 'success'
                 ? 'bg-emerald-500 text-white scale-95 shadow-sm'
                 : !hasStock 
@@ -56,11 +56,11 @@ const ProductCard = ({ product, hasStock, addingState, onAddToCart }) => {
             aria-label="Add to cart"
           >
             {addingState === 'success' ? (
-                <span className="flex items-center gap-1 text-white"><CheckCircle2 size={14} strokeWidth={2.5} /> เรียบร้อย</span>
+                <span className="flex items-center gap-1 text-white"><CheckCircle2 size={14} strokeWidth={2} /> เรียบร้อย</span>
             ) : (
                 <>
-                  <ShoppingCart size={14} strokeWidth={2.2} className="text-red-800 shrink-0" />
-                  <span className="text-red-800 font-bold tracking-tight">สั่งซื้อ</span>
+                  <ShoppingCart size={14} strokeWidth={1.8} className={!hasStock ? "text-slate-400 shrink-0" : "text-red-800 shrink-0"} />
+                  <span className={`${!hasStock ? 'text-slate-400' : 'text-red-800'} font-medium tracking-normal`}>สั่งซื้อ</span>
                 </>
             )}
           </button>
