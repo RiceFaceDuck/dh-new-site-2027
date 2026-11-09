@@ -29,13 +29,13 @@ const getVal = (obj, possibleKeys) => {
   return null;
 };
 
-const ProductList = ({ products, loading, error, title = "", showTitle = false }) => {
+const ProductList = ({ products, loading, error, title = "", showTitle = false, adOptions = {} }) => {
   const { addToCart } = useCartDispatch();
   const { showToast } = useToast();
   const [addingState, setAddingState] = useState({}); 
   
   // 🧠 1. เรียกใช้งานสมองกลแทรกโฆษณา (จะดึงสินค้าโปรโมทและนามบัตรมาให้)
-  const { productsWithAds, loadingAds } = useAdInjection(products || []);
+  const { productsWithAds, loadingAds } = useAdInjection(products || [], 20, adOptions);
 
   // 🧠 2. ผสานสถานะ Loading ทั้งจากฝั่งสินค้าและฝั่งโฆษณา
   const isLoading = loading || loadingAds;

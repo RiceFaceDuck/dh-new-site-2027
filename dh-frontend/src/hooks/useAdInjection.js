@@ -14,12 +14,15 @@ import { calculateDistance } from '../utils/geoUtils';
  * 2. ตัด 3 ร้านแรกทิ้งเสมอ ป้องกันการแสดงซ้ำ (Zero Duplication Guard)
  * 3. เรียงตามระยะทาง GPS 100% พร้อม Fallback เป็นคะแนนความนิยมเมื่อไม่มีพิกัด
  * 4. รองรับการอัปเดตแบบเรียลไทม์ทันทีที่เบราว์เซอร์อ่านค่า GPS สำเร็จ
+ * 5. รองรับการตัดร้านปัจจุบันออกจากตัวสุ่ม เพื่อเพิ่มช้อยส์ร้านอื่นให้ลูกค้า (Exclude Current Partner Guard)
  * 
  * @param {Array} regularProducts - Array ของรายการสินค้าปกติที่ต้องการนำมาแทรกโฆษณา
  * @param {Number} adLimit - จำนวนโฆษณาที่จะดึงมาหมุนเวียน (ค่าเริ่มต้น 20 ตัว)
+ * @param {Object} [options={}] - ออปชันเพิ่มเติม เช่น { excludePartnerId }
  * @returns {Object} { productsWithAds, loadingAds, refreshAds }
  */
-export const useAdInjection = (regularProducts, adLimit = 20) => {
+export const useAdInjection = (regularProducts, adLimit = 20, options = {}) => {
+  const excludePartnerId = options?.excludePartnerId ? String(options.excludePartnerId).trim() : null;
   const [ads, setAds] = useState([]);
   const [loadingAds, setLoadingAds] = useState(true);
   const [displayRatio, setDisplayRatio] = useState(10); // ค่าเริ่มต้น 10:1 
@@ -81,9 +84,22 @@ export const useAdInjection = (regularProducts, adLimit = 20) => {
         fetchAllActivePartners()
       ]);
 
-      // 🎯 กรองเฉพาะแผ่นป้ายสัดส่วน 1:1 (Square) เพื่อให้เข้ากับ Grid สินค้า
+      // 🛡️ ตัวช่วยตรวจสอบว่าตรงกับพาร์ทเนอร์ที่ต้องการตัดออกหรือไม่
+      const isTargetPartner = (targetId) => {
+        if (!excludePartnerId || !targetId) return false;
+        const str = String(targetId).trim();
+        return str === excludePartnerId || str === `AD-CARD-${excludePartnerId}` || str.replace('AD-CARD-', '') === excludePartnerId;
+      };
+
+      // 🎯 กรองเฉพาะแผ่นป้ายสัดส่วน 1:1 (Square) และตัดร้านที่ระบุออก
       const squareBillboards = (billboards || []).filter(
-        ad => ad.billboardRatio === '1:1' || !ad.billboardRatio
+        ad => (ad.billboardRatio === '1:1' || !ad.billboardRatio) &&
+              !isTargetPartner(ad.ownerId) &&
+              !isTargetPartner(ad.partnerId)
+      );
+
+      const filteredProductLinks = (productLinks || []).filter(
+        ad => !isTargetPartner(ad.ownerId) && !isTargetPartner(ad.partnerId)
       );
 
       // 📍 ดึงพิกัดผู้ใช้งานจาก sessionStorage
@@ -101,13 +117,18 @@ export const useAdInjection = (regularProducts, adLimit = 20) => {
       } catch (_) {}
 
       // 🗺️ จับคู่ข้อมูลพิกัดและคำนวณระยะทางของการ์ดนามบัตรช่าง (BUSINESS_CARD)
+      // พร้อมตัดร้านที่กำลังเปิดดูอยู่ออก (ถ้ามี) เพื่อเปิดทางให้พาร์ทเนอร์รายอื่นขึ้นมาแทน
+      const eligibleBusinessCards = (businessCards || []).filter(
+        ad => !isTargetPartner(ad.ownerId) && !isTargetPartner(ad.partnerId) && !isTargetPartner(ad.id)
+      );
+
       const partnersMap = new Map();
       (activePartners || []).forEach(p => {
         const id = p.id || p.partnerId || p.userId;
         if (id) partnersMap.set(id, p);
       });
 
-      const enrichedBusinessCards = (businessCards || []).map(ad => {
+      const enrichedBusinessCards = eligibleBusinessCards.map(ad => {
         const partnerId = ad.ownerId || ad.partnerId || (ad.id?.startsWith('AD-CARD-') ? ad.id.replace('AD-CARD-', '') : ad.id);
         const matchedPartner = partnersMap.get(partnerId);
 
@@ -157,7 +178,7 @@ export const useAdInjection = (regularProducts, adLimit = 20) => {
 
       // โฆษณาที่เหลือ (สินค้าโปรโมท, ป้ายแบนเนอร์, ร้านอันดับ 6 เป็นต้นไป)
       const otherAds = shuffleArray([
-        ...(productLinks || []),
+        ...(filteredProductLinks || []),
         ...squareBillboards,
         ...remainingCards
       ]);
@@ -174,7 +195,7 @@ export const useAdInjection = (regularProducts, adLimit = 20) => {
     } finally {
       setLoadingAds(false);
     }
-  }, [adLimit]);
+  }, [adLimit, excludePartnerId]);
 
   // 2. ดึงข้อมูลอัตโนมัติ 1 ครั้ง และคอยรับฟังเหตุการณ์เมื่อพิกัด GPS พร้อมทำงาน
   useEffect(() => {

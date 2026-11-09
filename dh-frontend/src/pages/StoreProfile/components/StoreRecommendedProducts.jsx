@@ -6,7 +6,7 @@ import { useStoreRecommendedProducts } from '../hooks/useStoreRecommendedProduct
  * Pure presentation component for displaying store recommended products.
  * Logic and data fetching are decoupled into useStoreRecommendedProducts hook.
  */
-export default function StoreRecommendedProducts() {
+export default function StoreRecommendedProducts({ excludePartnerId = null }) {
   const { inViewRef, inView, products, loading, error } = useStoreRecommendedProducts();
 
   if (inView && !loading && products.length === 0) return null;
@@ -20,6 +20,7 @@ export default function StoreRecommendedProducts() {
           error={error} 
           title="สินค้าแนะนำ" 
           showTitle={true} 
+          adOptions={{ excludePartnerId }}
         />
       )}
     </div>

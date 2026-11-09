@@ -14,9 +14,11 @@
    - อัปโหลดตรงเข้าสู่ Firebase Storage (`stores/{userId}/...`) เสถียรและเร็ว ไม่ติด Quota GAS
 6. ในส่วน "สินค้าแนะนำด้านล่างสุด" (`StoreRecommendedProducts.jsx`):
    - เมื่อเลื่อนจอลงมาใกล้ถึงด้านล่าง (Viewport Lazy Load) ระบบจะสุ่มสินค้า 4 รายการจาก `featuredQueryService.getRandomFeaturedProducts(4)`
-   - ส่งเข้าสู่ `ProductList` ซึ่งมีระบบ `useAdInjection` แทรกโฆษณาพาร์ทเนอร์ (นามบัตร/แบนเนอร์) 1 รายการ ลงในกริดสินค้าอัตโนมัติ รวมเป็น 5 รายการ (1 แถวพอดีบนจอเดสก์ท็อป)
+   - ส่งเข้าสู่ `ProductList` พร้อมส่งต่อ `excludePartnerId` ไปยัง `useAdInjection` เพื่อตัดร้านตัวเองที่กำลังเปิดดูอยู่ออก (Zero Self-Recommendation Guard)
+   - ดึงนามบัตร/โฆษณาของพาร์ทเนอร์รายอื่นที่อยู่ใกล้เคียงขึ้นมาแสดงแทน รวมเป็น 5 รายการ (1 แถวพอดีบนจอเดสก์ท็อป)
 
 ## 2. <domain_rules>
+- **Zero Self-Recommendation Guard:** หน้าร้านค้าพาร์ทเนอร์จะต้องไม่สุ่มหยิบนามบัตร/โฆษณาของร้านตัวเองมาแสดงในโซนสินค้าแนะนำด้านล่างเด็ดขาด โดยระบบต้องกรอง ID ร้านปัจจุบันออก และเลื่อนสุ่มพาร์ทเนอร์รายอื่นขึ้นมาเป็นทางเลือกใหม่ให้ลูกค้าเสมอ
 - **Universal Dynamic Contact Channels:** ทุกพาร์ทเนอร์ใช้จุดกลางเดียวกันใน `StoreProfileInfo.jsx`
 - **URL Normalization Guard:** ต้องจัดรูปแบบลิงก์ให้อยู่ในรูป `https://...` และแปลง URL เฉพาะแพลตฟอร์ม (เช่น YouTube `@handle`, TikTok, LINE ID/`@id`, Messenger) ให้คลิกแล้วเปิดไปยังปลายทางที่ถูกต้องเสมอ ไม่ตกหล่นหรือเกิด relative URL 404
 - **Calm UI Invariant & Pure Assets:** ใช้ภาพไอคอนโปร่งใส (RGBA PNG) ขนาดมาตรฐาน `400x400` เก็บไว้ที่ `dh-frontend/public/images/`
@@ -95,6 +97,9 @@
   3. แยกหน้าที่ (SRP): สกัด `useStoreLikes.js` ออกจาก `useStoreViews.js` โดยคง Facade `useStoreStats.js` ไว้, แตก God Component `StoreProfileInfo.jsx` (293 บรรทัด) ออกเป็น 4 ไฟล์ย่อย (<80 บรรทัด), สกัด `useStoreRecommendedProducts.js` เป็น Pure UI, ปรับขอบมน `rounded-[2px]` (0.1rem), และแสดงป้ายนิ่ง Calm UI ใน `StoreViewBadge.jsx`
   4. ตัดรอยรั่วโควต้า: ส่งต่อ Props `partner` เข้า `PartnerAds` -> `usePartnerAds` ตัดการอ่าน `ActivePartners` ซ้ำซ้อน ประหยัดโควต้า Read 50%
   5. บันทึกชุดทดสอบอัตโนมัติ 4 Suites (55 ข้อ) ไว้ที่ `Management System/tests/verifications/` ตามกฎ Centralized Test Hub
+
+- **Problem:** เมื่อลูกค้าเข้าชมหน้าโปรไฟล์ร้านค้า (`/store/:id`) โซนสินค้าแนะนำด้านล่างสุ่มหยิบนามบัตรของการ์ดร้านตัวเองขึ้นมาแสดงซ้ำ ทำให้เสียโอกาสในการนำเสนอร้านอื่นให้ลูกค้า
+- **Solution:** เพิ่ม `excludePartnerId` ใน `useAdInjection` กรองนามบัตร/ป้ายโฆษณาของร้านปัจจุบันออก และเลื่อนดึงพาร์ทเนอร์รายถัดไปตามระยะทาง/คะแนนขึ้นมาแสดงแทน พร้อมส่งต่อ props จาก `StoreProfilePage` -> `StoreRecommendedProducts` -> `ProductList` -> `useAdInjection` และบันทึกชุดทดสอบยืนยันใน `tests/verifications/verify_store_recommendation_exclusion.mjs`
 
 ## 6. <future_roadmap>
 - **Telemetry for Map & Share Buttons:** วางแผนติดตั้ง `trackAdClick` สำหรับปุ่มแผนที่ (`actionType: 'maps_open'`) และปุ่มแชร์ (`actionType: 'share_click'`) เพื่อเก็บสถิติความสนใจของลูกค้าเพิ่มเติม นอกเหนือจากการกดโทรออก (`phone_call`)
