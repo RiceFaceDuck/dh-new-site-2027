@@ -101,5 +101,8 @@
 - **Problem:** เมื่อลูกค้าเข้าชมหน้าโปรไฟล์ร้านค้า (`/store/:id`) โซนสินค้าแนะนำด้านล่างสุ่มหยิบนามบัตรของการ์ดร้านตัวเองขึ้นมาแสดงซ้ำ ทำให้เสียโอกาสในการนำเสนอร้านอื่นให้ลูกค้า
 - **Solution:** เพิ่ม `excludePartnerId` ใน `useAdInjection` กรองนามบัตร/ป้ายโฆษณาของร้านปัจจุบันออก และเลื่อนดึงพาร์ทเนอร์รายถัดไปตามระยะทาง/คะแนนขึ้นมาแสดงแทน พร้อมส่งต่อ props จาก `StoreProfilePage` -> `StoreRecommendedProducts` -> `ProductList` -> `useAdInjection` และบันทึกชุดทดสอบยืนยันใน `tests/verifications/verify_store_recommendation_exclusion.mjs`
 
+- **Problem:** ตัวหนังสือบนปุ่ม Action หลัก (โทร, MAP, แชร์) ใน `StoreActionButtons.jsx` ใช้ `font-bold` (700) ทำให้ตัวอักษรภาษาไทยและอังกฤษดูหนาตันเกินไป
+- **Solution:** ปรับคลาสฟอนต์เป็น `font-medium` (500) ให้ตัวหนังสือคม โปร่ง และสบายตาขึ้นตามหลัก Calm UI โดยคงปุ่มแบบนูน 3D และโครงสร้างโค้ดเดิม 100%
+
 ## 6. <future_roadmap>
 - **Telemetry for Map & Share Buttons:** วางแผนติดตั้ง `trackAdClick` สำหรับปุ่มแผนที่ (`actionType: 'maps_open'`) และปุ่มแชร์ (`actionType: 'share_click'`) เพื่อเก็บสถิติความสนใจของลูกค้าเพิ่มเติม นอกเหนือจากการกดโทรออก (`phone_call`)
