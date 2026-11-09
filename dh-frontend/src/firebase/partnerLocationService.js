@@ -98,18 +98,16 @@ export const fetchAllActivePartners = async (forceRefresh = false) => {
 };
 
 /**
- * 🎯 ค้นหาร้านพาร์ทเนอร์ที่อยู่ใกล้ลูกค้ามากที่สุด (Nearest Partner - Distance First 100%)
- * สำหรับโซนใต้ปุ่มใส่ตะกร้า: ยึดระยะทางจริงใกล้ตัวลูกค้าที่สุดเป็นอันดับแรกก่อนสิ่งอื่นใด
+ * 📍 ดึงรายชื่อร้านพาร์ทเนอร์ใกล้เคียงทั้งหมด เรียงลำดับจากใกล้ไปไกล (Distance-First)
  */
-export const findNearestPartner = async (userLat, userLon, maxDistanceKm = 30) => {
+export const findNearbyPartners = async (userLat, userLon, maxDistanceKm = 50) => {
   try {
-    if (!userLat || !userLon) return null;
+    if (!userLat || !userLon) return [];
 
     const partners = await fetchAllActivePartners();
-    if (partners.length === 0) return null;
+    if (!partners || partners.length === 0) return [];
 
-    let bestPartner = null;
-    let minDistance = Infinity;
+    const matched = [];
 
     partners.forEach(partner => {
       const lat = Number(partner.latitude ?? partner.lat);
@@ -119,23 +117,37 @@ export const findNearestPartner = async (userLat, userLon, maxDistanceKm = 30) =
       const distance = calculateDistance(userLat, userLon, lat, lng);
 
       if (distance <= maxDistanceKm) {
-        // ยึดระยะทางที่น้อยที่สุดก่อนสิ่งอื่นใด (Distance-First 100%)
-        const isCloser = distance < minDistance;
-        const isVirtuallySame = Math.abs(distance - minDistance) < 0.1;
-        const hasHigherPoints = (partner.points || 0) > (bestPartner?.points || 0);
-
-        if (isCloser || (isVirtuallySame && hasHigherPoints)) {
-          minDistance = distance;
-          bestPartner = { 
-            ...partner, 
-            distanceKm: distance,
-            formattedDistance: distance < 1 ? `${Math.round(distance * 1000)} เมตร` : `${Math.floor(distance)} กม.`
-          };
-        }
+        matched.push({
+          ...partner,
+          distanceKm: distance,
+          formattedDistance: distance < 1 ? `${Math.round(distance * 1000)} เมตร` : `${Math.floor(distance)} กม.`
+        });
       }
     });
 
-    return bestPartner;
+    // เรียงจากใกล้ไปไกล (ถ้าระยะทางเท่ากัน ให้ร้านคะแนนมากกว่าขึ้นก่อน)
+    matched.sort((a, b) => {
+      if (Math.abs(a.distanceKm - b.distanceKm) < 0.1) {
+        return (b.points || 0) - (a.points || 0);
+      }
+      return a.distanceKm - b.distanceKm;
+    });
+
+    return matched;
+  } catch (error) {
+    console.error("❌ [LocationService] เกิดข้อผิดพลาดในการหาพาร์ทเนอร์ใกล้เคียง:", error);
+    return [];
+  }
+};
+
+/**
+ * 🎯 ค้นหาร้านพาร์ทเนอร์ที่อยู่ใกล้ลูกค้ามากที่สุด (Nearest Partner - Distance First 100%)
+ * สำหรับโซนใต้ปุ่มใส่ตะกร้า: ยึดระยะทางจริงใกล้ตัวลูกค้าที่สุดเป็นอันดับแรกก่อนสิ่งอื่นใด
+ */
+export const findNearestPartner = async (userLat, userLon, maxDistanceKm = 30) => {
+  try {
+    const nearby = await findNearbyPartners(userLat, userLon, maxDistanceKm);
+    return nearby.length > 0 ? nearby[0] : null;
   } catch (error) {
     console.error("❌ [LocationService] เกิดข้อผิดพลาดในการหาพาร์ทเนอร์ใกล้เคียง:", error);
     return null;

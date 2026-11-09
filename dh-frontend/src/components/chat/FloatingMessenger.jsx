@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { MessageCircle, X, Headphones, Store } from 'lucide-react';
-import { findNearestPartner } from '../../firebase/partnerLocationService'; 
+import { findNearestPartner, findNearbyPartners } from '../../firebase/partnerLocationService'; 
 import { useGeolocation } from '../../hooks/useGeolocation';
 import MessengerMenu from './MessengerMenu';
 import MessengerRadar from './MessengerRadar';
@@ -16,6 +16,8 @@ const FloatingMessenger = () => {
   const [mode, setMode] = useState('menu'); 
   const [loading, setLoading] = useState(false);
   const [partner, setPartner] = useState(null);
+  const [nearbyPartners, setNearbyPartners] = useState([]);
+  const [partnerIndex, setPartnerIndex] = useState(0);
   const [error, setError] = useState(null);
   const [showTooltip, setShowTooltip] = useState(true);
   const [hasConsent, setHasConsent] = useState(() => {
@@ -70,32 +72,45 @@ const FloatingMessenger = () => {
 
   if (!hasConsent) return null;
 
-  const handleFindNearestPartner = async () => {
+  const handleFindNearestPartner = async (isSwitching = false) => {
     setMode('radar');
     setLoading(true);
     setError(null);
-    setPartner(null);
+    if (!isSwitching) setPartner(null);
 
     try {
       const location = await getUserCurrentLocation();
-      const nearest = await findNearestPartner(location.latitude, location.longitude, 30);
+      const list = await findNearbyPartners(location.latitude, location.longitude, 50);
       
       if (partnerTimeoutRef.current) clearTimeout(partnerTimeoutRef.current);
       partnerTimeoutRef.current = setTimeout(() => {
-        if (nearest) {
-          setPartner(nearest);
+        if (list && list.length > 0) {
+          setNearbyPartners(list);
+          const nextIdx = isSwitching ? (partnerIndex + 1) % list.length : 0;
+          setPartnerIndex(nextIdx);
+          setPartner(list[nextIdx]);
           setMode('result');
         } else {
           setError("ยังไม่มีร้านพาร์ทเนอร์ ในรัศมีพื้นที่ของคุณครับ");
           setMode('menu');
         }
         setLoading(false);
-      }, 1500);
+      }, 1000);
     } catch (err) {
-      if (err.message.includes("Permission")) setError("กรุณาเปิด GPS บนอุปกรณ์เพื่อค้นหาร้านใกล้เคียง");
+      if (err.message && err.message.includes("Permission")) setError("กรุณาเปิด GPS บนอุปกรณ์เพื่อค้นหาร้านใกล้เคียง");
       else setError("เกิดข้อผิดพลาดในการค้นหาพิกัด");
       setLoading(false);
       setMode('menu');
+    }
+  };
+
+  const handleNextPartner = () => {
+    if (nearbyPartners.length > 1) {
+      const nextIdx = (partnerIndex + 1) % nearbyPartners.length;
+      setPartnerIndex(nextIdx);
+      setPartner(nearbyPartners[nextIdx]);
+    } else {
+      handleFindNearestPartner(true);
     }
   };
 
@@ -120,7 +135,7 @@ const FloatingMessenger = () => {
   return (
     <div className={`fixed ${isProductDetail ? 'bottom-[135px]' : 'bottom-[85px]'} md:bottom-6 right-6 z-100 flex flex-col items-end pointer-events-none transition-all duration-300`}>
       
-      <div className={`pointer-events-auto mb-4 w-[320px] sm:w-[360px] bg-white/95 backdrop-blur-2xl rounded-md shadow-xl border border-slate-200 overflow-hidden transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] transform origin-bottom-right ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-50 opacity-0 translate-y-20'}`}>
+      <div className={`pointer-events-auto mb-4 w-[320px] sm:w-[360px] bg-white/95 backdrop-blur-2xl rounded-md shadow-[0_20px_50px_-10px_rgba(15,23,42,0.25),0_0_0_1px_rgba(15,23,42,0.08)] border border-slate-200/80 overflow-hidden transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)] transform origin-bottom-right ${isOpen ? 'scale-100 opacity-100 translate-y-0' : 'scale-50 opacity-0 translate-y-20'}`}>
         
         <div className={`p-5 text-white flex justify-between items-center relative overflow-hidden transition-colors duration-500 ${mode === 'partner_context' || mode === 'result' ? 'bg-linear-to-r from-emerald-600 to-teal-500' : 'bg-linear-to-r from-indigo-600 to-[#0870B8]'}`}>
           <div className="absolute top-0 right-0 w-40 h-40 bg-white opacity-10 rounded-full blur-3xl -translate-y-10 translate-x-10 pointer-events-none"></div>
@@ -146,7 +161,14 @@ const FloatingMessenger = () => {
           )}
 
           {(mode === 'result' || mode === 'partner_context') && (
-            <MessengerResult partner={partner} setMode={setMode} openLink={openLink} />
+            <MessengerResult 
+              partner={partner} 
+              setMode={setMode} 
+              openLink={openLink} 
+              onFindOtherPartner={handleNextPartner}
+              totalPartners={nearbyPartners.length}
+              partnerIndex={partnerIndex}
+            />
           )}
         </div>
       </div>
