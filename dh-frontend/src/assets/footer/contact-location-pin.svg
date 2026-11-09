@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none">
+  <defs>
+    <!-- Ground Shadow -->
+    <ellipse id="shadow" cx="24" cy="42" rx="12" ry="4" fill="url(#shadowGrad)" />
+    <radialGradient id="shadowGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#020617" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#020617" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Pin Outer 3D Gradient -->
+    <linearGradient id="pinBody" x1="10" y1="4" x2="38" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fb7185"/>
+      <stop offset="35%" stop-color="#f43f5e"/>
+      <stop offset="75%" stop-color="#e11d48"/>
+      <stop offset="100%" stop-color="#9f1239"/>
+    </linearGradient>
+
+    <!-- Glass Specular Highlight -->
+    <linearGradient id="specular" x1="16" y1="6" x2="28" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="50%" stop-color="#ffffff" stop-opacity="0.2"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Inner Core Gradient -->
+    <linearGradient id="innerCore" x1="19" y1="13" x2="29" y2="23" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f1f5f9"/>
+    </linearGradient>
+
+    <!-- Inner Core Rim Shadow -->
+    <filter id="coreShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="1" flood-color="#881337" flood-opacity="0.45"/>
+    </filter>
+  </defs>
+
+  <!-- Shadow on floor -->
+  <use href="#shadow"/>
+
+  <!-- Main Pin Body -->
+  <path d="M24 4C14.059 4 6 12.059 6 22c0 11.25 15.6 18.8 17.05 19.49a2.1 2.1 0 0 0 1.9 0C26.4 40.8 42 33.25 42 22 42 12.059 33.941 4 24 4Z" 
+        fill="url(#pinBody)" 
+        stroke="#fda4af" 
+        stroke-width="1"
+        stroke-opacity="0.4"/>
+
+  <!-- Pin Gloss Reflection -->
+  <path d="M24 6.5C15.44 6.5 8.5 13.44 8.5 22c0 3.2 1.1 6.16 3.1 8.5 1.5-5.5 5.5-10 11-11.5 5.2-1.4 10.4-.5 14.5 2-1.2-8.5-8-14.5-13.1-14.5Z" 
+        fill="url(#specular)"/>
+
+  <!-- Center Circle (White Core with Inner Depth) -->
+  <circle cx="24" cy="20" r="7" fill="url(#innerCore)" filter="url(#coreShadow)"/>
+  <circle cx="24" cy="20" r="3.2" fill="#be123c"/>
+</svg>

@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48" fill="none">
+  <defs>
+    <!-- Floor Shadow -->
+    <ellipse cx="24" cy="42" rx="14" ry="4" fill="url(#clockShadow)" />
+    <radialGradient id="clockShadow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#020617" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#020617" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Outer Gold Bezel -->
+    <linearGradient id="bezelGrad" x1="6" y1="4" x2="42" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#fbbf24"/>
+      <stop offset="35%" stop-color="#f59e0b"/>
+      <stop offset="75%" stop-color="#d97706"/>
+      <stop offset="100%" stop-color="#78350f"/>
+    </linearGradient>
+
+    <!-- Inner Dial Gradient -->
+    <radialGradient id="dialGrad" cx="40%" cy="35%" r="65%">
+      <stop offset="0%" stop-color="#1e293b"/>
+      <stop offset="70%" stop-color="#0f172a"/>
+      <stop offset="100%" stop-color="#020617"/>
+    </radialGradient>
+
+    <!-- Top Gloss Arc -->
+    <linearGradient id="glassShine" x1="10" y1="7" x2="38" y2="24" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.65"/>
+      <stop offset="60%" stop-color="#ffffff" stop-opacity="0.1"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+
+    <!-- Clock Hands Filter -->
+    <filter id="handGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="1" stdDeviation="1" flood-color="#f59e0b" flood-opacity="0.6"/>
+    </filter>
+  </defs>
+
+  <!-- Shadow -->
+  <ellipse cx="24" cy="42" rx="14" ry="4" fill="url(#clockShadow)" />
+
+  <!-- Outer Bezel -->
+  <circle cx="24" cy="23" r="18" fill="url(#bezelGrad)" stroke="#fde68a" stroke-width="1.2" stroke-opacity="0.6"/>
+
+  <!-- Inner Dark Dial -->
+  <circle cx="24" cy="23" r="14.5" fill="url(#dialGrad)" stroke="#b45309" stroke-width="0.8"/>
+
+  <!-- Tick Marks -->
+  <circle cx="24" cy="11.5" r="1" fill="#fde68a"/>
+  <circle cx="35.5" cy="23" r="1" fill="#fde68a"/>
+  <circle cx="24" cy="34.5" r="1" fill="#fde68a"/>
+  <circle cx="12.5" cy="23" r="1" fill="#fde68a"/>
+
+  <!-- Glass Dome Shine -->
+  <path d="M11 18c1.5-6 6.8-9.5 13-9.5s11.5 3.5 13 9.5c-2.5-3.5-7.5-5.5-13-5.5S13.5 14.5 11 18Z" fill="url(#glassShine)"/>
+
+  <!-- Clock Hands (Pointing to 9:00 - open time) -->
+  <!-- Hour Hand -->
+  <line x1="24" y1="23" x2="16.5" y2="23" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" filter="url(#handGlow)"/>
+  <!-- Minute Hand -->
+  <line x1="24" y1="23" x2="24" y2="13.5" stroke="#fef08a" stroke-width="1.8" stroke-linecap="round" filter="url(#handGlow)"/>
+  <!-- Center Cap -->
+  <circle cx="24" cy="23" r="2.2" fill="#f59e0b" stroke="#ffffff" stroke-width="0.8"/>
+</svg>
