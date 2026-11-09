@@ -62,14 +62,33 @@ export const resolveSmartUid = async (inputUid) => {
     if (!snap.empty) resolvedUid = snap.docs[0].id;
   }
 
-  // 3. Phone / PhoneNumber
-  if (resolvedUid === cleanInput) {
+  // 3. Phone / PhoneNumber (รองรับทั้งแบบมีขีด ไม่มีขีด และตัดรหัสประเทศ)
+  const cleanDigits = cleanInput.replace(/\D/g, '');
+  if (resolvedUid === cleanInput && cleanDigits.length >= 9 && cleanDigits.length <= 11) {
+    const candidates = [cleanInput, cleanDigits];
+    if (cleanDigits.startsWith('66') && cleanDigits.length === 11) {
+      candidates.push('0' + cleanDigits.substring(2));
+    }
+    for (const p of candidates) {
+      if (resolvedUid !== cleanInput) break;
+      snap = await getDocs(query(usersRefColl, where('phone', '==', p), limit(1)));
+      if (!snap.empty) {
+        resolvedUid = snap.docs[0].id;
+        break;
+      }
+      snap = await getDocs(query(usersRefColl, where('phoneNumber', '==', p), limit(1)));
+      if (!snap.empty) {
+        resolvedUid = snap.docs[0].id;
+        break;
+      }
+    }
+  } else if (resolvedUid === cleanInput) {
     snap = await getDocs(query(usersRefColl, where('phone', '==', cleanInput), limit(1)));
     if (!snap.empty) resolvedUid = snap.docs[0].id;
-  }
-  if (resolvedUid === cleanInput) {
-    snap = await getDocs(query(usersRefColl, where('phoneNumber', '==', cleanInput), limit(1)));
-    if (!snap.empty) resolvedUid = snap.docs[0].id;
+    if (resolvedUid === cleanInput) {
+      snap = await getDocs(query(usersRefColl, where('phoneNumber', '==', cleanInput), limit(1)));
+      if (!snap.empty) resolvedUid = snap.docs[0].id;
+    }
   }
 
   // 4. Email
@@ -78,10 +97,15 @@ export const resolveSmartUid = async (inputUid) => {
     if (!snap.empty) resolvedUid = snap.docs[0].id;
   }
 
-  // 5. Document ID prefix search
+  // 5. Document ID prefix search (รองรับทั้งตัวพิมพ์ใหญ่ upper และตัวพิมพ์เล็ก lower)
   if (resolvedUid === cleanInput && cleanInput.length >= 6) {
-    snap = await getDocs(query(usersRefColl, where(documentId(), '>=', cleanInput), where(documentId(), '<=', cleanInput + '\uf8ff'), limit(1)));
+    snap = await getDocs(query(usersRefColl, where(documentId(), '>=', upper), where(documentId(), '<=', upper + '\uf8ff'), limit(1)));
     if (!snap.empty) resolvedUid = snap.docs[0].id;
+
+    if (resolvedUid === cleanInput && upper !== lower) {
+      snap = await getDocs(query(usersRefColl, where(documentId(), '>=', lower), where(documentId(), '<=', lower + '\uf8ff'), limit(1)));
+      if (!snap.empty) resolvedUid = snap.docs[0].id;
+    }
   }
 
   uidCache.set(cleanInput, { uid: resolvedUid, timestamp: Date.now() });
@@ -202,11 +226,12 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
         throw new Error("ไม่พบบัญชีผู้ใช้งานที่ระบุ");
     }
 
+    const userData = userSnap.data() || {};
     const settingsData = settingsSnap.exists() ? settingsSnap.data() : null;
     const ledger = settingsData?.ledger || { systemPoolMax: 1000000, totalAllocated: 0, status: 'SECURE' };
 
     // ✨ Canonical Source of Truth คือ creditPoints บน userDoc เท่านั้น!
-    let currentPoints = Number(userSnap.data().creditPoints || 0);
+    let currentPoints = Number(userData.creditPoints || 0);
     let totalAccumulated = 0;
     if (walletSnap.exists()) {
       totalAccumulated = Number(walletSnap.data().totalAccumulated) || 0;
@@ -266,6 +291,14 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
       updatedAt: serverTimestamp()
     };
 
+    // 🛡️ Data Healing: หากเอกสารยังไม่มี accountId หรือ customerCode ให้บันทึกรหัสมาตรฐานลงไปพร้อมกัน
+    if (userData && !userData.accountId) {
+      syncPayload.accountId = userData.customerCode || uid.substring(0, 8).toUpperCase();
+    }
+    if (userData && !userData.customerCode) {
+      syncPayload.customerCode = syncPayload.accountId || uid.substring(0, 8).toUpperCase();
+    }
+
     transaction.set(userRef, syncPayload, { merge: true });
 
     // ✨ NEW FIX: Sync points to ActivePartners to prevent denormalization issues
@@ -273,7 +306,6 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
       transaction.set(activePartnerRef, { points: newPointsBalance, isActive: true, updatedAt: serverTimestamp() }, { merge: true });
     }
 
-    const userData = userSnap.data();
     const userEmail = userData.email || 'Migrated User';
     const resolvedName = getCustomerDisplayName(userData, '') || (userData.firstName ? `${userData.firstName} ${userData.lastName || ''}`.trim() : null) || (userData.email ? userData.email.split('@')[0] : null) || userData.phone || userData.phoneNumber || 'Unknown';
 

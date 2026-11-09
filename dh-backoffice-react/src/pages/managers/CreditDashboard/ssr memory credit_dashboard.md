@@ -52,5 +52,7 @@
 - ⚠️ Symbol & Decimal Parity: Standardized PT/THB to Pts in CreditAdjustTab/CreditCalculatorTab and enabled maximumFractionDigits: 2 in frontend creditFormatService.
 - ⚠️ Schema & Type Validation (Phase 3): Centralized COLLECTIONS.CREDIT_TRANSACTIONS in schemaKeys.js and guarded all write transactions with Zod schema validation (creditSchema.js).
 - ⚠️ Partner Ad Auto-Restore & Directory Parity (Self-Healing): ร้านที่เคยแต้มหมดแล้วถูกระงับเป็น OUT_OF_CREDIT และลบออกจาก ActivePartners เมื่อผู้จัดการเติมเครดิตใหม่ผ่าน adjustUserCredit ระบบจะปลดล็อกโฆษณานามบัตรกลับเป็น active, คืนข้อมูลลง ActivePartners และซิงค์แต้มลง catalogs/customers_directory อัตโนมัติ ป้องกันปัญหาแต้มไม่ขึ้นในตารางและโฆษณาหายหน้าบ้าน
+- ⚠️ Case-Insensitive UID Prefix & Hyphenated Phone Search (Self-Healing): UID ใน Firestore ขึ้นต้นด้วยตัวพิมพ์เล็กหรือใหญ่ได้ (เช่น iclu...) แต่รหัสแสดงผล 8 ตัวถูกแปลงเป็น uppercase (ICLUEDVL) ทำให้ range query documentId() แบบเคสเดียวหาไม่เจอ ต้องค้นหาทั้ง upper และ lower prefix และสกัดตัวเลขเบอร์โทร (.replace(/\D/g, '')) ก่อนค้นหา phone/phoneNumber เสมอ พร้อม auto-heal accountId/customerCode ลง userDoc เมื่อมีการทำรายการ
+- ⚠️ Variable Scope Invariant in Transaction (TDZ Guard): ใน adjustUserCreditWithTransaction ต้องประกาศ const userData = userSnap.data() || {} ไว้บนสุดทันทีหลังตรวจ userSnap.exists() ห้ามเรียกใช้ userData ในบล็อก auto-heal ก่อนบรรทัดประกาศเด็ดขาด ป้องกัน ReferenceError (Cannot access before initialization)
 </pitfalls_and_lessons>
 </grimoire>
