@@ -4,7 +4,8 @@ import { Globe } from 'lucide-react';
 /**
  * คอมโพเนนต์แสดงยอดผู้เข้าชมเว็บไซต์ All-Time (Pure UI Component)
  * - Calm UI Invariant: ป้ายนิ่ง ไม่กระพริบ ไม่เคลื่อนไหวรบกวนสายตา
- * - UI Border Radius Invariant: ใช้ความโค้งมนระดับ 0.1 (rounded-[2px])
+ * - UI Border Radius Invariant: ใช้ความโค้งมนระดับ 0.1 (rounded-[2px]) ในโหมด Card
+ * - Borderless PC Invariant: ใน Footer PC แสดงผลแบบคลีน ไร้ขอบ (No border) และไร้รูปทรงกล่องแยก (No shapes)
  * 
  * @param {Object} props
  * @param {string} props.count ตัวเลขยอดผู้เข้าชมที่จัดรูปแบบแล้ว
@@ -30,19 +31,19 @@ export const VisitorCounterBadge = ({ count, loading = false, variant = 'footer-
     );
   }
 
-  // โหมด Default: footer-dark สำหรับแสดงใน Footer PC ใต้ Trust Badges
+  // โหมด Default: footer-dark สำหรับแสดงใน Footer PC ใต้ Trust Badges (ไร้ขอบ ไม่เอารูปทรงกล่อง)
   return (
     <div 
-      className="flex items-center justify-between gap-3 bg-slate-800/80 border border-slate-700/80 px-3 py-2 rounded-[2px] shadow-xs select-none hover:border-slate-600 transition-colors"
+      className="flex items-center justify-between gap-3 px-1 py-1.5 select-none transition-colors"
       title="สถิติผู้เข้าชมเว็บไซต์ทั้งหมด (All-time)"
     >
-      <div className="flex items-center gap-2 text-slate-300">
+      <div className="flex items-center gap-2 text-slate-400">
         <Globe className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-        <span className="text-[11px] font-medium tracking-tight text-slate-300">ผู้เข้าชมทั้งหมด:</span>
+        <span className="text-[11px] font-medium tracking-tight text-slate-400">ผู้เข้าชมทั้งหมด:</span>
       </div>
       <div className="flex items-baseline gap-1 font-mono font-bold text-sky-400">
         <span className="text-sm tracking-tight">{loading ? '...' : count}</span>
-        <span className="text-[10px] font-normal text-slate-400 font-sans">ครั้ง</span>
+        <span className="text-[10px] font-normal text-slate-500 font-sans">ครั้ง</span>
       </div>
     </div>
   );

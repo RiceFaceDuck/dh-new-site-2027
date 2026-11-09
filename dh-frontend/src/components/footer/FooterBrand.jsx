@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { ShieldCheck, Award, CheckCircle2, Truck } from 'lucide-react';
 import { trackFooterClick } from '../../firebase/footerAnalyticsService';
 import { useWebTrafficAllTime } from '../../hooks/useWebTrafficAllTime';
@@ -55,15 +56,15 @@ const FooterBrand = ({ companyConfig, trustBadgesConfig, socialHubConfig }) => {
   return (
     <div className="col-span-1 space-y-5">
       <div className="flex flex-col items-start leading-none">
-        {/* Logo in Corporate Badge Style */}
-        <div className="bg-white p-2.5 rounded-lg shadow-[0_0_15px_rgba(255,255,255,0.1)] inline-block transform hover:scale-105 transition-transform duration-300">
+        <Link to="/" className="inline-block group">
           <img 
-            src={companyConfig?.logoUrl || "/logo.png"} 
+            src={companyConfig?.logoUrl || "/logo.jpg"} 
             alt="Brand Logo" 
-            className="h-7 md:h-9 object-contain" 
+            className="h-10 md:h-12 w-auto object-contain rounded-[2px] group-hover:scale-105 transition-transform duration-300 drop-shadow-sm" 
             loading="lazy" 
+            onError={(e) => { e.target.src = '/logo.png'; }}
           />
-        </div>
+        </Link>
       </div>
 
       <p className="text-sm text-slate-400 pr-2 leading-relaxed font-normal">
