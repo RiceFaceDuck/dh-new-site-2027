@@ -53,7 +53,7 @@ const StoreProfilePage = () => {
       <StoreProfileHero partner={partner} />
       <div className="max-w-4xl lg:max-w-6xl xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 pb-8">
         <StoreProfileInfo partner={partner} currentUser={currentUser} />
-        <PartnerAds partnerId={partner.id} />
+        <PartnerAds partnerId={partner.id} partner={partner} />
         <StoreRecommendedProducts />
       </div>
     </div>

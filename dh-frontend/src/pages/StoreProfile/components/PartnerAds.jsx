@@ -12,8 +12,9 @@ import usePartnerAds from '../hooks/usePartnerAds';
  * - Placement: store_partner_ads.
  * - Container UI border radius: 0.1 (rounded-[2px]).
  */
-const PartnerAds = ({ partnerId }) => {
-  const { ads, loading } = usePartnerAds(partnerId);
+const PartnerAds = ({ partnerId, partner = null }) => {
+  const resolvedPartnerId = partnerId || partner?.id;
+  const { ads, loading } = usePartnerAds(resolvedPartnerId, partner);
 
   if (loading) {
     return (

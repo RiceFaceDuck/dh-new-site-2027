@@ -20,24 +20,36 @@ const getTelemetryEndpoint = () => {
 };
 
 const inMemoryAntiFraudCache = new Map();
+const STORE_VIEW_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes (1,800,000 ms)
+const AD_COOLDOWN_MS = 5 * 60 * 1000;          // 5 minutes (300,000 ms)
 
 const checkAntiFraud = (actionType, adId) => {
   const sessionKey = `dh_ad_${actionType}_${adId}`;
   const now = Date.now();
+  const cooldownMs = actionType === 'store_view' ? STORE_VIEW_COOLDOWN_MS : AD_COOLDOWN_MS;
 
-  if (typeof window !== "undefined" && window.sessionStorage) {
-    try {
-      const lastAction = sessionStorage.getItem(sessionKey);
-      if (lastAction && (now - parseInt(lastAction, 10)) < 300000) return false; // 5-minute cooldown per ad
-      sessionStorage.setItem(sessionKey, now.toString());
-      return true;
-    } catch (e) {
-      // SessionStorage disabled or restricted, fall back to memory
+  // Cross-tab synchronization: store_view checks localStorage first, ads check sessionStorage
+  if (typeof window !== "undefined") {
+    const storage = actionType === 'store_view'
+      ? (window.localStorage || window.sessionStorage)
+      : window.sessionStorage;
+
+    if (storage) {
+      try {
+        const lastAction = storage.getItem(sessionKey);
+        if (lastAction && (now - parseInt(lastAction, 10)) < cooldownMs) {
+          return false;
+        }
+        storage.setItem(sessionKey, now.toString());
+        return true;
+      } catch (e) {
+        // Storage disabled or restricted in private browsing mode, fall back to memory
+      }
     }
   }
 
   const lastMemoryAction = inMemoryAntiFraudCache.get(sessionKey);
-  if (lastMemoryAction && (now - lastMemoryAction) < 300000) return false;
+  if (lastMemoryAction && (now - lastMemoryAction) < cooldownMs) return false;
   inMemoryAntiFraudCache.set(sessionKey, now);
   return true; 
 };
@@ -61,9 +73,11 @@ export const flushTelemetryQueue = async (isExiting = false) => {
   const dataString = JSON.stringify({ events: payload });
 
   // 1. ถ้ากำลังจะปิดหน้าเว็บ ให้ใช้ navigator.sendBeacon ของเบราว์เซอร์
+  // 🛡️ Bypasses CORS Preflight: Uses 'text/plain;charset=UTF-8' Blob so the browser
+  // treats it as a simple request and avoids OPTIONS preflight drops on page unload.
   if (isExiting && typeof navigator !== 'undefined' && navigator.sendBeacon) {
     try {
-      const blob = new Blob([dataString], { type: 'application/json' });
+      const blob = new Blob([dataString], { type: 'text/plain;charset=UTF-8' });
       const sent = navigator.sendBeacon(endpoint, blob);
       if (sent) return;
     } catch (beaconErr) {
@@ -76,7 +90,7 @@ export const flushTelemetryQueue = async (isExiting = false) => {
     if (typeof fetch !== 'undefined') {
       await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': isExiting ? 'text/plain;charset=UTF-8' : 'application/json' },
         body: dataString,
         keepalive: true
       });
@@ -209,7 +223,11 @@ export const logClick = async (adId, meta = {}) => {
  * @param {string} [params.ownerId] - รหัสเจ้าของร้าน
  * @param {string} [params.source] - แหล่งที่มา (default: 'direct')
  */
-export const trackStoreView = async ({ storeId, partnerName = '', ownerId = '', source = 'direct' } = {}) => {
+export const trackStoreView = async (params = {}) => {
+  // Support both trackStoreView('PARTNER-123') and trackStoreView({ storeId: 'PARTNER-123' })
+  const options = typeof params === 'string' ? { storeId: params } : (params || {});
+  const { storeId, partnerName = '', ownerId = '', source = 'direct' } = options;
+
   if (!storeId) return;
   if (!checkAntiFraud('store_view', storeId)) return;
 

@@ -1,44 +1,13 @@
-import { useState, useEffect } from 'react';
+import React from 'react';
 import ProductList from '../../../components/ProductList';
-import useInView from '../../../hooks/useInView';
-import { featuredQueryService } from '../../../firebase/featuredQueryService';
+import { useStoreRecommendedProducts } from '../hooks/useStoreRecommendedProducts';
 
+/**
+ * Pure presentation component for displaying store recommended products.
+ * Logic and data fetching are decoupled into useStoreRecommendedProducts hook.
+ */
 export default function StoreRecommendedProducts() {
-  const [inViewRef, inView] = useInView({ rootMargin: '300px 0px' });
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    if (!inView) return;
-
-    let isMounted = true;
-    const fetchRandomProducts = async () => {
-      try {
-        setLoading(true);
-        const items = await featuredQueryService.getRandomFeaturedProducts(4);
-        if (isMounted) {
-          setProducts(items || []);
-          setError(null);
-        }
-      } catch (err) {
-        console.error("Error fetching recommended products for store profile:", err);
-        if (isMounted) {
-          setError("ไม่สามารถโหลดสินค้าแนะนำได้");
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    };
-
-    fetchRandomProducts();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [inView]);
+  const { inViewRef, inView, products, loading, error } = useStoreRecommendedProducts();
 
   if (inView && !loading && products.length === 0) return null;
 

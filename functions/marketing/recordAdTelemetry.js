@@ -141,6 +141,25 @@ const calculateAdDeductions = (validAdMap, config = {}) => {
   return ownerDeductions;
 };
 
+/**
+ * คำนวณวันที่ปัจจุบันในรูปแบบ "YYYY-MM-DD" อิงโซนเวลา Asia/Bangkok (UTC+7)
+ * ใช้ Intl.DateTimeFormat แบบ Native 100% เพื่อหลีกเลี่ยงข้อผิดพลาด CJS / ESM (ERR_REQUIRE_ESM)
+ * @param {Date|number|string} [date=new Date()]
+ * @returns {string} เช่น "2026-11-09"
+ */
+const getBangkokDateKey = (date = new Date()) => {
+  let d = date instanceof Date ? date : new Date(date || Date.now());
+  if (isNaN(d.getTime())) {
+    d = new Date();
+  }
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Bangkok",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(d);
+};
+
 // ==========================================
 // 3. ATOMIC TRANSACTION & LEDGER ORCHESTRATOR (SRP Layer 3)
 // ==========================================
@@ -218,35 +237,81 @@ const commitTelemetryTransaction = async (db, adAggregates = {}, config = {}, st
     const ownerDeductions = adIds.length > 0 ? calculateAdDeductions(validAdMap, config) : {};
 
     // C. Write Phase 1: บันทึกสถิติยอดเข้าชมหน้าร้านพาร์ทเนอร์ (Dual-Sync: ActivePartners + users/{uid}/storeProfile/main)
+    const todayStr = getBangkokDateKey();
+
     storeSnaps.forEach((snap, idx) => {
       const storeId = storeIds[idx];
       const deltaViews = Number(storeAggregates[storeId]?.views || 0);
       if (deltaViews > 0) {
         const storeRef = storeRefs[idx];
+        const profileRef = profileRefs[idx];
+        const profileSnap = profileSnaps[idx];
+
+        // 🏪 1. ActivePartners Multi-Period Metrics
         if (snap.exists) {
+          const storeData = snap.data() || {};
+          const currentAllTime = Number(
+            storeData?.views?.allTime ?? storeData?.viewCount ?? storeData?.viewsCount ?? 0
+          );
+          const newAllTime = currentAllTime + deltaViews;
+          const isSameDay = storeData?.views?.dateKey === todayStr;
+          const currentToday = isSameDay ? Number(storeData?.views?.today ?? 0) : 0;
+          const newToday = currentToday + deltaViews;
+
           transaction.update(storeRef, {
             viewCount: FieldValue.increment(deltaViews),
+            views: {
+              allTime: newAllTime,
+              today: newToday,
+              dateKey: todayStr,
+              updatedAt: FieldValue.serverTimestamp()
+            },
             updatedAt: FieldValue.serverTimestamp()
           });
         } else {
           transaction.set(storeRef, {
             partnerId: storeId,
             viewCount: deltaViews,
+            views: {
+              allTime: deltaViews,
+              today: deltaViews,
+              dateKey: todayStr,
+              updatedAt: FieldValue.serverTimestamp()
+            },
             updatedAt: FieldValue.serverTimestamp()
           }, { merge: true });
         }
 
-        // 🛡️ Dual-Sync: บันทึก viewCount ลง Permanent SSOT (users/{uid}/storeProfile/main) เพื่อไม่ให้สถิติสูญหาย
-        const profileRef = profileRefs[idx];
-        const profileSnap = profileSnaps[idx];
+        // 🛡️ 2. Dual-Sync: บันทึกลง Permanent SSOT (users/{uid}/storeProfile/main)
         if (profileSnap && profileSnap.exists) {
+          const profileData = profileSnap.data() || {};
+          const pCurrentAllTime = Number(
+            profileData?.views?.allTime ?? profileData?.viewCount ?? profileData?.viewsCount ?? 0
+          );
+          const pNewAllTime = pCurrentAllTime + deltaViews;
+          const pIsSameDay = profileData?.views?.dateKey === todayStr;
+          const pCurrentToday = pIsSameDay ? Number(profileData?.views?.today ?? 0) : 0;
+          const pNewToday = pCurrentToday + deltaViews;
+
           transaction.update(profileRef, {
             viewCount: FieldValue.increment(deltaViews),
+            views: {
+              allTime: pNewAllTime,
+              today: pNewToday,
+              dateKey: todayStr,
+              updatedAt: FieldValue.serverTimestamp()
+            },
             updatedAt: FieldValue.serverTimestamp()
           });
         } else {
           transaction.set(profileRef, {
             viewCount: deltaViews,
+            views: {
+              allTime: deltaViews,
+              today: deltaViews,
+              dateKey: todayStr,
+              updatedAt: FieldValue.serverTimestamp()
+            },
             updatedAt: FieldValue.serverTimestamp()
           }, { merge: true });
         }
@@ -507,5 +572,6 @@ module.exports = {
   processAdTelemetryBatch,
   aggregateTelemetryEvents,
   calculateAdDeductions,
-  commitTelemetryTransaction
+  commitTelemetryTransaction,
+  getBangkokDateKey
 };

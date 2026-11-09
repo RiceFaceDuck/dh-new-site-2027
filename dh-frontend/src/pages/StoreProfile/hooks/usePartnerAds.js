@@ -7,11 +7,13 @@ import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 /**
  * Controller hook for fetching and filtering partner ads for Store Profile.
  * Clean Architecture & SRP: handles Firestore data queries, guest permission safety, and ad filtering.
+ * Quota Optimization: Bypasses redundant ActivePartners getDoc read when partnerData prop is provided.
  * 
  * @param {string} partnerId
+ * @param {Object|null} [partnerData=null] Pre-fetched partner data to bypass redundant Firestore read
  * @returns {{ ads: Array, loading: boolean }}
  */
-export const usePartnerAds = (partnerId) => {
+export const usePartnerAds = (partnerId, partnerData = null) => {
   const [ads, setAds] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -28,19 +30,27 @@ export const usePartnerAds = (partnerId) => {
         setLoading(true);
 
         // 🛡️ ตรวจสอบสถานะการเปิดใช้งานและเครดิตจาก ActivePartners (Public Collection - ปลอดภัยสำหรับ Guest)
-        try {
-          const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), partnerId);
-          const activePartnerSnap = await getDoc(activePartnerRef);
+        // ⚡ Quota Safeguard: หากมี partnerData ส่งเข้ามาแล้ว ให้ข้าม getDoc เพื่อประหยัด 1 Read ทันที
+        let resolvedPartnerData = partnerData;
 
-          if (activePartnerSnap.exists()) {
-            const partnerData = activePartnerSnap.data();
-            if (partnerData.isActive === false || (typeof partnerData.points === 'number' && partnerData.points <= 0)) {
-              if (isMounted) setAds([]);
-              return;
+        if (!resolvedPartnerData) {
+          try {
+            const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), partnerId);
+            const activePartnerSnap = await getDoc(activePartnerRef);
+
+            if (activePartnerSnap.exists()) {
+              resolvedPartnerData = activePartnerSnap.data();
             }
+          } catch (activePartnerErr) {
+            console.debug('[usePartnerAds] ActivePartners status check deferred:', activePartnerErr?.message);
           }
-        } catch (activePartnerErr) {
-          console.debug('[usePartnerAds] ActivePartners status check deferred:', activePartnerErr?.message);
+        }
+
+        if (resolvedPartnerData) {
+          if (resolvedPartnerData.isActive === false || (typeof resolvedPartnerData.points === 'number' && resolvedPartnerData.points <= 0)) {
+            if (isMounted) setAds([]);
+            return;
+          }
         }
 
         // ดึงโฆษณาทั้งหมดของพาร์ทเนอร์รายนี้
@@ -74,7 +84,7 @@ export const usePartnerAds = (partnerId) => {
     return () => {
       isMounted = false;
     };
-  }, [partnerId]);
+  }, [partnerId, partnerData?.isActive, partnerData?.points]);
 
   return { ads, loading };
 };

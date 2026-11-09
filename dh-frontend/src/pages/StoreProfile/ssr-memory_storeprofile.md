@@ -88,6 +88,13 @@
 - **Solution:** ติดตั้ง Dwell-time Guard (ต้องดูเกิน 1,000ms ถึงเริ่มนับ) ร่วมกับ Session Deduplication (คูลดาวน์ 5 นาที) และส่งผ่าน In-memory Telemetry Queue (`trackStoreView`) รวบรวมส่งเป็นรอบ พร้อมตัดการสร้างรหัสโฆษณาเทียมออก เพื่อแยกยอดวิวร้านค้าทั่วไป (Organic) ออกจากยอดวิวโฆษณา (Paid) อย่างเด็ดขาด
 - **Problem:** ตัวแปร `settingsRef` ใน Cloud Functions `recordAdTelemetry.js` ประกาศอยู่ลึกใน if-block เมื่อเข้าสู่ขั้นตอนการเขียนข้อมูลใน Transaction ทำให้เกิด `ReferenceError: settingsRef is not defined`
 - **Solution:** ยก (Hoist) ขอบเขตของ `settingsRef` ออกมาให้อยู่ใน Transaction Scope ด้านนอกสุด และใส่ Null-guard รัดกุม (`totalDeductionsAll > 0 && settingsRef && settingsSnap && settingsSnap.exists`) เพื่อความปลอดภัย 100%
+- **Problem:** ยอดเข้าชมหน้าโปรไฟล์ร้านค้าพาร์ทเนอร์ (`/store/:id`) สวิงกลับไปกลับมาระหว่าง `0 ➔ 1 ➔ 0 ➔ 1` เมื่อรีเฟรชหน้า F5 หรือสลับแท็บ เนื่องจาก Optimistic UI บวกเลขหลอกตาขณะที่ In-Memory Telemetry Queue ยังไม่บันทึกจริงลง Firestore และถูก Props เก่าเขียนทับ
+- **Solution:** 
+  1. สร้าง Hook `useStoreViews.js` ใช้สูตร Synchronous Frame 0 State Initialization คู่กับ Monotonic Max Ceiling (`Math.max(remote, localTarget)`) และ Cross-Tab Synchronization ผ่าน `localStorage` พร้อม TTL Lock 30 นาที ป้องกันตัวเลขตกวูบหรือเด้งสลับ
+  2. ออกแบบระบบสถิติหลายระยะ (All-time & Today) ฝังใน `views: { allTime, today, dateKey, updatedAt }` โซนเวลาไทย (`Asia/Bangkok`) ตัดรอบเที่ยงคืนแบบ Lazy Rollover โดยมีต้นทุน Read/Write Firestore เพิ่ม = 0 บาท พร้อมรักษาประวัติยอดวิวเก่า (Legacy Preservation) 100%
+  3. แยกหน้าที่ (SRP): สกัด `useStoreLikes.js` ออกจาก `useStoreViews.js` โดยคง Facade `useStoreStats.js` ไว้, แตก God Component `StoreProfileInfo.jsx` (293 บรรทัด) ออกเป็น 4 ไฟล์ย่อย (<80 บรรทัด), สกัด `useStoreRecommendedProducts.js` เป็น Pure UI, ปรับขอบมน `rounded-[2px]` (0.1rem), และแสดงป้ายนิ่ง Calm UI ใน `StoreViewBadge.jsx`
+  4. ตัดรอยรั่วโควต้า: ส่งต่อ Props `partner` เข้า `PartnerAds` -> `usePartnerAds` ตัดการอ่าน `ActivePartners` ซ้ำซ้อน ประหยัดโควต้า Read 50%
+  5. บันทึกชุดทดสอบอัตโนมัติ 4 Suites (55 ข้อ) ไว้ที่ `Management System/tests/verifications/` ตามกฎ Centralized Test Hub
 
 ## 6. <future_roadmap>
 - **Telemetry for Map & Share Buttons:** วางแผนติดตั้ง `trackAdClick` สำหรับปุ่มแผนที่ (`actionType: 'maps_open'`) และปุ่มแชร์ (`actionType: 'share_click'`) เพื่อเก็บสถิติความสนใจของลูกค้าเพิ่มเติม นอกเหนือจากการกดโทรออก (`phone_call`)

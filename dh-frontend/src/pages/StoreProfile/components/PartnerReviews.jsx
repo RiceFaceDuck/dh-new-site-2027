@@ -23,7 +23,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
   } = usePartnerReviews(partnerId, ownerId, currentUser);
 
   return (
-    <div className="bg-white rounded-2xl shadow-xs border border-slate-100 p-6 md:p-8">
+    <div className="bg-white rounded-[2px] shadow-xs border border-slate-100 p-6 md:p-8">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <h3 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center">
@@ -49,7 +49,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
 
       {/* Review Form */}
       {currentUser && !isOwner && (
-        <form onSubmit={handleSubmitReview} className="bg-slate-50 rounded-2xl p-5 mb-8 border border-slate-100 transition-all focus-within:ring-2 focus-within:ring-brand/30 focus-within:bg-white">
+        <form onSubmit={handleSubmitReview} className="bg-slate-50 rounded-[2px] p-5 mb-8 border border-slate-100 transition-all focus-within:ring-2 focus-within:ring-brand/30 focus-within:bg-white">
           <div className="flex items-start gap-4">
             <img src={currentUser.photoURL || 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100&h=100&fit=crop'} alt="User" className="w-10 h-10 rounded-full border-2 border-white shadow-xs"  loading="lazy" />
             <div className="flex-1">
@@ -90,7 +90,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
       )}
 
       {(!currentUser && reviews.length === 0) && (
-        <div className="text-center py-10 bg-slate-50 rounded-2xl border border-dashed border-slate-200">
+        <div className="text-center py-10 bg-slate-50 rounded-[2px] border border-dashed border-slate-200">
           <p className="text-slate-500 mb-2">ยังไม่มีรีวิวสำหรับร้านค้านี้</p>
           <p className="text-sm text-slate-400">ล็อกอินเข้าสู่ระบบเพื่อเป็นคนแรกที่รีวิว!</p>
         </div>
@@ -102,7 +102,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
           <div key={review.id} className="group flex gap-4">
             <img src={review.userPhoto} alt={review.userName} className="w-12 h-12 rounded-full border border-slate-200 shadow-xs object-contain"  loading="lazy" />
             <div className="flex-1">
-              <div className="bg-slate-50 rounded-2xl p-4 sm:p-5 relative">
+              <div className="bg-slate-50 rounded-[2px] p-4 sm:p-5 relative">
                 
                 {/* Heart Button for Owner */}
                 {isOwner && (
@@ -165,7 +165,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
                       value={replyText}
                       onChange={(e) => setReplyText(e.target.value)}
                       placeholder="พิมพ์ข้อความตอบกลับ..."
-                      className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-brand focus:border-brand"
+                      className="flex-1 bg-slate-50 border border-slate-200 rounded-[2px] px-3 py-2 text-sm focus:outline-hidden focus:ring-1 focus:ring-brand focus:border-brand"
                       autoFocus
                     />
                     <button 
@@ -191,7 +191,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
                   <div className="w-8 h-8 rounded-full bg-brand flex items-center justify-center text-white font-bold text-xs shrink-0 ring-4 ring-white shadow-xs z-10">
                     ร้าน
                   </div>
-                  <div className="flex-1 bg-brand/5 border border-brand/10 rounded-2xl p-4">
+                  <div className="flex-1 bg-brand/5 border border-brand/10 rounded-[2px] p-4">
                     <div className="flex items-center gap-2 mb-1">
                       <h4 className="font-bold text-brand text-sm">การตอบกลับจากเจ้าของร้าน</h4>
                       <span className="text-xs text-brand/60">• {formatDate(review.ownerReply.createdAt)}</span>
