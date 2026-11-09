@@ -136,15 +136,15 @@ const ProfileSidebar = ({ user, activeTab, setActiveTab, handleLogout }) => {
 
             {/* 🪙 เครดิตพอยต์ (เน้นให้เด่น) */}
             <div className="border-l border-slate-700/80 px-1 flex flex-col items-center justify-center transition-transform hover:scale-105">
-              <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1 flex items-center justify-center gap-1">
+              <p className="text-[8px] text-slate-500 uppercase tracking-widest mb-1">
                 Points
-                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_4px_rgba(99,102,241,0.8)]"></span>
+
               </p>
               {creditLoading ? (
                  <Loader2 size={14} className="animate-spin text-indigo-400 mx-auto mt-1" />
               ) : (
-                 <p className={`text-xs font-black tracking-wider ${balance > 0 ? 'text-indigo-300' : 'text-slate-400'} drop-shadow-xs`}>
-                   {formatCredit(balance)}
+                 <p className={`text-xs font-medium tracking-wider ${balance > 0 ? 'text-indigo-100' : 'text-slate-400'} drop-shadow-xs`}>
+                   {Math.floor(balance || 0).toLocaleString('th-TH')}
                  </p>
               )}
             </div>

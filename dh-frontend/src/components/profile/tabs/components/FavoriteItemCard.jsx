@@ -119,7 +119,7 @@ const FavoriteItemCard = ({
       </div>
       
       <div className={viewMode === 'grid' ? '' : 'flex flex-row gap-3'}>
-        <div className={`${viewMode === 'grid' ? 'aspect-square mb-3 mt-4' : 'w-20 h-20 sm:w-24 sm:h-24 shrink-0'} bg-slate-50 rounded-xs border border-slate-200 overflow-hidden flex items-center justify-center p-2 relative shadow-2xs`}>
+        <div className={`${viewMode === 'grid' ? 'aspect-square mb-3 mt-4' : 'w-20 h-20 sm:w-24 sm:h-24 shrink-0'} overflow-hidden flex items-center justify-center p-1 relative`}>
           <img src={displayData.imageUrl || displayData.images?.[0] || "https://via.placeholder.com/200x200?text=No+Image"} alt={displayData.name} className="w-full h-full object-contain group-hover:scale-105 transition duration-500" loading="lazy" />
           {isDiscontinued ? (
             <div className="absolute inset-0 bg-slate-900/60 flex items-center justify-center backdrop-blur-[1px]">
@@ -150,14 +150,14 @@ const FavoriteItemCard = ({
             {!isExpanded && (tags.length > 0 || note) && (
               <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
                 {tags.slice(0, 3).map((tag, idx) => (
-                  <span key={idx} className="bg-emerald-50 text-emerald-800 border border-emerald-300 px-1.5 py-0.5 rounded-xs text-[9px] font-medium flex items-center gap-1 shadow-2xs">
-                    <Tag size={8} /> {tag}
+                  <span key={idx} className="text-emerald-700 text-[10px] font-semibold flex items-center gap-1">
+                    <Tag size={9} className="text-emerald-600 shrink-0" /> {tag}
                   </span>
                 ))}
                 {tags.length > 3 && <span className="text-[9px] text-slate-500 font-semibold">+{tags.length - 3}</span>}
                 {note && (
-                  <span className="text-[10px] text-slate-600 italic flex items-center gap-1 line-clamp-1 max-w-[200px] bg-slate-100 px-1.5 py-0.5 rounded-xs border border-slate-200">
-                    <FileText size={10} className="shrink-0 text-slate-500" /> {note}
+                  <span className="text-[10px] text-slate-600 flex items-center gap-1 line-clamp-1 max-w-[200px]">
+                    <FileText size={10} className="shrink-0 text-slate-400" /> {note}
                   </span>
                 )}
               </div>

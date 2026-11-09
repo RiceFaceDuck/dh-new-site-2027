@@ -1,4 +1,4 @@
-import { Heart, ShoppingCart, LayoutGrid, List, AlertCircle, Search, Tag, Copy, Check, X } from 'lucide-react';
+import { Heart, ShoppingCart, LayoutGrid, List, Search, Tag, X, Sparkles } from 'lucide-react';
 import { useFavoriteManagement } from './hooks/useFavoriteManagement';
 import FavoriteItemCard from './components/FavoriteItemCard';
 
@@ -26,16 +26,16 @@ const TabFavorites = () => {
     tagCounts,
     loadingLive,
     liveProducts,
-    handleCopyQuotation,
-    copiedQuotation,
+
+
     navigate
   } = useFavoriteManagement();
 
   return (
   <div className="animate-in fade-in duration-500 pb-8">
     {/* Page Header */}
-    <div className="flex items-center justify-between mb-4">
-      <div className="flex items-center gap-2.5">
+    <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 mb-4">
+      <div className="flex items-center gap-2.5 shrink-0">
         <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
           <Heart size={22} className="text-emerald-600 fill-emerald-100" /> สินค้าที่ถูกใจ
         </h2>
@@ -43,6 +43,15 @@ const TabFavorites = () => {
           {favorites.length} รายการ
         </span>
       </div>
+
+      {favorites.length > 0 && (
+        <div className="flex items-center gap-1.5 text-xs text-slate-600 font-medium px-2 whitespace-nowrap">
+          <Sparkles size={14} className="shrink-0 text-amber-500 fill-amber-500" />
+          <span>
+            <strong className="text-amber-800 font-bold">ห้องทำงานช่าง:</strong> คุมอะไหล่ครบ จบทุกงานซ่อม
+          </span>
+        </div>
+      )}
       <div className="flex items-center gap-2">
         {favorites.length > 0 && (
           <div className="flex items-center bg-slate-100 rounded-xs p-0.5 border border-slate-300 shadow-2xs">
@@ -67,42 +76,24 @@ const TabFavorites = () => {
 
     {favorites.length > 0 && (
       <div className="mb-4 flex flex-col gap-2.5">
-        {/* Info Alert */}
-        <div className="flex items-center gap-2 text-[11px] text-amber-800 bg-amber-50/90 p-2 rounded-xs border border-amber-300/80 shadow-2xs w-full">
-          <AlertCircle size={14} className="shrink-0 text-amber-600" />
-          <span className="font-medium">ห้องทำงานช่าง: สามารถจดบันทึกงาน ใส่แท็ก คัดลอกสรุปราคา และจัดลำดับอะไหล่ขึ้น-ลงได้ทันที</span>
-        </div>
-
-        {/* Workstation Filter & Search Hub */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-100/90 p-2 rounded-xs border border-slate-300 shadow-2xs">
-          <div className="relative flex-1">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
-            <input 
-              type="text"
-              placeholder="ค้นหาอะไหล่ตามชื่อ, SKU, หมายเหตุ หรือแท็ก..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full text-xs pl-8 pr-7 py-1.5 rounded-xs border border-slate-300 bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500 outline-hidden shadow-2xs transition-all"
-            />
-            {searchQuery && (
-              <button 
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
-              >
-                <X size={12} />
-              </button>
-            )}
-          </div>
-
-          {/* Copy Quotation / Parts Summary Button */}
-          <button
-            onClick={handleCopyQuotation}
-            className={`flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-xs text-xs font-bold border shadow-xs transition-all shrink-0 ${copiedQuotation ? 'bg-emerald-600 text-white border-emerald-700' : 'bg-white text-slate-700 border-slate-300 hover:bg-slate-50 hover:border-slate-400'}`}
-            title="คัดลอกรายการสรุปราคาสำหรับส่งให้ลูกค้าทาง LINE"
-          >
-            {copiedQuotation ? <Check size={13} /> : <Copy size={13} />}
-            <span>{copiedQuotation ? 'คัดลอกรายการแล้ว!' : 'คัดลอกรายการสรุปราคา'}</span>
-          </button>
+        {/* Workstation Search Bar */}
+        <div className="relative">
+          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+          <input 
+            type="text"
+            placeholder="ค้นหาอะไหล่ตามชื่อ, SKU, หมายเหตุ หรือแท็ก..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full text-xs pl-8 pr-7 py-1.5 rounded-xs border border-slate-300 bg-white focus:border-emerald-600 focus:ring-1 focus:ring-emerald-500 outline-hidden shadow-2xs transition-all"
+          />
+          {searchQuery && (
+            <button 
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+            >
+              <X size={12} />
+            </button>
+          )}
         </div>
 
         {/* Tag Filter Chips Bar */}
@@ -131,8 +122,8 @@ const TabFavorites = () => {
         )}
 
         {/* Toolbar & Estimator Compact */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-slate-100/90 p-2.5 rounded-xs border border-slate-300 shadow-xs">
-          <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none px-2.5 py-1 rounded-xs hover:bg-slate-200/70 border border-transparent hover:border-slate-300 transition-colors w-full sm:w-auto">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 py-1">
+          <label className="flex items-center gap-2 text-xs font-bold text-slate-700 cursor-pointer select-none py-1 hover:text-emerald-700 transition-colors w-full sm:w-auto">
             <input 
               type="checkbox" 
               checked={selectedIds.length > 0 && selectedIds.length === filteredFavorites.length}

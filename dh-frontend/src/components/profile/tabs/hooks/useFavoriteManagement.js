@@ -13,7 +13,7 @@ export const useFavoriteManagement = () => {
     const [loadingLive, setLoadingLive] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedTag, setSelectedTag] = useState(null); // null = all tags
-    const [copiedQuotation, setCopiedQuotation] = useState(false);
+
     const navigate = useNavigate();
 
     // 🚀 BATCH FETCH: รวบการอ่านข้อมูลสินค้าเป็นคำสั่งเดียว (Single Read Batch) ลดโควต้าลงเหลือ 1 Query
@@ -154,37 +154,6 @@ export const useFavoriteManagement = () => {
         }
     }, [selectedProducts, cartItems, addToCart, navigate]);
 
-    // 4. ฟังก์ชันคัดลอกรายการสรุปราคา (สำหรับส่งให้ลูกค้าทาง LINE / จดงาน)
-    const handleCopyQuotation = useCallback(() => {
-        const itemsToExport = selectedProducts.length > 0 ? selectedProducts : filteredFavorites.map(f => liveProducts[f.id] || f);
-        if (itemsToExport.length === 0) return;
-
-        let total = 0;
-        const lines = itemsToExport.map((p, idx) => {
-            const price = Number(p?.salePrice) || Number(p?.price) || 0;
-            const sku = p.model || p.sku || p.id;
-            const name = p.name || 'สินค้า';
-            const noteText = p.note ? ` (หมายเหตุ: ${p.note})` : '';
-            total += price;
-            return `${idx + 1}. [${sku}] ${name} - ฿${price.toLocaleString()}${noteText}`;
-        });
-
-        const quotationText = [
-            `📋 สรุปรายการอะไหล่ประเมินราคา (${itemsToExport.length} รายการ)`,
-            `----------------------------------------`,
-            ...lines,
-            `----------------------------------------`,
-            `💰 ยอดรวมทั้งสิ้น: ฿${total.toLocaleString()} บาท`,
-            `🕒 วันที่สร้าง: ${new Date().toLocaleDateString('th-TH')}`
-        ].join('\n');
-
-        if (navigator.clipboard) {
-            navigator.clipboard.writeText(quotationText);
-            setCopiedQuotation(true);
-            setTimeout(() => setCopiedQuotation(false), 2500);
-        }
-    }, [selectedProducts, filteredFavorites, liveProducts]);
-
     const notInCartCount = selectedProducts.filter(p => !cartItems.some(i => i.id === p.id) && !(p.isOutOfStock || p.stockQuantity <= 0)).length;
 
     return {
@@ -210,8 +179,8 @@ export const useFavoriteManagement = () => {
         tagCounts,
         loadingLive,
         liveProducts,
-        handleCopyQuotation,
-        copiedQuotation,
+
+
         navigate
     };
 };
