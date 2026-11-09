@@ -71,7 +71,7 @@ function ExpandableBadgeList({ items = [], emptyText = "ยังไม่มี
           {items.map((item, idx) => (
             <span 
               key={idx} 
-              className="bg-white border border-slate-300 shadow-xs text-slate-700 font-medium px-3 py-1 rounded-[2px] text-sm"
+              className="bg-white shadow-xs text-slate-600 font-normal px-3 py-1 rounded-[2px] text-sm"
             >
               {item}
             </span>
@@ -84,7 +84,7 @@ function ExpandableBadgeList({ items = [], emptyText = "ยังไม่มี
           <button
             type="button"
             onClick={handleToggle}
-            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold text-blue-600 bg-white hover:bg-blue-50 border border-slate-300 shadow-xs transition-all active:scale-95 cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-normal text-blue-700 bg-blue-100 hover:bg-blue-200 shadow-xs transition-all active:scale-95 cursor-pointer"
           >
             {isExpanded ? (
               <>
@@ -93,7 +93,7 @@ function ExpandableBadgeList({ items = [], emptyText = "ยังไม่มี
               </>
             ) : (
               <>
-                <span>แสดงทั้งหมด ({items.length} รายการ)</span>
+                <span>แสดงทั้งหมด</span>
                 <ChevronDown size={14} />
               </>
             )}
@@ -185,7 +185,14 @@ export default function ProductKnowledgeSection({
   const partsList = parseArray(compatiblePartNumbers);
 
   return (
-    <div className="bg-slate-50 rounded-2xl shadow-md border border-slate-300 overflow-hidden mt-2">
+    <div className="bg-slate-50 rounded-2xl shadow-md overflow-hidden mt-2">
+      <style>{`
+        @keyframes headingAmbientFlow {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+      `}</style>
 
       {alertMessage && (
         <div className={`m-6 px-4 py-3 rounded-md flex items-center gap-2 text-sm font-medium ${
@@ -199,9 +206,16 @@ export default function ProductKnowledgeSection({
       <div className="p-6 md:p-8 space-y-8">
         {/* Compatible Models */}
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-              <Layers size={16} className="text-slate-400" /> Compatible Models
+          <div className="flex items-center justify-between mb-5">
+            <h4 
+              className="text-xl font-normal text-slate-900 inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-[4px] shadow-sm"
+              style={{
+                background: 'linear-gradient(120deg, #e2e8f0, #cbd5e1, #d8e1ea, #e2e8f0)',
+                backgroundSize: '250% 250%',
+                animation: 'headingAmbientFlow 12s ease infinite'
+              }}
+            >
+              <Layers size={22} className="text-slate-600" /> Compatible Models
             </h4>
             <button 
               onClick={() => setShowForm(showForm === 'models' ? null : 'models')}
@@ -251,9 +265,16 @@ export default function ProductKnowledgeSection({
 
         {/* Compatible Part Numbers */}
         <div>
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-bold text-slate-700 flex items-center gap-2">
-              <Layers size={16} className="text-slate-400" /> Compatible Part Number
+          <div className="flex items-center justify-between mb-5">
+            <h4 
+              className="text-xl font-normal text-slate-900 inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-[4px] shadow-sm"
+              style={{
+                background: 'linear-gradient(120deg, #e2e8f0, #cbd5e1, #d8e1ea, #e2e8f0)',
+                backgroundSize: '250% 250%',
+                animation: 'headingAmbientFlow 12s ease infinite'
+              }}
+            >
+              <Layers size={22} className="text-slate-600" /> Compatible Part Number
             </h4>
             <button 
               onClick={() => setShowForm(showForm === 'parts' ? null : 'parts')}
