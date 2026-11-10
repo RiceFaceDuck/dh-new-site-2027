@@ -104,5 +104,10 @@
 - **Problem:** ตัวหนังสือบนปุ่ม Action หลัก (โทร, MAP, แชร์) ใน `StoreActionButtons.jsx` ใช้ `font-bold` (700) ทำให้ตัวอักษรภาษาไทยและอังกฤษดูหนาตันเกินไป
 - **Solution:** ปรับคลาสฟอนต์เป็น `font-medium` (500) ให้ตัวหนังสือคม โปร่ง และสบายตาขึ้นตามหลัก Calm UI โดยคงปุ่มแบบนูน 3D และโครงสร้างโค้ดเดิม 100%
 
+- **Problem (2026-11-10):** ยอด All-time บางร้าน "กลับไป 0" หลังผ่านไป 30 นาที ตรวจ Firestore จริง (REST `ActivePartners/{id}` อ่านสาธารณะได้) พบ 3/4 ร้านตรงกับจอ แต่ Lucky Com จอโชว์ 1 ขณะ DB ไม่มี `views` เลย ➔ สาเหตุ: จอ +1 แบบ Optimistic (local lock 30 นาที) แต่ event ค้างใน In-Memory Queue 2 นาทีแล้วหาย (fetch ได้ 4xx/5xx ถูกทิ้งเงียบ, ส่งพังไม่ตั้งเวลาซ้ำ, Vite HMR ทำให้ตัวดัก pagehide ผูกกับคิวเก่าที่ว่าง) พอ lock หมดอายุ จอเลยกลับเป็นค่า server = 0
+- **Solution:** `marketingAnalyticsService.js`: `trackStoreView` flush ทันที (คูลดาวน์ 30 นาทีกันปั๊มยอดยังอยู่), fetch ใช้ `text/plain` (ไม่มี preflight), `res.ok === false` ➔ re-queue + `scheduleFlush()`, ตัวดัก lifecycle ถอดของเก่าออกผ่าน `window.__dh_ad_telemetry_handlers` ก่อนผูกใหม่; `useStoreProfilePage` fallback ส่ง `views` map. เทสต์: `tests/verifications/verify_store_view_immediate_flush.mjs` (5/5 ผ่าน) | สถานะ: ✅ แก้ฝั่งหน้าเว็บ ไม่ deploy
+- **Known gap [open]:** `functions/marketing/ga4AdSyncCron.js` อัปเดตแค่ `viewCount` ไม่แตะ `views.allTime` (หน้าจอใช้ Math.max จึงยังโชว์ถูก) — แก้ต้อง deploy Functions ซึ่งถูกล็อก
+- **Note:** เทสต์เก่า `verify_view_tracking_and_telemetry_parity.mjs` (Test 7) และ `verify_milestone_2_view_telemetry_and_srp.mjs` (Test 3) fail อยู่ก่อนแล้ว เพราะยังเช็คโครงสร้างเดิมก่อนแยก `useStoreViews` (ไม่เกี่ยวกับการแก้รอบนี้)
+
 ## 6. <future_roadmap>
 - **Telemetry for Map & Share Buttons:** วางแผนติดตั้ง `trackAdClick` สำหรับปุ่มแผนที่ (`actionType: 'maps_open'`) และปุ่มแชร์ (`actionType: 'share_click'`) เพื่อเก็บสถิติความสนใจของลูกค้าเพิ่มเติม นอกเหนือจากการกดโทรออก (`phone_call`)

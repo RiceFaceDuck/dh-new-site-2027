@@ -90,7 +90,8 @@ export const useStoreProfilePage = (id) => {
                   shopeeUrl: uStore.shopeeUrl || '',
                   lazadaUrl: uStore.lazadaUrl || '',
                   points: points,
-                  viewCount: Number(uStore.viewCount || uStore.viewsCount || uStore.views || 0),
+                  viewCount: Number(uStore.viewCount || uStore.viewsCount || 0) || 0,
+                  views: (uStore.views && typeof uStore.views === 'object') ? uStore.views : null,
                   likeCount: Number(uStore.likeCount || uStore.likes || 0),
                   isActive: false
                 });

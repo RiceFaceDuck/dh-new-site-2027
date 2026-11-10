@@ -86,19 +86,25 @@ export const flushTelemetryQueue = async (isExiting = false) => {
   }
 
   // 2. ใช้ fetch พร้อม keepalive: true เพื่อความแน่นอน
+  // 🛡️ text/plain = simple request (ไม่มี OPTIONS preflight) ลดโอกาสหลุดและลดจำนวน request ลงครึ่งหนึ่ง
   try {
     if (typeof fetch !== 'undefined') {
-      await fetch(endpoint, {
+      const res = await fetch(endpoint, {
         method: 'POST',
-        headers: { 'Content-Type': isExiting ? 'text/plain;charset=UTF-8' : 'application/json' },
+        headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
         body: dataString,
         keepalive: true
       });
+      // Server ตอบ error (4xx/5xx) ถือว่าส่งไม่สำเร็จ ต้องไม่ทิ้งข้อมูลเงียบๆ
+      if (res && res.ok === false) {
+        throw new Error(`Telemetry HTTP ${res.status}`);
+      }
     }
   } catch (err) {
-    // Fail-safe: หากยังไม่ได้ปิดหน้าเว็บและคิวไม่ล้น ให้นำกลับมาลองใหม่ในรอบถัดไป
+    // Fail-safe: หากยังไม่ได้ปิดหน้าเว็บและคิวไม่ล้น ให้นำกลับมาลองใหม่ในรอบถัดไป (ตั้งเวลาส่งซ้ำเสมอ)
     if (!isExiting && eventQueue.length < 50) {
       eventQueue = [...payload, ...eventQueue];
+      scheduleFlush();
     }
   }
 };
@@ -112,17 +118,29 @@ const scheduleFlush = () => {
 };
 
 // 🛡️ ผูกตัวดักตรวจจับการปิดแท็บหรือสลับหน้าเว็บ (Page Lifecycle Singleton Guard)
-if (typeof window !== 'undefined' && !window.__dh_ad_telemetry_attached) {
+// ถอดตัวดักของ module instance เก่าออกก่อนเสมอ (กัน Vite HMR ทำให้ตัวดักเก่าไป flush คิวเก่าที่ว่างเปล่า
+// ขณะที่ event ใหม่ค้างอยู่ในคิวของ instance ใหม่แล้วหายตอนปิดแท็บ)
+if (typeof window !== 'undefined') {
   try {
-    window.__dh_ad_telemetry_attached = true;
-    window.addEventListener('visibilitychange', () => {
-      if (document.visibilityState === 'hidden') {
+    const prev = window.__dh_ad_telemetry_handlers;
+    if (prev) {
+      window.removeEventListener('visibilitychange', prev.onVisibility);
+      window.removeEventListener('pagehide', prev.onPageHide);
+    }
+    const handlers = {
+      onVisibility: () => {
+        if (document.visibilityState === 'hidden') {
+          flushTelemetryQueue(true);
+        }
+      },
+      onPageHide: () => {
         flushTelemetryQueue(true);
       }
-    });
-    window.addEventListener('pagehide', () => {
-      flushTelemetryQueue(true);
-    });
+    };
+    window.addEventListener('visibilitychange', handlers.onVisibility);
+    window.addEventListener('pagehide', handlers.onPageHide);
+    window.__dh_ad_telemetry_handlers = handlers;
+    window.__dh_ad_telemetry_attached = true;
   } catch (e) {
     // Non-browser or restricted environment safe
   }
@@ -258,11 +276,9 @@ export const trackStoreView = async (params = {}) => {
     timestamp: Date.now()
   });
 
-  if (eventQueue.length >= MAX_QUEUE_SIZE) {
-    flushTelemetryQueue(false);
-  } else {
-    scheduleFlush();
-  }
+  // 3. วิวหน้าร้านส่งขึ้น server ทันที (ไม่รอ buffer 2 นาที) — มีคูลดาวน์ 30 นาทีกันปั๊มยอดอยู่แล้ว
+  // ป้องกันยอดหายเมื่อปิดหน้าเร็ว/HMR ซึ่งทำให้ตัวเลข Optimistic บนจอกลับเป็น 0 หลัง lock หมดอายุ
+  flushTelemetryQueue(false);
 };
 
 // 🛡️ Backward Compatible dummy for any external callers
