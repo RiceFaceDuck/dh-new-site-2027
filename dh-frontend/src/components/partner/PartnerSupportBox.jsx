@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Phone, CheckCircle2, MapPin, Award, Store } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { useNearestPartner } from './hooks/useNearestPartner';
@@ -49,6 +50,7 @@ const SkeletonLoader = () => (
 // ==========================================
 
 const PartnerSupportBox = () => {
+  const navigate = useNavigate();
   const { partner, loading, error } = useNearestPartner();
   const { showToast } = useToast();
   const [imgFailed, setImgFailed] = useState(false);
@@ -72,7 +74,20 @@ const PartnerSupportBox = () => {
     }
   });
 
-  const handleContactClick = () => {
+  const handleCardClick = () => {
+    if (!partnerUid) return;
+    trackAdClick('partner_ads', adId, {
+      type: 'BUSINESS_CARD',
+      ownerId: partnerUid,
+      placement: 'product_detail_nearest_partner',
+      actionType: 'store_profile_view',
+      targetUrl: `/store/${partnerUid}`
+    }).catch(() => {});
+    navigate(`/store/${partnerUid}`);
+  };
+
+  const handleContactClick = (e) => {
+    e?.stopPropagation();
     if (!partner) return;
     if (partnerUid) {
       trackAdClick('partner_ads', adId, {
@@ -90,7 +105,8 @@ const PartnerSupportBox = () => {
     }
   };
 
-  const handleLineClick = () => {
+  const handleLineClick = (e) => {
+    e?.stopPropagation();
     if (!partner) return;
     if (partnerUid) {
       trackAdClick('partner_ads', adId, {
@@ -108,7 +124,8 @@ const PartnerSupportBox = () => {
     }
   };
 
-  const handleMessengerClick = () => {
+  const handleMessengerClick = (e) => {
+    e?.stopPropagation();
     if (!partner) return;
     if (partnerUid) {
       trackAdClick('partner_ads', adId, {
@@ -141,7 +158,9 @@ const PartnerSupportBox = () => {
   return (
     <div 
       ref={boxRef} 
-      className="bg-white border border-slate-200/90 shadow-sm rounded-[2px] overflow-hidden flex flex-row items-stretch h-[142px] sm:h-[150px] group hover:shadow-md transition-all duration-300 my-4 sm:my-6"
+      onClick={handleCardClick}
+      className="bg-white border border-slate-200/90 shadow-sm rounded-[2px] overflow-hidden flex flex-row items-stretch h-[142px] sm:h-[150px] group hover:shadow-md hover:border-indigo-200 transition-all duration-300 my-4 sm:my-6 cursor-pointer"
+      title={`ดูข้อมูลและสินค้าทั้งหมดของร้าน ${partner.storeName || ''}`}
     >
       {/* 🖼️ ฝั่งซ้าย: ภาพร้านค้าเต็มความสูง สัดส่วน 1:1 เต็มเฟรม */}
       <div className="h-full aspect-square relative shrink-0 overflow-hidden bg-slate-100 flex items-center justify-center border-r border-slate-100">
@@ -195,8 +214,11 @@ const PartnerSupportBox = () => {
           </div>
         </div>
 
-        {/* Row 3: ปุ่มติดต่อ อยู่ในแถวเดียวเสมอ ไม่ตกบรรทัด */}
-        <div className="flex items-center gap-1.5 pt-1.5 border-t border-slate-100 shrink-0">
+        {/* Row 3: ปุ่มติดต่อ อยู่ในแถวเดียวเสมอ ไม่ตกบรรทัด (ป้องกัน event bubbling ไม่ให้เด้งไปหน้าร้าน) */}
+        <div 
+          onClick={(e) => e.stopPropagation()} 
+          className="flex items-center gap-1.5 pt-1.5 border-t border-slate-100 shrink-0 cursor-default"
+        >
           <button 
             onClick={handleContactClick}
             className="flex-1 min-w-0 px-2.5 py-1.5 bg-linear-to-r from-[#0870B8] to-[#0A85D9] hover:from-[#065A96] hover:to-[#0870B8] text-white font-medium rounded-[2px] shadow-xs hover:shadow-md transition-all flex items-center justify-center gap-1.5 active:scale-95 border border-[#0870B8]/20 cursor-pointer"
