@@ -53,4 +53,6 @@
     1. ปลด `bg-gradient-to-b from-slate-100...` ออก ให้หน้าเว็บเชื่อมต่อกับ Canvas หลักแบบเนียนไร้รอยต่อ (ไร้เสื่อเทาซ้อน)
     2. ปรับการ์ด `CategoryCard` เป็น `rounded-[2px]` (0.1 curvature standard) ร่วมกับเส้นขอบบางเฉียบ `border-slate-200/60` (Hairline border เนียนตา ไม่หนา)
     3. เสริมเงานุ่มละมุนหลายชั้น `shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_1px_2px_0_rgba(15,23,42,0.04)]` และเงายกตัวเมื่อ Hover ทำให้การ์ดลอยเด่นมีมิติโดยไม่ต้องพึ่งเส้นขอบหนา และไม่ขาวโพลนกลืนกัน
+- **ปัญหาเดิม 5 (Image Shrinkage from Border & Container Shapes)**: กล่องแสดงรูปภาพและไอคอนหมวดหมู่เดิมใส่เส้นขอบ `border border-slate-100`, รูปทรงกล่อง `rounded-[2px] bg-slate-50/70`, และ padding `p-2` ทำให้รูปภาพอะไหล่/โลโก้ถูกตีกรอบและถูกบีบให้มีขนาดเล็กเกินไป
+  - **วิธีแก้**: ปลดเส้นขอบ (Border), พื้นหลัง และรูปทรงครอบ (Shapes) ออกทั้งหมด ให้รูปภาพแสดงผลลอยอิสระแบบ Borderless Clean เต็มพื้นที่ `w-14 h-14 md:w-16 md:h-16` โดยไม่มี padding บีบรูป ทำให้ภาพและไอคอนใหญ่ ชัดเจน และสบายตา ทั้งบน `CategoryCard` (Desktop) และ `CategoryModal` (Mobile)
 </pitfalls_and_solutions>

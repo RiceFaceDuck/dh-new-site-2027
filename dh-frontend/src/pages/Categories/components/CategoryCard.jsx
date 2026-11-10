@@ -11,8 +11,9 @@ const CategoryCard = ({ category }) => {
       {/* Ambient hover glow */}
       <div className="absolute inset-0 bg-gradient-to-r from-brand/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
+      {/* Image / Icon container: No borders, no shape box, no padding so image displays at full size */}
       <div 
-        className="shrink-0 w-14 h-14 md:w-16 md:h-16 rounded-[2px] bg-slate-50/70 border border-slate-100 flex items-center justify-center overflow-hidden p-2 group-hover:bg-white group-hover:border-slate-200 transition-all duration-300 relative z-10" 
+        className="shrink-0 w-14 h-14 md:w-16 md:h-16 flex items-center justify-center overflow-hidden relative z-10" 
       >
         {category.imageUrl ? (
           <LazyImage 
@@ -21,9 +22,7 @@ const CategoryCard = ({ category }) => {
             className="w-full h-full object-contain group-hover:scale-110 transition-transform duration-300"
           />
         ) : (
-          <div className="w-full h-full bg-blue-50/60 rounded-[2px] flex items-center justify-center group-hover:bg-brand/10 transition-colors">
-            <Package className="w-6 h-6 md:w-8 md:h-8 text-blue-500 group-hover:text-brand group-hover:scale-110 transition-all duration-300" strokeWidth={1.75} />
-          </div>
+          <Package className="w-9 h-9 md:w-10 md:h-10 text-blue-500 group-hover:text-brand group-hover:scale-110 transition-all duration-300" strokeWidth={1.75} />
         )}
       </div>
       

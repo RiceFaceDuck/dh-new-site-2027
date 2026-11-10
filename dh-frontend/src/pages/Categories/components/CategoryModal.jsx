@@ -105,7 +105,7 @@ const CategoryModal = ({ isOpen, onClose, categories = [] }) => {
         <div className="overflow-y-auto p-3.5 sm:p-4 overscroll-contain">
           {filteredCategories.length === 0 ? (
             <div className="py-10 text-center text-slate-400 text-xs sm:text-sm">
-              ไม่พบหมวดหมู่ที่ตรงกับ "{searchTerm}"
+              ไม่พบหมวดหมู่ที่ตรงกับ &quot;{searchTerm}&quot;
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2.5">
@@ -116,7 +116,8 @@ const CategoryModal = ({ isOpen, onClose, categories = [] }) => {
                   onClick={() => handleSelect(cat.type)}
                   className="flex flex-col items-center justify-center p-3 rounded-[2px] border border-slate-200/60 bg-white hover:border-brand/40 hover:bg-blue-50/20 active:scale-95 transition-all text-center shadow-[0_1px_3px_rgba(15,23,42,0.04)] group"
                 >
-                  <div className="w-13 h-13 rounded-[2px] bg-slate-50/80 border border-slate-100 flex items-center justify-center overflow-hidden p-2 group-hover:scale-105 transition-transform duration-200 mb-2">
+                  {/* Image / Icon: Clean, borderless, no shape box */}
+                  <div className="w-14 h-14 flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform duration-200 mb-2">
                     {cat.imageUrl ? (
                       <LazyImage
                         src={cat.imageUrl}
@@ -124,7 +125,7 @@ const CategoryModal = ({ isOpen, onClose, categories = [] }) => {
                         className="w-full h-full object-contain"
                       />
                     ) : (
-                      <Package className="w-6 h-6 text-blue-500" strokeWidth={1.75} />
+                      <Package className="w-8 h-8 text-blue-500" strokeWidth={1.75} />
                     )}
                   </div>
                   <span className="text-xs font-bold text-slate-800 group-hover:text-blue-600 line-clamp-1">
