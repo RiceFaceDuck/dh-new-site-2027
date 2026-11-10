@@ -283,11 +283,11 @@ const ProductDetail = () => {
         <div className="flex-1 min-w-0">
           <div className="text-xs text-slate-100 truncate font-medium">{product.name}</div>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-base font-extrabold text-amber-300">
+            <span className="text-base font-medium text-amber-300 tracking-tight">
               ฿{(currentProductInfo?.salePrice || currentProductInfo?.price || 0).toLocaleString()}
             </span>
             {currentProductInfo?.salePrice && (
-              <span className="text-xs text-slate-300 line-through">
+              <span className="text-xs text-slate-300 line-through font-normal">
                 ฿{currentProductInfo?.price?.toLocaleString()}
               </span>
             )}

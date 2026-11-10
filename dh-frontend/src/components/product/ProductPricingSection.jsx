@@ -192,11 +192,11 @@ export default function ProductPricingSection({
       <div className="mb-6 flex items-end gap-3">
         {salePrice ? (
           <>
-            <span className="text-3xl md:text-4xl font-bold text-cyber-emerald">฿{Number(salePrice || 0).toLocaleString()}</span>
-            <span className="text-lg text-slate-400 line-through mb-1">฿{Number(price || 0).toLocaleString()}</span>
+            <span className="text-3xl md:text-4xl font-medium text-amber-500 tracking-tight">฿{Number(salePrice || 0).toLocaleString()}</span>
+            <span className="text-lg text-slate-400 line-through mb-1 font-normal">฿{Number(price || 0).toLocaleString()}</span>
           </>
         ) : (
-          <span className="text-3xl md:text-4xl font-bold text-slate-800">฿{Number(price || 0).toLocaleString()}</span>
+          <span className="text-3xl md:text-4xl font-medium text-amber-500 tracking-tight">฿{Number(price || 0).toLocaleString()}</span>
         )}
       </div>
       
