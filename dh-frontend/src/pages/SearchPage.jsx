@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import ProductList from '../components/ProductList';
 import LazyImage from '../components/common/LazyImage';
-import { Search, Sparkles, ChevronLeft, Database, Wrench, Phone, MessageCircle, MapPin, X, ShieldCheck, Store, Clock } from 'lucide-react';
+import { Search, Sparkles, ChevronLeft, Database, Wrench, Phone, MessageCircle, X, ShieldCheck, Store, Clock } from 'lucide-react';
 import { filterProductsByQuery, findRelatedProducts } from '../utils/searchMatcher';
 import { getStorefrontCatalog, subscribeStorefrontCatalogUpdates } from '../services/storefrontCatalogService';
 import { marketingService } from '../firebase/marketingService';
@@ -273,15 +273,15 @@ const SearchPage = () => {
 
         {/* 🔍 แถบค้นหา + แท็กยอดนิยม (วางเคียงคู่กันทางขวา ไม่ต้องซ่อน) */}
         <div className="flex flex-col lg:flex-row lg:items-center gap-4 w-full">
-          {/* กล่องค้นหา (ฝั่งซ้าย) - ปรับเงา สี และมุมโค้งมล 0.1 */}
-          <div className="w-full lg:w-[420px] shrink-0 bg-slate-50/90 p-2 rounded-[0.1rem] border border-slate-300/80 shadow-sm">
+          {/* กล่องค้นหา (ฝั่งซ้าย) - ปลดกรอบครอบชั้นนอกและ Shapes ออก ให้คลีนชั้นเดียว */}
+          <div className="w-full lg:w-[420px] shrink-0">
             <form onSubmit={handleLocalSearchSubmit} className="relative w-full group">
               <input 
                 type="text" 
                 value={typedQuery}
                 onChange={(e) => setTypedQuery(e.target.value)}
                 placeholder="ค้นหาอะไหล่, รหัสสินค้า, หรือรุ่นโน๊ตบุ๊ค..." 
-                className="w-full bg-white border border-slate-200/90 text-slate-800 px-5 py-3 rounded-[0.1rem] focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand focus:bg-white transition-all duration-300 text-sm placeholder-slate-400 group-hover:border-slate-300 shadow-2xs"
+                className="w-full bg-white border border-slate-200/90 text-slate-800 px-5 py-3 rounded-[0.2rem] focus:outline-hidden focus:ring-2 focus:ring-brand/50 focus:border-brand focus:bg-white transition-all duration-300 text-sm placeholder-slate-400 group-hover:border-slate-300 shadow-2xs"
               />
               <button type="submit" disabled={loading} aria-label="ค้นหาสินค้า" title="ค้นหาสินค้า" className={`absolute right-2.5 top-1/2 -translate-y-1/2 text-white p-2 rounded-lg transition-colors shadow-xs active:scale-95 ${loading ? 'bg-slate-400 cursor-not-allowed' : 'bg-brand hover:bg-brand-dark'}`}>
                 <Search size={16} strokeWidth={2.5} />
@@ -313,27 +313,27 @@ const SearchPage = () => {
           </div>
         </div>
 
-        {/* Search Query Display & Notice Banner */}
+        {/* Search Query Display & Notice Banner: ปลด Border และ Shapes ออกให้โปร่ง สะอาดตา */}
         {queryParam && (
-          <div className="bg-gradient-to-r from-brand-light/30 via-slate-50 to-brand-light/20 border border-brand-light/60 p-3 sm:p-4 rounded-[0.1rem] flex flex-col md:flex-row md:items-center justify-between gap-3 shadow-xs">
+          <div className="py-2.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2.5">
-              <span className="text-slate-600 font-medium text-sm">คำค้นหา:</span>
-              <span className="text-brand font-bold text-base sm:text-lg px-3 py-0.5 bg-white rounded-lg shadow-2xs border border-brand-light/30">
-                "{queryParam}"
+              <span className="text-slate-500 font-medium text-sm">คำค้นหา:</span>
+              <span className="text-brand font-black text-base sm:text-lg">
+                &quot;{queryParam}&quot;
               </span>
               
-              {/* ข้อความแจ้งสถานะเมื่อไม่พบสินค้าตรงเป๊ะ */}
+              {/* ข้อความแจ้งสถานะเมื่อไม่พบสินค้าตรงเป๊ะ: ปลด Border และ Box Shapes ออก */}
               {!loading && filteredProducts.length === 0 && (
-                <div className="flex flex-wrap items-center gap-2 px-3 py-1 bg-amber-50 text-amber-800 border border-amber-200/80 rounded-lg text-xs font-semibold animate-fade-in">
+                <div className="flex flex-wrap items-center gap-2 text-amber-700 text-xs font-medium animate-fade-in pl-1">
                   <Sparkles size={14} className="text-amber-500 shrink-0" />
-                  <span>ไม่พบสินค้าที่ตรงกับคำนี้</span>
+                  <span className="font-semibold text-amber-800">ไม่พบสินค้าที่ตรงกับคำนี้</span>
                   {relatedProducts.length > 0 && (
-                    <span className="text-amber-700 font-normal hidden sm:inline">— แนะนำสินค้าใกล้เคียงในหมวดเดียวกันด้านล่างนี้ค่ะ</span>
+                    <span className="text-slate-600 hidden sm:inline">— แนะนำสินค้าใกล้เคียงในหมวดเดียวกันด้านล่างนี้ค่ะ</span>
                   )}
                   <button
                     type="button"
                     onClick={() => setShowTechnicianModal(true)}
-                    className="ml-1 inline-flex items-center gap-1 px-2.5 py-0.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[11px] font-bold shadow-2xs cursor-pointer active:scale-95"
+                    className="ml-1 inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[11px] font-bold shadow-2xs cursor-pointer active:scale-95"
                   >
                     <Wrench size={11} /> ติดต่อช่างทันที
                   </button>
@@ -346,9 +346,7 @@ const SearchPage = () => {
                 <span>กำลังค้นหา...</span>
               ) : (
                 <div className="flex items-center gap-2">
-                  <span className={`px-2.5 py-1 rounded-md font-bold ${
-                    filteredProducts.length > 0 ? 'bg-white text-slate-700 border border-slate-200/60 shadow-2xs' : 'bg-slate-100 text-slate-500'
-                  }`}>
+                  <span className="font-bold text-slate-600">
                     พบ {filteredProducts.length} รายการ
                   </span>
                   {catalogMeta?.isPartial && (
@@ -420,24 +418,22 @@ const SearchPage = () => {
                   <Search size={28} />
                 </div>
                 <h3 className="text-lg font-bold text-slate-800 mb-1">
-                  ไม่พบสินค้าตรงเป๊ะสำหรับ "{queryParam}"
+                  ไม่พบสินค้าตรงเป๊ะสำหรับ &quot;{queryParam}&quot;
                 </h3>
                 <p className="text-slate-500 text-sm max-w-md mx-auto mb-5">
                   ลองตรวจสอบตัวสะกด หรือใช้คำค้นหาที่สั้นลง เช่น ชื่อแบรนด์ หรือรหัสอะไหล่
                 </p>
 
-                {/* 🌟 การ์ดติดต่อช่างทันที (แสดงป้ายโฆษณานามบัตร) */}
-                <div className="my-5 p-3.5 bg-emerald-50/80 border border-emerald-200/80 rounded-[0.1rem] flex flex-col sm:flex-row items-center justify-between gap-3 text-left shadow-2xs">
+                {/* 🌟 การ์ดติดต่อช่างทันที: ปลด Border และ Shapes ออกให้กลมกลืน เรียบหรู */}
+                <div className="my-5 p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-xs">
-                      <Wrench size={18} />
-                    </div>
+                    <Wrench size={22} className="text-emerald-600 shrink-0" />
                     <div>
-                      <div className="font-bold text-sm text-emerald-950 flex items-center gap-1.5">
+                      <div className="font-bold text-sm text-slate-800 flex items-center gap-1.5">
                         หาอะไหล่ไม่เจอ หรือต้องการให้ช่างช่วยเช็ค?
-                        <span className="text-[10px] bg-emerald-200 text-emerald-800 px-1.5 py-0.2 rounded font-bold">ฟรี</span>
+                        <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">ฟรี</span>
                       </div>
-                      <div className="text-xs text-emerald-700">ส่งรูปโน๊ตบุ๊คหรืออาการเสียให้ช่างประจำร้านช่วยเทียบได้เลย</div>
+                      <div className="text-xs text-slate-500">ส่งรูปโน๊ตบุ๊คหรืออาการเสียให้ช่างประจำร้านช่วยเทียบได้เลย</div>
                     </div>
                   </div>
                   <button

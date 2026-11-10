@@ -114,10 +114,10 @@ const CategoryModal = ({ isOpen, onClose, categories = [] }) => {
                   key={cat.id || cat.type}
                   type="button"
                   onClick={() => handleSelect(cat.type)}
-                  className="flex flex-col items-center justify-center p-3 rounded-[2px] border border-slate-200/60 bg-white hover:border-brand/40 hover:bg-blue-50/20 active:scale-95 transition-all text-center shadow-[0_1px_3px_rgba(15,23,42,0.04)] group"
+                  className="flex flex-col items-center justify-center p-3 rounded-[0.2rem] border border-slate-200/60 bg-white hover:border-brand/40 hover:bg-blue-50/20 active:scale-95 transition-all text-center shadow-[0_1px_3px_rgba(15,23,42,0.04)] group"
                 >
                   {/* Image / Icon: Clean, borderless, no shape box */}
-                  <div className="w-14 h-14 flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform duration-200 mb-2">
+                  <div className="w-16 h-16 flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform duration-200 mb-2">
                     {cat.imageUrl ? (
                       <LazyImage
                         src={cat.imageUrl}
@@ -125,7 +125,7 @@ const CategoryModal = ({ isOpen, onClose, categories = [] }) => {
                         className="w-full h-full object-contain"
                       />
                     ) : (
-                      <Package className="w-8 h-8 text-blue-500" strokeWidth={1.75} />
+                      <Package className="w-9 h-9 text-blue-500" strokeWidth={1.75} />
                     )}
                   </div>
                   <span className="text-xs font-bold text-slate-800 group-hover:text-blue-600 line-clamp-1">

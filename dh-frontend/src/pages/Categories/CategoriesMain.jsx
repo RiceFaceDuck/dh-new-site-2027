@@ -72,10 +72,10 @@ const CategoriesMain = () => {
           <button
             type="button"
             onClick={() => setIsModalOpen(true)}
-            className="w-full flex items-center justify-between p-3.5 bg-white rounded-[2px] border border-slate-200/80 shadow-[0_4px_16px_-2px_rgba(15,23,42,0.12),0_2px_4px_-1px_rgba(15,23,42,0.06)] hover:border-brand/40 active:scale-[0.99] transition-all group"
+            className="w-full flex items-center justify-between p-3.5 bg-white rounded-[0.2rem] border border-slate-200/80 shadow-[0_4px_16px_-2px_rgba(15,23,42,0.12),0_2px_4px_-1px_rgba(15,23,42,0.06)] hover:border-brand/40 active:scale-[0.99] transition-all group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[2px] bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+              <div className="w-10 h-10 rounded-[0.2rem] bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                 <LayoutGrid className="w-5 h-5" />
               </div>
               <div className="text-left">
@@ -87,7 +87,7 @@ const CategoriesMain = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-50/80 px-2.5 py-1.5 rounded-[2px] border border-blue-100/80">
+            <div className="flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-50/80 px-2.5 py-1.5 rounded-[0.2rem] border border-blue-100/80">
               <span>เลือกหมวด</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </div>
