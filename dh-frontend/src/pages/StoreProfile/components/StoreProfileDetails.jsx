@@ -5,7 +5,7 @@ const StoreProfileDetails = ({ partner = {}, onOpenLightbox }) => {
   const galleryImages = partner.galleryImages || [];
 
   return (
-    <div className="bg-white rounded-[2px] shadow-xs border border-slate-100 p-6 md:p-8">
+    <div className="bg-white rounded-[2px] shadow-[0_4px_16px_-2px_rgba(15,23,42,0.12),0_2px_4px_-1px_rgba(15,23,42,0.06)] border border-slate-200/80 p-6 md:p-8">
       <h3 className="text-xl font-bold text-slate-800 mb-4 flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-brand mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

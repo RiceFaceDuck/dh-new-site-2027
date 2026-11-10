@@ -22,9 +22,9 @@ const CategoriesMain = () => {
   };
 
   return (
-    <div className="w-full bg-gradient-to-b from-slate-100/90 via-slate-50 to-slate-100/70 min-h-screen pb-36 md:pb-20 animate-fade-in">
+    <div className="w-full min-h-screen pb-36 md:pb-20 animate-fade-in">
       {/* Formal Header Banner - Modern Glass & Elevation */}
-      <div className="bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+      <div className="bg-white/70 backdrop-blur-md border-b border-slate-200/50 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 md:py-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
             <div>
@@ -37,7 +37,7 @@ const CategoriesMain = () => {
                 หมวดหมู่อะไหล่ทั้งหมด
               </h1>
               <p className="text-slate-600 mt-2 text-xs md:text-sm leading-relaxed max-w-3xl">
-                คุณสามารถใช้ <span className="font-bold text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded-md border border-slate-200">Part Number (PN)</span> หรือชื่อรุ่น เพื่อค้นหาอะไหล่ได้ทันที
+                คุณสามารถใช้ <span className="font-bold text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded-[2px] border border-slate-200/60">Part Number (PN)</span> หรือชื่อรุ่น เพื่อค้นหาอะไหล่ได้ทันที
               </p>
             </div>
 
@@ -49,12 +49,12 @@ const CategoriesMain = () => {
                   value={quickSearch}
                   onChange={(e) => setQuickSearch(e.target.value)}
                   placeholder="ค้นหาอะไหล่, รหัส PN, หรือรุ่น..." 
-                  className="w-full bg-slate-50 border border-slate-300 text-slate-800 pl-4 pr-11 py-2.5 rounded-md focus:outline-hidden focus:ring-2 focus:ring-brand/40 focus:border-brand focus:bg-white transition-all text-xs sm:text-sm placeholder-slate-400 group-hover:border-slate-400 shadow-2xs"
+                  className="w-full bg-white border border-slate-200/80 text-slate-800 pl-4 pr-11 py-2.5 rounded-[2px] focus:outline-hidden focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all text-xs sm:text-sm placeholder-slate-400 group-hover:border-slate-300 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
                 />
                 <button 
                   type="submit" 
                   aria-label="ค้นหาสินค้า" 
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-brand text-white p-1.5 rounded-md hover:bg-brand-dark transition-all active:scale-95 shadow-2xs"
+                  className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-brand text-white p-1.5 rounded-[2px] hover:bg-brand-dark transition-all active:scale-95 shadow-2xs"
                 >
                   <Search size={15} strokeWidth={2.5} />
                 </button>
@@ -72,10 +72,10 @@ const CategoriesMain = () => {
           <button
             type="button"
             onClick={() => setIsModalOpen(true)}
-            className="w-full flex items-center justify-between p-3.5 bg-white rounded-md border border-slate-200 shadow-sm hover:border-blue-400 active:scale-[0.99] transition-all group"
+            className="w-full flex items-center justify-between p-3.5 bg-white rounded-[2px] border border-slate-200/80 shadow-[0_4px_16px_-2px_rgba(15,23,42,0.12),0_2px_4px_-1px_rgba(15,23,42,0.06)] hover:border-brand/40 active:scale-[0.99] transition-all group"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-md bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+              <div className="w-10 h-10 rounded-[2px] bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
                 <LayoutGrid className="w-5 h-5" />
               </div>
               <div className="text-left">
@@ -87,7 +87,7 @@ const CategoriesMain = () => {
                 </p>
               </div>
             </div>
-            <div className="flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-50/80 px-2.5 py-1.5 rounded-md border border-blue-100/80">
+            <div className="flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-50/80 px-2.5 py-1.5 rounded-[2px] border border-blue-100/80">
               <span>เลือกหมวด</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </div>

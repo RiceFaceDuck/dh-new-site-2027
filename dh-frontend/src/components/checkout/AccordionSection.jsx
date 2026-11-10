@@ -14,9 +14,9 @@ const AccordionSection = ({
 }) => {
   const isOpen = activeStep === step;
   return (
-    <div className={`border rounded-md mb-4 overflow-hidden transition-all duration-300 ${isOpen ? 'border-emerald-500 shadow-md' : 'border-gray-200 bg-white'}`}>
+    <div className={`border rounded-[2px] mb-4 overflow-hidden transition-all duration-300 ${isOpen ? 'border-emerald-500 shadow-[0_8px_24px_-4px_rgba(15,23,42,0.12),0_2px_4px_-1px_rgba(15,23,42,0.06)]' : 'border-slate-200/80 bg-white shadow-[0_4px_16px_-2px_rgba(15,23,42,0.12),0_2px_4px_-1px_rgba(15,23,42,0.06)]'}`}>
       <div 
-        className={`p-4 flex items-center justify-between cursor-pointer select-none transition-colors ${isOpen ? 'bg-emerald-50 text-emerald-800' : 'hover:bg-gray-50'}`}
+        className={`p-4 flex items-center justify-between cursor-pointer select-none transition-colors ${isOpen ? 'bg-emerald-50 text-emerald-800' : 'hover:bg-slate-50/60'}`}
         onClick={() => setActiveStep(isOpen ? null : step)}
       >
         <div className="flex items-center gap-3">

@@ -48,4 +48,9 @@
   - **วิธีแก้**: ยกเลิก `IntersectionObserver` ปรับค่าเป็นหน้าละ 50 รายการพอดีกับขนาดของ Tier 1 Chunk `cat_*` และสร้างแถบเปลี่ยนหน้า (Pagination Bar: `< ก่อนหน้า`, `1`, `2`, `ถัดไป >`) พร้อมแคช `pageCacheRef` ในหน่วยความจำ ทำให้กดย้อนกลับหน้าเดิมได้เร็วทันที 0ms และไม่เสียโควต้าอ่านเพิ่ม
 - **ปัญหาเดิม 3 (UI Bubble Curvature & Low Contrast)**: `CategoryCard`, `CategoryModal`, `CategoriesMain` เดิมใช้ `rounded-3xl`, `rounded-2xl`, และ `border-slate-100` ทำให้ดูโค้งมนเกินไป (Bubble styling) และขอบการ์ดกลืนไปกับพื้นหลังสีขาว
   - **วิธีแก้ (Retro Redesign M3)**: ปรับโครงสร้างกรอบเป็นการ์ดสไตล์เรโทร/คลาสสิกด้วย `rounded-md` (0.375rem / 6px) และขอบ `border-slate-200` ที่คมชัด มองเห็นมิติได้ชัดเจน กล่องรูปภาพปรับเป็น `rounded-sm border-slate-200` ขณะที่ปุ่มไอคอนวงกลมยังคงรักษากฎความโค้งกลม 100% ด้วย `w-8 h-8 rounded-full`
+- **ปัญหาเดิม 4 (Nested Canvas Leak & Harsh Thick Borders)**: `CategoriesMain` มีการใส่แผ่นสีเทาครอบกลาง (`bg-gradient-to-b from-slate-100/90 via-slate-50...`) ซ้อนอยู่บนพื้นหลังเบราว์เซอร์สีขาว เกิดเป็น "ชั้นเสื่อเทาลอยซ้อน 3 ชั้น" และการ์ดใส่เส้นขอบเทาหนาชัดเจน (`border-slate-200`) กับเงาแบน ทำให้หน้าจอดูแข็ง หนักตา และทับซ้อน
+  - **วิธีแก้ (Modern Hairline & Soft Depth Elevation)**:
+    1. ปลด `bg-gradient-to-b from-slate-100...` ออก ให้หน้าเว็บเชื่อมต่อกับ Canvas หลักแบบเนียนไร้รอยต่อ (ไร้เสื่อเทาซ้อน)
+    2. ปรับการ์ด `CategoryCard` เป็น `rounded-[2px]` (0.1 curvature standard) ร่วมกับเส้นขอบบางเฉียบ `border-slate-200/60` (Hairline border เนียนตา ไม่หนา)
+    3. เสริมเงานุ่มละมุนหลายชั้น `shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06),0_1px_2px_0_rgba(15,23,42,0.04)]` และเงายกตัวเมื่อ Hover ทำให้การ์ดลอยเด่นมีมิติโดยไม่ต้องพึ่งเส้นขอบหนา และไม่ขาวโพลนกลืนกัน
 </pitfalls_and_solutions>

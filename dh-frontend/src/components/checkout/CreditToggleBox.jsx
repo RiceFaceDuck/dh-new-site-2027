@@ -22,7 +22,7 @@ export default function CreditToggleBox({
   if (!user || isLoading || balance <= 0) return null;
 
   return (
-    <div className="bg-linear-to-br from-indigo-50 to-white rounded-md p-5 border border-indigo-100 shadow-xs animate-fade-in relative overflow-hidden transition-all duration-300 mb-6">
+    <div className="bg-linear-to-br from-indigo-50/60 to-white rounded-[2px] p-5 border border-indigo-100/80 shadow-[0_4px_16px_-2px_rgba(15,23,42,0.1),0_2px_4px_-1px_rgba(15,23,42,0.06)] animate-fade-in relative overflow-hidden transition-all duration-300 mb-6">
       <div className="absolute -right-6 -top-6 w-24 h-24 bg-indigo-100/50 rounded-full blur-2xl pointer-events-none"></div>
       
       <div className="flex justify-between items-center relative z-10">

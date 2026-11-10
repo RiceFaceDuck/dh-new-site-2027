@@ -65,28 +65,28 @@ const PartnerCard = ({ partner, placement = 'home_squad_highlight' }) => {
   };
 
   return (
-    <div ref={cardRef} className="group relative bg-white p-3 md:p-3.5 rounded-md flex items-center space-x-3 md:space-x-4 border border-slate-200 shadow-sm transition-all duration-300 hover:shadow-lg hover:-translate-y-1 hover:border-indigo-200">
+    <div ref={cardRef} className="group relative bg-white p-3 md:p-3.5 rounded-[2px] flex items-center space-x-3 md:space-x-4 border border-slate-200/80 shadow-[0_4px_16px_-2px_rgba(15,23,42,0.12),0_2px_4px_-1px_rgba(15,23,42,0.06)] transition-all duration-300 hover:shadow-[0_16px_32px_-4px_rgba(15,23,42,0.16),0_6px_12px_-2px_rgba(15,23,42,0.08)] hover:-translate-y-1 hover:border-brand/40">
       
       {/* Avatar Container */}
       <div className="relative shrink-0">
-        <div className="absolute inset-0 bg-linear-to-tr from-indigo-500/20 to-emerald-500/20 rounded-md blur-md group-hover:blur-lg transition-all"></div>
-        <LazyImage src={avatar} alt={name} className="relative w-[105px] h-[105px] sm:w-[115px] sm:h-[115px] md:w-[125px] md:h-[125px] rounded-md object-cover shadow-xs bg-slate-50 border border-slate-100/50" />
+        <div className="absolute inset-0 bg-linear-to-tr from-indigo-500/20 to-emerald-500/20 rounded-[2px] blur-md group-hover:blur-lg transition-all"></div>
+        <LazyImage src={avatar} alt={name} className="relative w-[105px] h-[105px] sm:w-[115px] sm:h-[115px] md:w-[125px] md:h-[125px] rounded-[2px] object-cover shadow-xs bg-slate-50 border border-slate-100/50" />
       </div>
 
       <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
-        <h3 className="text-sm md:text-base font-black text-slate-800 leading-tight mb-0.5 group-hover:text-indigo-600 transition-colors truncate">{name}</h3>
+        <h3 className="text-sm md:text-base font-black text-slate-800 leading-tight mb-0.5 group-hover:text-brand transition-colors truncate">{name}</h3>
         <p className="text-xs text-slate-500 font-normal leading-snug line-clamp-2 min-h-[2.25rem] mb-2 break-words" title={role}>{role}</p>
         
         {/* Distance Display */}
         {displayDistance ? (
-          <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-normal bg-linear-to-r from-indigo-50 to-emerald-50 text-indigo-700 px-2.5 py-1 rounded-md w-fit max-w-full border border-slate-200 shadow-xs">
+          <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-normal bg-linear-to-r from-indigo-50 to-emerald-50 text-indigo-700 px-2.5 py-1 rounded-[2px] w-fit max-w-full border border-slate-200/60 shadow-xs">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1.5 text-emerald-500 shrink-0" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
             </svg>
             <span className="truncate">เดินทาง {displayDistance}</span>
           </div>
         ) : (
-          <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-normal bg-slate-50 text-slate-500 px-2.5 py-1 rounded-md w-fit max-w-full border border-slate-200 shadow-xs">
+          <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-normal bg-slate-50 text-slate-500 px-2.5 py-1 rounded-[2px] w-fit max-w-full border border-slate-200/60 shadow-xs">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1.5 text-slate-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
             </svg>

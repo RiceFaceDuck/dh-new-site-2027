@@ -26,13 +26,13 @@ const ProvidersPage = () => {
   const [showGuide, setShowGuide] = useState(false);
 
   return (
-    <div className="min-h-screen bg-slate-50 py-8 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen pb-24 pt-4 px-4 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
         
         {/* Header Area */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 space-y-4 md:space-y-0">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-brand/10 rounded-2xl">
+            <div className="p-3 bg-brand/10 rounded-[2px]">
               <Users className="w-8 h-8 text-brand" />
             </div>
             <div>
@@ -45,7 +45,7 @@ const ProvidersPage = () => {
           
           <button 
             onClick={() => setShowGuide(true)}
-            className="flex items-center text-sm font-medium text-brand hover:text-brand-accent transition-colors bg-white px-3 py-1.5 rounded-full shadow-xs border border-brand/20"
+            className="flex items-center text-sm font-medium text-brand hover:text-brand-accent transition-colors bg-white px-3.5 py-1.5 rounded-[2px] shadow-[0_2px_8px_-2px_rgba(15,23,42,0.08)] border border-brand/20 active:scale-95"
           >
             <HelpCircle className="w-4 h-4 mr-1.5" />
             วิธีใช้งานหน้านี้

@@ -185,7 +185,7 @@ export default function ProductKnowledgeSection({
   const partsList = parseArray(compatiblePartNumbers);
 
   return (
-    <div className="bg-slate-50 rounded-2xl shadow-md overflow-hidden mt-2">
+    <div className="bg-slate-50/70 rounded-[2px] border border-slate-200/80 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.06)] overflow-hidden mt-2">
       <style>{`
         @keyframes headingAmbientFlow {
           0% { background-position: 0% 50%; }

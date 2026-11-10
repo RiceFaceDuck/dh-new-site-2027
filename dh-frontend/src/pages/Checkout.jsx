@@ -140,7 +140,7 @@ const Checkout = () => {
   // RENDER: หน้า Checkout ปกติ
   // -------------------------------------------------------------
   return (
-    <div className="min-h-screen bg-gray-50 py-8 pb-24 font-sans">
+    <div className="min-h-screen pb-24 pt-4 font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Header */}

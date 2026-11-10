@@ -158,7 +158,7 @@ const ProductDetail = () => {
         </script>
       </Helmet>
       
-      <nav className="flex items-center flex-wrap text-sm font-medium text-slate-500 mb-6 bg-slate-50 p-3 rounded-md border border-slate-200 w-fit">
+      <nav className="flex items-center flex-wrap text-xs sm:text-sm font-medium text-slate-500 mb-6 bg-white/80 backdrop-blur-xs py-2 px-3.5 rounded-[2px] border border-slate-200/80 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.08)] w-fit">
         <Link 
           to="/" 
           className="hover:text-brand transition-colors flex items-center gap-1"
@@ -182,12 +182,12 @@ const ProductDetail = () => {
         </span>
       </nav>
 
-      <div className="bg-white rounded-md shadow-xs border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-[2px] shadow-[0_4px_16px_-2px_rgba(15,23,42,0.12),0_2px_4px_-1px_rgba(15,23,42,0.06)] border border-slate-200/80 overflow-hidden">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
           <div className="flex flex-col bg-white">
             <ProductImageSection product={product} imageUrl={product.imageUrl} name={product.name} />
             {isDesktop && (
-              <div className="flex-1 flex flex-col md:border-r border-slate-200">
+              <div className="flex-1 flex flex-col md:border-r border-slate-200/60">
                 <ProductCommunitySection 
                   productId={product.id} 
                   reviewCount={product.reviewCount || 0} 

@@ -109,5 +109,8 @@
 - **Known gap [open]:** `functions/marketing/ga4AdSyncCron.js` อัปเดตแค่ `viewCount` ไม่แตะ `views.allTime` (หน้าจอใช้ Math.max จึงยังโชว์ถูก) — แก้ต้อง deploy Functions ซึ่งถูกล็อก
 - **Note:** เทสต์เก่า `verify_view_tracking_and_telemetry_parity.mjs` (Test 7) และ `verify_milestone_2_view_telemetry_and_srp.mjs` (Test 3) fail อยู่ก่อนแล้ว เพราะยังเช็คโครงสร้างเดิมก่อนแยก `useStoreViews` (ไม่เกี่ยวกับการแก้รอบนี้)
 
+- **Problem (2026-11-10 Nested Backgrounds & Flat Elevation):** หน้า `StoreProfilePage` เดิมใส่ `bg-slate-50` ครอบทั้งจอ ทำให้เกิดแผ่นเทาลอยซ้อนบนพื้นหลังสีขาว และการ์ดข้อมูลร้านใช้ขอบหนากับเงาแบน
+- **Solution:** ปลด `bg-slate-50` ออกให้เป็นผืนเดียวกับ Canvas หลัก และปรับการ์ดทั้งหมด (`StoreProfileHero`, `StoreProfileDetails`, `StoreContactChannels`, `StoreLocationCard`, `StoreCertifications`, `PartnerReviews`) ให้ใช้ Hairline Border `border-slate-200/80` ควบคู่กับเงามิติ Soft Depth `shadow-[0_4px_16px_-2px_rgba(15,23,42,0.12)]` ขับให้การ์ดลอยเด่นมีมิติสวยงาม ไม่ขาวโพลน
+
 ## 6. <future_roadmap>
 - **Telemetry for Map & Share Buttons:** วางแผนติดตั้ง `trackAdClick` สำหรับปุ่มแผนที่ (`actionType: 'maps_open'`) และปุ่มแชร์ (`actionType: 'share_click'`) เพื่อเก็บสถิติความสนใจของลูกค้าเพิ่มเติม นอกเหนือจากการกดโทรออก (`phone_call`)

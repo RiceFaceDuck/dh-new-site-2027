@@ -108,7 +108,7 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
               )}
 
               {/* Modern Input Box with Enclosed Attachment & Submit Button */}
-              <div className="bg-white rounded-[2px] border border-slate-200 transition-all duration-200 focus-within:border-brand focus-within:ring-1 focus-within:ring-brand/30 shadow-2xs p-3">
+              <div className="bg-white rounded-[2px] border border-slate-200/80 transition-all duration-200 focus-within:border-brand focus-within:ring-1 focus-within:ring-brand/30 shadow-[0_4px_16px_-2px_rgba(15,23,42,0.1),0_2px_4px_-1px_rgba(15,23,42,0.06)] p-3.5">
                 <textarea
                   value={newReview}
                   onChange={(e) => setNewReview(e.target.value)}

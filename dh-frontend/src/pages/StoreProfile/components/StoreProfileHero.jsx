@@ -24,7 +24,7 @@ const StoreProfileHero = ({ partner }) => {
 
   return (
     <div className="max-w-4xl lg:max-w-6xl xl:max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4 md:pt-6 relative z-10">
-      <div className="relative bg-white rounded-[2px] shadow-sm border border-slate-100 p-6 md:p-8 lg:p-10 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 lg:gap-10">
+      <div className="relative bg-white rounded-[2px] shadow-[0_4px_16px_-2px_rgba(15,23,42,0.12),0_2px_4px_-1px_rgba(15,23,42,0.06)] border border-slate-200/80 p-6 md:p-8 lg:p-10 flex flex-col md:flex-row items-center md:items-start gap-6 md:gap-8 lg:gap-10">
         
         {/* Avatar Area */}
         <div className="relative group shrink-0">

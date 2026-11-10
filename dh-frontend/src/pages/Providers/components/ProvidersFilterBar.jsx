@@ -8,7 +8,7 @@ const ProvidersFilterBar = ({
   locationError 
 }) => {
   return (
-    <div className="w-full bg-white rounded-2xl shadow-xs border border-slate-200 p-4 mb-6 sticky top-20 z-10">
+    <div className="w-full bg-white rounded-[2px] shadow-[0_4px_16px_-2px_rgba(15,23,42,0.12),0_2px_4px_-1px_rgba(15,23,42,0.06)] border border-slate-200/80 p-4 mb-6 sticky top-20 z-10">
       
       {/* Search Input */}
       <div className="relative mb-4">
@@ -17,7 +17,7 @@ const ProvidersFilterBar = ({
         </div>
         <input
           type="text"
-          className="block w-full pl-10 pr-3 py-3 border border-slate-300 rounded-xl leading-5 bg-slate-50 placeholder-slate-400 focus:outline-hidden focus:bg-white focus:border-brand focus:ring-1 focus:ring-brand transition-colors duration-200"
+          className="block w-full pl-10 pr-3 py-2.5 border border-slate-200/80 rounded-[2px] leading-5 bg-slate-50/60 placeholder-slate-400 focus:outline-hidden focus:bg-white focus:border-brand focus:ring-2 focus:ring-brand/20 transition-colors duration-200 text-sm"
           placeholder="ค้นหาชื่อร้าน หรือ บริการ (เช่น ซ่อมบอร์ด, เปลี่ยนจอ)..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
@@ -29,7 +29,7 @@ const ProvidersFilterBar = ({
         <div className="flex items-center flex-wrap gap-2.5">
           <button
             onClick={() => requestLocation(true)}
-            className={`flex items-center px-4 py-2 rounded-lg text-sm font-medium transition-colors shrink-0 ${
+            className={`flex items-center px-4 py-2 rounded-[2px] text-sm font-medium transition-colors shrink-0 ${
               userLocation 
                 ? 'bg-[#C8EFD4] text-slate-800 border border-[#B3E1C1]' 
                 : 'bg-slate-100 text-slate-600 hover:bg-slate-200 border border-slate-200'

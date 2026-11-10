@@ -13,7 +13,7 @@ const FeaturedSectionContent = () => {
   if (!featuredIsActive) return null;
 
   return (
-    <div className="mt-12 md:mt-16 pt-8 border-t border-slate-200/80 animate-fade-in">
+    <div className="mt-12 md:mt-16 pt-8 border-t border-slate-200/40 animate-fade-in">
       <FeaturedSpares 
         products={featuredProducts} 
         loading={featuredLoading} 
