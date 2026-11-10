@@ -1,4 +1,4 @@
-import { Wallet, Plus, Activity, ShieldCheck, Sparkles, AlertTriangle } from 'lucide-react';
+import { Wallet, Plus, Sparkles, AlertTriangle } from 'lucide-react';
 
 const AdStatsOverview = ({ userCredit, onOpenForm }) => {
   // Helper สำหรับจัดฟอร์แมตตัวเลข
@@ -26,43 +26,23 @@ const AdStatsOverview = ({ userCredit, onOpenForm }) => {
             </span>
           </div>
           <div>
-            <p className="text-[11px] text-slate-500 font-bold uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+            <p className="text-[11px] text-slate-500 font-medium uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
               Available Credits <Sparkles size={12} className="text-amber-500"/>
             </p>
-            <div className="flex items-baseline gap-2">
-              <p className={`text-4xl font-black tracking-tight ${isOutOfCredit ? 'text-amber-600' : 'text-slate-900'}`}>
+            <div className="flex items-baseline gap-2.5">
+              <p className={`text-4xl font-semibold tracking-normal ${isOutOfCredit ? 'text-amber-600' : 'text-slate-900'}`}>
                 {formatNumber(userCredit)}
               </p>
-              <span className="text-xs font-bold text-slate-600 uppercase tracking-widest bg-slate-200/80 px-2 py-0.5 rounded-md">PTS</span>
+              <span className="text-xs font-medium text-slate-600 uppercase tracking-wider bg-slate-200/80 px-2 py-0.5 rounded-md">PTS</span>
             </div>
           </div>
         </div>
 
-        {/* 📊 Trust Indicators & Action Button */}
-        <div className="flex flex-col sm:flex-row items-center w-full md:w-auto gap-5">
-          
-          {/* Trust Badges (Corporate Vibe) */}
-          <div className="hidden sm:flex gap-5 mr-2">
-            <div className="flex flex-col items-end justify-center pr-5 border-r border-slate-300/70">
-               <span className="flex items-center gap-1.5 text-[10px] text-slate-500 uppercase tracking-widest">
-                 <Activity size={12} className={isOutOfCredit ? "text-amber-500" : "text-emerald-600"}/> Ad Engine
-               </span>
-               <span className={`text-sm font-bold tracking-wide ${isOutOfCredit ? "text-amber-600" : "text-emerald-600"}`}>
-                 {isOutOfCredit ? "OUT OF CREDIT" : "ACTIVE"}
-               </span>
-            </div>
-            <div className="flex flex-col items-end justify-center pr-3 border-r border-slate-300/70">
-               <span className="flex items-center gap-1.5 text-[10px] text-slate-500 uppercase tracking-widest">
-                 <ShieldCheck size={12} className="text-indigo-600"/> Protection
-               </span>
-               <span className="text-sm font-bold text-indigo-600 tracking-wide">ZERO-LEAK</span>
-            </div>
-          </div>
-
-          {/* Action Button: Create Campaign */}
+        {/* Action Button: Create Campaign */}
+        <div className="w-full md:w-auto">
           <button 
             onClick={onOpenForm}
-            className="w-full sm:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-md shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2.5 group whitespace-nowrap active:scale-95"
+            className="w-full sm:w-auto px-8 py-4 bg-indigo-600 hover:bg-indigo-700 text-white font-medium tracking-wide rounded-md shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center gap-2.5 group whitespace-nowrap active:scale-95"
           >
             <Plus size={22} className="group-hover:rotate-90 transition-transform duration-300" /> 
             สร้างแคมเปญโฆษณา

@@ -22,22 +22,22 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
   const getStatusBadge = (status, ad = {}) => {
     const s = String(status).toUpperCase();
     if (s === 'OUT_OF_CREDIT' || ad.isQuotaExhausted || (ad.remainingViews !== undefined && ad.remainingViews <= 0)) {
-      return <span className="flex items-center gap-1 bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><XCircle size={12}/> โควต้าหมด</span>;
+      return <span className="inline-flex items-center gap-1.5 text-purple-600 text-xs font-medium tracking-wide uppercase"><XCircle size={14}/> โควต้าหมด</span>;
     }
-    if (['APPROVED', 'ACTIVE'].includes(s)) return <span className="flex items-center gap-1 bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><CheckCircle2 size={12}/> Active</span>;
-    if (s === 'PENDING') return <span className="flex items-center gap-1 bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><Clock size={12}/> Pending</span>;
-    if (s === 'REJECTED') return <span className="flex items-center gap-1 bg-rose-100 text-rose-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><XCircle size={12}/> Rejected</span>;
-    if (s === 'PAUSED') return <span className="flex items-center gap-1 bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><Activity size={12}/> Paused</span>;
-    if (s === 'OUT_OF_CREDIT') return <span className="flex items-center gap-1 bg-purple-100 text-purple-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><XCircle size={12}/> เครดิตหมด</span>;
-    if (s === 'COMPLETED') return <span className="flex items-center gap-1 bg-blue-100 text-blue-700 px-2.5 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase"><CheckCircle2 size={12}/> จบแคมเปญ</span>;
-    return <span className="bg-slate-100 text-slate-600 px-2 py-1 rounded-md text-[10px] font-bold uppercase">{s}</span>;
+    if (['APPROVED', 'ACTIVE'].includes(s)) return <span className="inline-flex items-center gap-1.5 text-emerald-600 text-xs font-medium tracking-wide uppercase"><CheckCircle2 size={14}/> Active</span>;
+    if (s === 'PENDING') return <span className="inline-flex items-center gap-1.5 text-amber-600 text-xs font-medium tracking-wide uppercase"><Clock size={14}/> Pending</span>;
+    if (s === 'REJECTED') return <span className="inline-flex items-center gap-1.5 text-rose-600 text-xs font-medium tracking-wide uppercase"><XCircle size={14}/> Rejected</span>;
+    if (s === 'PAUSED') return <span className="inline-flex items-center gap-1.5 text-orange-600 text-xs font-medium tracking-wide uppercase"><Activity size={14}/> Paused</span>;
+    if (s === 'OUT_OF_CREDIT') return <span className="inline-flex items-center gap-1.5 text-purple-600 text-xs font-medium tracking-wide uppercase"><XCircle size={14}/> เครดิตหมด</span>;
+    if (s === 'COMPLETED') return <span className="inline-flex items-center gap-1.5 text-blue-600 text-xs font-medium tracking-wide uppercase"><CheckCircle2 size={14}/> จบแคมเปญ</span>;
+    return <span className="text-slate-600 text-xs font-medium uppercase">{s}</span>;
   };
 
   const getTypeBadge = (type) => {
-    if (type === 'BUSINESS_CARD') return <span className="text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-sm text-[10px] font-bold">นามบัตร</span>;
-    if (type === 'PRODUCT_LINK') return <span className="text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-sm text-[10px] font-bold">สินค้า</span>;
-    if (type === 'BILLBOARD') return <span className="text-rose-600 bg-rose-50 px-2 py-0.5 rounded-sm text-[10px] font-bold">แผ่นป้าย</span>;
-    return <span>ทั่วไป</span>;
+    if (type === 'BUSINESS_CARD') return <span className="text-indigo-600 text-xs font-medium tracking-normal">นามบัตร</span>;
+    if (type === 'PRODUCT_LINK') return <span className="text-emerald-600 text-xs font-medium tracking-normal">สินค้า</span>;
+    if (type === 'BILLBOARD') return <span className="text-rose-600 text-xs font-medium tracking-normal">แผ่นป้าย</span>;
+    return <span className="text-slate-500 text-xs font-medium tracking-normal">ทั่วไป</span>;
   };
 
   return (
@@ -73,7 +73,7 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
               
               <div className="flex-1 min-w-0">
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <span className="font-bold text-slate-800 text-sm truncate">{ad.title || ad.productName || 'โฆษณา'}</span>
+                  <span className="font-medium text-slate-800 text-sm truncate tracking-normal">{ad.title || ad.productName || 'โฆษณา'}</span>
                   {getStatusBadge(ad.status, ad)}
                 </div>
                 <div className="flex items-center gap-2">
@@ -90,7 +90,7 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
             {/* 🛑 แสดงเหตุผลการปฏิเสธ (ถ้ามี) */}
             {['REJECTED', 'rejected'].includes(String(ad.status)) && ad.rejectReason && (
               <div className="text-[11px] text-rose-600 bg-rose-50 border border-rose-200 px-2.5 py-1.5 rounded-md">
-                <span className="font-bold">เหตุผลปฏิเสธ: </span>
+                <span className="font-medium">เหตุผลปฏิเสธ: </span>
                 <span>{ad.rejectReason}</span>
               </div>
             )}
@@ -98,21 +98,21 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
             {/* Stats Row: Views / Clicks / Limit */}
             <div className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-md border border-slate-200 text-center">
               <div>
-                <span className="text-[10px] text-slate-400 font-bold uppercase block mb-0.5" title="ยอดการมองเห็นป้ายโฆษณา (Ad Impressions)">ยอดมองเห็น (Ad Impressions)</span>
-                <span className="font-black text-slate-700 text-xs">{Number(ad.stats?.views || 0).toLocaleString()}</span>
+                <span className="text-[10px] text-slate-400 font-medium uppercase block mb-0.5 tracking-wider" title="ยอดการมองเห็นป้ายโฆษณา (Ad Impressions)">ยอดมองเห็น</span>
+                <span className="font-medium text-slate-700 text-xs">{Number(ad.stats?.views || 0).toLocaleString()}</span>
                 {ad.remainingViews !== undefined && (
-                  <span className="block text-[9px] text-emerald-600 font-bold mt-0.5">
-                    เหลือ {Number(ad.remainingViews).toLocaleString()} วิว
+                  <span className="block text-[9px] text-slate-500 font-normal mt-1 tracking-wider whitespace-nowrap">
+                    รอบโควต้า <span className="text-amber-600 font-medium">{Number(ad.remainingViews).toLocaleString()}</span> ครั้ง
                   </span>
                 )}
               </div>
               <div>
-                <span className="text-[10px] text-slate-400 font-bold uppercase block mb-0.5">Clicks</span>
-                <span className="font-black text-indigo-600 text-xs">{Number(ad.stats?.clicks || 0).toLocaleString()}</span>
+                <span className="text-[10px] text-slate-400 font-medium uppercase block mb-0.5 tracking-wider">Clicks</span>
+                <span className="font-medium text-indigo-600 text-xs">{Number(ad.stats?.clicks || 0).toLocaleString()}</span>
               </div>
               <div>
-                <span className="text-[10px] text-slate-400 font-bold uppercase block mb-0.5">ใช้ไป / งบ</span>
-                <span className="font-bold text-slate-700 text-[11px]">
+                <span className="text-[10px] text-slate-400 font-medium uppercase block mb-0.5 tracking-wider">ใช้ไป / งบ</span>
+                <span className="font-medium text-slate-700 text-[11px]">
                   {Number(ad.spentBudget || 0).toLocaleString()} / {ad.creditLimit === -1 ? '∞' : (ad.creditLimit ? `${ad.creditLimit}` : '0')} <span className="text-[9px] text-slate-400">Pts</span>
                 </span>
               </div>
@@ -161,14 +161,14 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
       <div className="hidden md:block overflow-x-auto">
         <table className="w-full text-left border-collapse">
           <thead>
-            <tr className="bg-slate-100/90 text-slate-700 text-[11px] uppercase tracking-widest font-bold border-b border-slate-200">
-              <th className="p-4">รูปภาพ</th>
-              <th className="p-4">แคมเปญ / ประเภท</th>
-              <th className="p-4">สถานะ</th>
-              <th className="p-4 text-center" title="ยอดการมองเห็นป้ายโฆษณา (Ad Impressions)">ยอดการมองเห็นป้ายโฆษณา (Ad Impressions)</th>
-              <th className="p-4 text-center">ยอดคลิก (Clicks)</th>
-              <th className="p-4 text-center">ใช้ไป / งบ (Pts)</th>
-              <th className="p-4 text-right">จัดการ</th>
+            <tr className="bg-slate-50/80 border-b border-slate-200/80">
+              <th className="px-4 py-3.5 text-sm font-normal text-slate-500 tracking-wide whitespace-nowrap">รูปภาพ</th>
+              <th className="px-4 py-3.5 text-sm font-normal text-slate-500 tracking-wide whitespace-nowrap">แคมเปญ</th>
+              <th className="px-4 py-3.5 text-sm font-normal text-slate-500 tracking-wide whitespace-nowrap">สถานะ</th>
+              <th className="px-5 py-3.5 text-sm font-normal text-slate-500 tracking-wide text-center whitespace-nowrap min-w-[130px]" title="ยอดการมองเห็นป้ายโฆษณา (Ad Impressions)">การมองเห็น</th>
+              <th className="px-4 py-3.5 text-sm font-normal text-slate-500 tracking-wide text-center whitespace-nowrap" title="จำนวนครั้งที่คลิก (Clicks)">ยอดคลิก</th>
+              <th className="px-4 py-3.5 text-sm font-normal text-slate-500 tracking-wide text-center whitespace-nowrap" title="งบประมาณแต้มที่ใช้ไป">ใช้ไป / งบ</th>
+              <th className="px-4 py-3.5 text-sm font-normal text-slate-500 tracking-wide text-right whitespace-nowrap">จัดการ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-50 text-sm">
@@ -190,7 +190,7 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
                   </div>
                 </td>
                 <td className="p-4">
-                  <div className="font-bold text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition-colors">{ad.title || ad.productName || 'โฆษณา'}</div>
+                  <div className="font-medium text-slate-800 line-clamp-1 group-hover:text-indigo-600 transition-colors tracking-normal">{ad.title || ad.productName || 'โฆษณา'}</div>
                   <div className="mt-1 flex items-center gap-2">
                     {getTypeBadge(ad.type)}
                     {ad.targetUrl && (
@@ -201,29 +201,29 @@ const AdListTable = ({ ads, onEditAd, onDeleteAd, onToggleStatus, onResubmitAd }
                   </div>
                   {['REJECTED', 'rejected'].includes(String(ad.status)) && ad.rejectReason && (
                     <div className="mt-1.5 text-[10px] text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded flex items-center gap-1 max-w-sm">
-                      <span className="font-bold shrink-0">เหตุผล:</span>
+                      <span className="font-medium shrink-0">เหตุผล:</span>
                       <span className="truncate" title={ad.rejectReason}>{ad.rejectReason}</span>
                     </div>
                   )}
                 </td>
                 <td className="p-4">{getStatusBadge(ad.status, ad)}</td>
-                <td className="p-4 text-center">
-                  <span className="font-black text-slate-700 bg-slate-100 px-3 py-1 rounded-lg">
+                <td className="p-4 text-center min-w-[130px]">
+                  <span className="font-medium text-slate-800 text-sm block">
                     {Number(ad.stats?.views || 0).toLocaleString()}
                   </span>
                   {ad.remainingViews !== undefined && (
-                    <div className="text-[10px] text-emerald-600 font-bold mt-1">
-                      เหลือ {Number(ad.remainingViews).toLocaleString()} วิว
+                    <div className="text-[10px] text-slate-500 font-normal mt-1.5 whitespace-nowrap tracking-wider">
+                      รอบโควต้า <span className="text-amber-600 font-medium">{Number(ad.remainingViews).toLocaleString()}</span> ครั้ง
                     </div>
                   )}
                 </td>
                 <td className="p-4 text-center">
-                  <span className="font-black text-indigo-600 bg-indigo-50 px-3 py-1 rounded-lg border border-indigo-100">
+                  <span className="font-medium text-indigo-600 text-sm block">
                     {Number(ad.stats?.clicks || 0).toLocaleString()}
                   </span>
                 </td>
-                <td className="p-4 text-center text-xs font-bold text-slate-700">
-                  <span className="text-indigo-600 font-black">{Number(ad.spentBudget || 0).toLocaleString()}</span>
+                <td className="p-4 text-center text-xs font-medium text-slate-700">
+                  <span className="text-indigo-600 font-semibold">{Number(ad.spentBudget || 0).toLocaleString()}</span>
                   <span className="text-slate-400 mx-1">/</span>
                   <span className="text-slate-600">{ad.creditLimit === -1 ? '∞' : (ad.creditLimit ? `${ad.creditLimit}` : '0')}</span>
                 </td>

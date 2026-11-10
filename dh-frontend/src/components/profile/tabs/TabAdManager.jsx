@@ -63,34 +63,34 @@ const TabAdManager = ({ user }) => {
     <div className="space-y-6 animate-fade-in relative z-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-slate-900 border border-slate-800 rounded-md p-5 shadow-sm">
         <div>
-          <h2 className="text-xl md:text-2xl font-black text-white flex items-center gap-2.5 tracking-tight">
+          <h2 className="text-xl md:text-2xl font-semibold text-white flex items-center gap-3 tracking-normal">
             <Megaphone className="text-indigo-400 drop-shadow-xs" size={26} /> ศูนย์จัดการโฆษณาและร้านค้า
           </h2>
-          <p className="text-xs text-slate-400 mt-1 flex items-center gap-1.5 font-medium">
+          <p className="text-xs text-slate-400 mt-1.5 flex items-center gap-1.5 font-normal tracking-wide">
             <Sparkles size={13} className="text-amber-400" />ศูนย์รวมการโปรโมทร้านค้าและสินค้าแบบครบวงจร
           </p>
         </div>
-        <div className="flex bg-slate-950/80 p-1.5 rounded-md border border-slate-700/80 shadow-inner gap-1.5">
+        <div className="flex bg-slate-950/80 p-1.5 rounded-md border border-slate-700/80 shadow-inner gap-2">
           <button
             onClick={() => setActiveSubTab('store')}
-            className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg flex items-center gap-2 transition-all duration-200 cursor-pointer ${
+            className={`px-4 py-2 text-xs md:text-sm font-medium tracking-wide rounded-lg flex items-center gap-2 transition-all duration-200 cursor-pointer ${
               activeSubTab === 'store'
-                ? 'bg-amber-400 text-slate-950 shadow-md font-black hover:bg-amber-300 active:scale-95'
+                ? 'bg-amber-400 text-slate-950 shadow-md font-semibold hover:bg-amber-300 active:scale-95'
                 : 'text-slate-300 bg-slate-800/80 border border-slate-700/60 hover:text-white hover:bg-slate-700 hover:border-slate-600 active:scale-95'
             }`}
           >
             <Store size={15} /> ข้อมูลร้านซ่อม
             {Number(storeData?.viewCount || 0) > 0 && (
-              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-bold ${activeSubTab === 'store' ? 'bg-slate-900 text-amber-300' : 'bg-slate-700/80 text-indigo-300 border border-indigo-500/30'}`} title="ยอดเข้าชมหน้าร้านพาร์ทเนอร์">
+              <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${activeSubTab === 'store' ? 'bg-slate-900 text-amber-300' : 'bg-slate-700/80 text-indigo-300 border border-indigo-500/30'}`} title="ยอดเข้าชมหน้าร้านพาร์ทเนอร์">
                 {Number(storeData.viewCount).toLocaleString()} วิว
               </span>
             )}
           </button>
           <button
             onClick={() => setActiveSubTab('ads')}
-            className={`px-4 py-2 text-xs md:text-sm font-bold rounded-lg flex items-center gap-2 transition-all duration-200 cursor-pointer ${
+            className={`px-4 py-2 text-xs md:text-sm font-medium tracking-wide rounded-lg flex items-center gap-2 transition-all duration-200 cursor-pointer ${
               activeSubTab === 'ads'
-                ? 'bg-amber-400 text-slate-950 shadow-md font-black hover:bg-amber-300 active:scale-95'
+                ? 'bg-amber-400 text-slate-950 shadow-md font-semibold hover:bg-amber-300 active:scale-95'
                 : 'text-slate-300 bg-slate-800/80 border border-slate-700/60 hover:text-white hover:bg-slate-700 hover:border-slate-600 active:scale-95'
             }`}
           >
