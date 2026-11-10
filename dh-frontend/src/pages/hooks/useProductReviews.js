@@ -1,7 +1,17 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 import { productReviewService } from '../../firebase/productReviewService';
+import { storageService } from '../../firebase/storageService';
+import { compressImage } from '../../utils/imageCompressor';
 import { useToast } from '../../context/ToastContext';
+
+export const PRODUCT_QUICK_REVIEWS = [
+  "สินค้าตรงปก ใช้งานได้ดี",
+  "แพ็คสินค้ามาแน่นหนามาก",
+  "จัดส่งรวดเร็วทันใจ",
+  "คุณภาพดี คุ้มราคา",
+  "ใช้งานได้ปกติ ไม่มีปัญหา"
+];
 
 export const useProductReviews = (productId, reviewCount = 0, inView = true) => {
   const [currentUser, setCurrentUser] = useState(null);
@@ -13,16 +23,26 @@ export const useProductReviews = (productId, reviewCount = 0, inView = true) => 
   // Form State
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
+  const [reviewText, setReviewText] = useState('');
   const reviewTextRef = useRef(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // 📸 Image Attachment State & Compression
+  const [imageFile, setImageFile] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
+  const [isCompressing, setIsCompressing] = useState(false);
+
   const isMountedRef = useRef(true);
 
   useEffect(() => {
     isMountedRef.current = true;
     return () => {
       isMountedRef.current = false;
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
     };
-  }, []);
+  }, [imagePreview]);
 
   const { showToast } = useToast();
   const auth = getAuth();
@@ -85,6 +105,55 @@ export const useProductReviews = (productId, reviewCount = 0, inView = true) => 
     }
   }, [productId, inView, reviewCount]);
 
+  // 📸 ฟังก์ชันเลือกและบีบอัดภาพรีวิวสินค้าหน้าบ้าน
+  const handleImageSelect = useCallback(async (file) => {
+    if (!file) return;
+    if (!file.type || !file.type.startsWith('image/')) {
+      showToast('กรุณาเลือกไฟล์รูปภาพเท่านั้น (JPG, PNG, WebP)', 'error');
+      return;
+    }
+
+    try {
+      setIsCompressing(true);
+      // 🚀 บีบอัดภาพหน้าบ้านทันที ให้ขนาดไฟล์เหลือ ~80-120KB คงคุณภาพความคมชัด
+      const compressed = await compressImage(file, {
+        maxWidth: 1200,
+        maxHeight: 1200,
+        quality: 0.75,
+        mimeType: 'image/webp'
+      });
+
+      if (imagePreview) {
+        URL.revokeObjectURL(imagePreview);
+      }
+      setImageFile(compressed);
+      setImagePreview(URL.createObjectURL(compressed));
+    } catch (err) {
+      console.error("Error compressing product review image:", err);
+      showToast('เกิดข้อผิดพลาดในการประมวลผลรูปภาพ', 'error');
+    } finally {
+      setIsCompressing(false);
+    }
+  }, [imagePreview, showToast]);
+
+  const handleRemoveImage = useCallback(() => {
+    if (imagePreview) {
+      URL.revokeObjectURL(imagePreview);
+    }
+    setImageFile(null);
+    setImagePreview(null);
+  }, [imagePreview]);
+
+  // 💬 ฟังก์ชันแทรกคำพูด Quick รีวิวอย่างเป็นธรรมชาติ
+  const handleQuickReview = useCallback((phrase) => {
+    setReviewText((prev) => {
+      const trimmed = prev.trim();
+      if (!trimmed) return phrase;
+      if (trimmed.includes(phrase)) return trimmed; // ไม่แทรกคำเดิมซ้ำ
+      return `${trimmed} ${phrase}`;
+    });
+  }, []);
+
   const handleSubmit = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
     if (!currentUser) {
@@ -92,25 +161,34 @@ export const useProductReviews = (productId, reviewCount = 0, inView = true) => 
       return;
     }
     
-    const reviewText = reviewTextRef.current?.value || '';
-    if (!reviewText.trim()) {
+    const textToSend = reviewText.trim() || reviewTextRef.current?.value?.trim() || '';
+    if (!textToSend) {
       showToast("กรุณาเขียนความคิดเห็น", "warning");
       return;
     }
 
     try {
       setSubmitting(true);
+      let uploadedImageUrl = null;
+
+      // 🚀 อัปโหลดรูปภาพที่ผ่านการบีบอัดแล้วขึ้น Storage
+      if (imageFile) {
+        uploadedImageUrl = await storageService.uploadReviewImage(imageFile, currentUser.uid);
+      }
       
       const newReview = {
         rating,
-        text: reviewText.trim()
+        text: textToSend,
+        imageUrl: uploadedImageUrl || null
       };
       
       await productReviewService.addReview(productId, newReview, currentUser);
       
       showToast("ขอบคุณสำหรับรีวิวของคุณ!", "success");
+      setReviewText('');
       if (reviewTextRef.current) reviewTextRef.current.value = '';
       setRating(5);
+      handleRemoveImage();
       
       // Reload comments to show the new one
       loadComments(true);
@@ -155,7 +233,16 @@ export const useProductReviews = (productId, reviewCount = 0, inView = true) => 
     setRating,
     hoverRating,
     setHoverRating,
+    reviewText,
+    setReviewText,
     reviewTextRef,
+    imageFile,
+    imagePreview,
+    isCompressing,
+    handleImageSelect,
+    handleRemoveImage,
+    handleQuickReview,
+    quickReviews: PRODUCT_QUICK_REVIEWS,
     submitting,
     loadMore: () => loadComments(false),
     handleSubmit,

@@ -100,6 +100,7 @@ export const productReviewService = {
           userAvatar: user.photoURL || `https://ui-avatars.com/api/?name=${user.displayName || 'U'}&background=0D8ABC&color=fff`,
           rating: reviewData.rating,
           text: reviewData.text,
+          imageUrl: reviewData.imageUrl || null,
           likes: 0,
           verified: false, // ตั้งค่าเริ่มต้นเป็น false 
           createdAt: serverTimestamp()
