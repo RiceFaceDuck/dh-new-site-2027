@@ -175,9 +175,9 @@ const PartnerSupportBox = () => {
             <div className="p-[1px] rounded-[2px] bg-linear-to-r from-violet-500 via-pink-500 via-amber-400 via-emerald-400 to-cyan-500 shadow-xs max-w-full">
               <div className="flex items-center gap-1 bg-white/95 backdrop-blur-xs px-1.5 py-[1px] rounded-[2px] max-w-full">
                 <MapPin size={10} className="text-violet-600 shrink-0" />
-                <span className="text-[10px] sm:text-[11px] font-semibold text-slate-700 tracking-tight truncate">
+                <span className="text-[10px] sm:text-[11px] font-normal text-slate-600 truncate">
                   ผู้ให้บริการ ใกล้คุณ {partner.formattedDistance && (
-                    <span className="text-violet-700 font-bold ml-0.5">{partner.formattedDistance}</span>
+                    <span className="text-violet-700 font-medium ml-1">{partner.formattedDistance}</span>
                   )}
                 </span>
               </div>
