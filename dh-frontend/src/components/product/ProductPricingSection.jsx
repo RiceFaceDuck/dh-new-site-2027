@@ -3,6 +3,7 @@ import { Cpu, Package, Truck, ShoppingCart, Heart, CheckCircle2, Minus, Plus, Za
 import VariantSelector from './VariantSelector';
 import { useFavorites } from '../../context/FavoritesProvider';
 import { trackMarketplaceClick } from '../../firebase/productAnalyticsService';
+import addToCartImg from '../../assets/add-to-cart-btn.png';
 
 export default function ProductPricingSection({
   product,
@@ -360,42 +361,64 @@ export default function ProductPricingSection({
             </button>
           </div>
 
-          {/* Add to Cart Button (แบบทึบขอบเทา ตามภาพตัวอย่างบน) */}
+          {/* Add to Cart Button (ธีมภาพต้นฉบับ +ADD TO CART) */}
           <button 
             onClick={handleAddToCart}
-            disabled={isOutOfStock || isAdding || addSuccess}
-            className={`flex-1 h-10 md:h-11 rounded-full font-bold text-sm md:text-base tracking-wide flex items-center justify-center gap-2 transition-all duration-300 border-[3.5px] cursor-pointer active:scale-[0.98] ${
-              isOutOfStock 
-                ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-                : addSuccess
-                  ? 'bg-emerald-50 text-cyber-emerald border-cyber-emerald'
-                  : 'bg-[#f04e69] text-white border-slate-200 hover:border-slate-300 hover:bg-[#e03b57] shadow-sm hover:shadow-md'
+            disabled={isOutOfStock || isAdding || addSuccess || (needsSelection && !isSelectionComplete)}
+            className={`h-10 shrink-0 flex items-center justify-center transition-all duration-200 active:scale-[0.98] select-none ${
+              isOutOfStock || (needsSelection && !isSelectionComplete)
+                ? 'opacity-60 cursor-not-allowed'
+                : isAdding || addSuccess
+                  ? 'rounded-lg border-[2.5px] border-black font-bold text-sm px-3'
+                  : 'cursor-pointer hover:scale-[1.02]'
+            } ${
+              addSuccess 
+                ? 'bg-[#FFA901] text-black' 
+                : isAdding 
+                  ? 'bg-[#FFB21A] text-black' 
+                  : ''
             }`}
           >
             {isAdding ? (
-              <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div> กำลังประมวลผล</>
+              <><div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin mr-2"></div> กำลังประมวลผล</>
             ) : addSuccess ? (
-              <><CheckCircle2 size={18} strokeWidth={2.5} /> เพิ่มลงตะกร้าแล้ว</>
+              <><CheckCircle2 size={18} strokeWidth={2.5} className="mr-1.5" /> เพิ่มลงตะกร้าแล้ว</>
             ) : isOutOfStock ? (
-              <>สินค้าหมด</>
+              <div className="h-10 px-4 rounded-lg bg-slate-200 text-slate-500 font-bold text-sm flex items-center justify-center border-2 border-slate-300">สินค้าหมด</div>
             ) : (needsSelection && !isSelectionComplete) ? (
-              <>โปรดเลือกตัวเลือกสินค้า</>
+              <div className="h-10 px-4 rounded-lg bg-amber-50 text-amber-700 font-bold text-xs md:text-sm flex items-center justify-center border-2 border-amber-300">โปรดเลือกตัวเลือก</div>
             ) : (
-              <><ShoppingCart size={18} /> ใส่ตะกร้า</>
+              <img 
+                src={addToCartImg} 
+                alt="+ADD TO CART" 
+                className="h-10 w-auto object-contain pointer-events-none drop-shadow-xs" 
+              />
             )}
           </button>
 
-          {/* Buy Now Button (แบบกรอบชมพูขอบหนา ตามภาพตัวอย่างล่าง) */}
-          {!isOutOfStock && (
-            <button
-              onClick={handleBuyNow}
-              disabled={isAdding}
-              className="flex-1 h-10 md:h-11 rounded-full font-bold text-sm md:text-base tracking-wide flex items-center justify-center gap-2 border-[3.5px] border-[#f04e69] bg-slate-100 text-[#f04e69] hover:bg-[#f04e69] hover:text-white transition-all duration-300 shadow-sm hover:shadow-md cursor-pointer active:scale-[0.98]"
+          {/* LINE สั่งกับแอดมิน (แทนที่ปุ่มซื้อเลยเดิม ถอดปุ่มระบบมา 100% เหมือนปุ่มบนเป๊ะ) */}
+          <a 
+            href={lineAddFriendUrl || "https://line.me/ti/p/"} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            onClick={() => trackMarketplaceClick('line', product)}
+            className="relative inline-flex items-center gap-2 px-3.5 h-10 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-md shadow-xs hover:shadow-md hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 shrink-0 select-none group"
+            title="สั่งซื้อกับแอดมินผ่าน LINE"
+          >
+            {/* Subtle pulse glow effect behind the button */}
+            <div className="absolute inset-0 bg-[#06C755] opacity-20 group-hover:opacity-40 blur-md rounded-md transition-opacity duration-300 animate-pulse pointer-events-none"></div>
+            
+            {/* LINE Speech Bubble Vector (ไดคัทเฉพาะบอลลูนขาว ตัวอักษรฉลุโปร่งใสรับพื้นหลังปุ่ม) */}
+            <svg 
+              viewBox="0 0 24 24" 
+              fill="#ffffff" 
+              className="w-7 h-7 shrink-0 relative z-10" 
+              aria-hidden="true"
             >
-              <Zap size={18} className="fill-current" />
-              ซื้อเลย
-            </button>
-          )}
+              <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
+            </svg>
+            <span className="relative z-10 font-medium text-sm tracking-normal text-white">สั่งกับแอดมิน</span>
+          </a>
         </div>
       </div>
 
