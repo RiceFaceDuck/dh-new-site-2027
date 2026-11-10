@@ -93,7 +93,9 @@ export default function ProductPricingSection({
 
   return (
     <div className="px-6 pt-4 pb-6 md:px-8 md:pt-5 md:pb-8 flex flex-col">
-      <div className="mb-2 flex items-center justify-between gap-3 flex-wrap">
+      {/* Top Bar: SKU Chip + Favorite Button (Responsive Balance) */}
+      <div className="mb-2 flex items-center justify-between gap-3">
+        {/* Left: SKU Chip */}
         <span className="text-sm font-tech text-slate-500 font-bold flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-md shrink-0">
           <Cpu size={14} className="text-slate-400" /> DH-SKU: {model}
           <button 
@@ -107,8 +109,8 @@ export default function ProductPricingSection({
           </button>
         </span>
 
-        {/* Top Right Action Group: Share Bar + Heart Button */}
-        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0 ml-auto">
+        {/* Desktop View (md:flex): Share Bar + Heart Button on the right */}
+        <div className="hidden md:flex items-center gap-2.5 sm:gap-3 shrink-0 ml-auto">
           {/* 🔗 Social Share Bar */}
           <div className="flex items-center gap-1.5">
             <span className="text-xs font-semibold text-slate-400 select-none mr-0.5">Share</span>
@@ -161,7 +163,7 @@ export default function ProductPricingSection({
           {/* Divider before Heart */}
           <div className="h-5 w-[1px] bg-slate-200"></div>
 
-          {/* Favorite Button (ย้ายมาไว้มุมขวาบน) */}
+          {/* Favorite Button (Desktop) */}
           <button 
             type="button"
             onClick={() => product && toggleFavorite(product)}
@@ -173,6 +175,63 @@ export default function ProductPricingSection({
             aria-label={isFav ? "ลบออกจากรายการโปรด" : "เพิ่มในรายการโปรด"}
           >
             <Heart size={18} className={isFav ? "fill-current text-red-500" : ""} />
+          </button>
+        </div>
+
+        {/* Mobile View (md:hidden): Favorite Button only in top row */}
+        <button 
+          type="button"
+          onClick={() => product && toggleFavorite(product)}
+          className={`md:hidden w-9 h-9 border rounded-md flex items-center justify-center transition-colors shadow-xs shrink-0 cursor-pointer ${
+            isFav 
+              ? 'bg-red-50 border-red-300 text-red-500' 
+              : 'bg-white border-slate-200 text-slate-400 hover:border-red-300 hover:text-red-500 hover:bg-red-50'
+          }`}
+          aria-label={isFav ? "ลบออกจากรายการโปรด" : "เพิ่มในรายการโปรด"}
+        >
+          <Heart size={18} className={isFav ? "fill-current text-red-500" : ""} />
+        </button>
+      </div>
+
+      {/* Mobile Social Share Row (md:hidden): Clean dedicated row with refined sizing and spacing */}
+      <div className="md:hidden flex items-center gap-2 mb-3">
+        <span className="text-xs font-medium text-slate-400 select-none mr-0.5">Share:</span>
+        <div className="flex items-center gap-1.5">
+          <button
+            type="button"
+            onClick={() => handleShare('facebook')}
+            className="w-6 h-6 inline-flex items-center justify-center rounded-sm hover:opacity-90 active:scale-95 transition-all shadow-xs cursor-pointer"
+            title="แชร์ไปยัง Facebook"
+            aria-label="Share on Facebook"
+          >
+            <img src="/images/share_fb.png" alt="Facebook" className="w-full h-full object-contain rounded-sm" />
+          </button>
+          <button
+            type="button"
+            onClick={() => handleShare('x')}
+            className="w-6 h-6 inline-flex items-center justify-center rounded-sm hover:opacity-90 active:scale-95 transition-all shadow-xs cursor-pointer"
+            title="แชร์ไปยัง X (Twitter)"
+            aria-label="Share on X"
+          >
+            <img src="/images/share_x.png" alt="X" className="w-full h-full object-contain rounded-sm" />
+          </button>
+          <button
+            type="button"
+            onClick={() => handleShare('pinterest')}
+            className="w-6 h-6 inline-flex items-center justify-center rounded-sm hover:opacity-90 active:scale-95 transition-all shadow-xs cursor-pointer"
+            title="แชร์ไปยัง Pinterest"
+            aria-label="Share on Pinterest"
+          >
+            <img src="/images/share_pinterest.png" alt="Pinterest" className="w-full h-full object-contain rounded-sm" />
+          </button>
+          <button
+            type="button"
+            onClick={() => handleShare('line')}
+            className="w-6 h-6 inline-flex items-center justify-center rounded-sm hover:opacity-90 active:scale-95 transition-all shadow-xs cursor-pointer"
+            title="แชร์ไปยัง LINE"
+            aria-label="Share on LINE"
+          >
+            <img src="/images/share_line.png" alt="LINE" className="w-full h-full object-contain rounded-sm" />
           </button>
         </div>
       </div>
@@ -230,15 +289,15 @@ export default function ProductPricingSection({
         </div>
       </div>
 
-      {/* 💬 LINE Add Friend & Quick Marketplace Badges */}
-      <div className="mb-5 flex items-center justify-start gap-7">
+      {/* 💬 LINE Add Friend & Quick Marketplace Badges (Responsive Sizing & Spacing) */}
+      <div className="mb-5 flex items-center justify-start gap-3 sm:gap-4 md:gap-6 flex-wrap">
         {/* LINE สั่งกับแอดมิน */}
         <a 
           href={lineAddFriendUrl || "https://line.me/ti/p/"} 
           target="_blank" 
           rel="noopener noreferrer" 
           onClick={() => trackMarketplaceClick('line', product)}
-          className="relative inline-flex items-center gap-2 px-3.5 h-10 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-md shadow-xs hover:shadow-md hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 shrink-0 select-none group"
+          className="relative inline-flex items-center gap-2 px-3 sm:px-3.5 h-9 sm:h-10 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-md shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shrink-0 select-none group"
           title="สั่งซื้อกับแอดมินผ่าน LINE"
         >
           {/* Subtle pulse glow effect behind the button */}
@@ -248,16 +307,16 @@ export default function ProductPricingSection({
           <svg 
             viewBox="0 0 24 24" 
             fill="#ffffff" 
-            className="w-7 h-7 shrink-0 relative z-10" 
+            className="w-6 h-6 sm:w-7 sm:h-7 shrink-0 relative z-10" 
             aria-hidden="true"
           >
             <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.495.254l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.627-.63.349 0 .631.285.631.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
           </svg>
-          <span className="relative z-10 font-medium text-sm tracking-normal text-white">สั่งกับแอดมิน</span>
+          <span className="relative z-10 font-medium text-xs sm:text-sm tracking-normal text-white whitespace-nowrap">สั่งกับแอดมิน</span>
         </a>
 
-        {/* Quick Marketplace Badges (Circle Icons) */}
-        <div className="flex items-center gap-5">
+        {/* 🛍️ Marketplace Pod: Shopee + Lazada + Directional Guide (In Same Content Zone) */}
+        <div className="inline-flex items-center gap-2 sm:gap-2.5 shrink-0">
           {/* Shopee Quick Badge (Circle) */}
           {(shopeeUrl || product?.externalLinks?.shopee || product?.shopeeUrl) ? (
             <a
@@ -265,13 +324,13 @@ export default function ProductPricingSection({
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackMarketplaceClick('shopee', product)}
-              className="relative inline-flex items-center justify-center rounded-full hover:scale-[1.08] active:scale-[0.95] transition-all duration-200 shrink-0 shadow-[0_3px_8px_rgba(0,0,0,0.16)] hover:shadow-[0_5px_14px_rgba(0,0,0,0.22)]"
+              className="relative inline-flex items-center justify-center rounded-full hover:scale-[1.08] active:scale-[0.95] transition-all duration-200 shrink-0 shadow-[0_2px_6px_rgba(0,0,0,0.12)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.18)]"
               title="สั่งซื้อผ่าน Shopee"
             >
               <img 
                 src="/images/shopee_circle.png" 
                 alt="Shopee" 
-                className="w-10 h-10 object-contain rounded-full" 
+                className="w-9 h-9 sm:w-10 sm:h-10 object-contain rounded-full" 
               />
             </a>
           ) : (
@@ -283,7 +342,7 @@ export default function ProductPricingSection({
               <img 
                 src="/images/shopee_circle.png" 
                 alt="Shopee" 
-                className="w-10 h-10 object-contain pointer-events-none rounded-full" 
+                className="w-9 h-9 sm:w-10 sm:h-10 object-contain pointer-events-none rounded-full" 
               />
             </div>
           )}
@@ -295,13 +354,13 @@ export default function ProductPricingSection({
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackMarketplaceClick('lazada', product)}
-              className="relative inline-flex items-center justify-center rounded-full hover:scale-[1.08] active:scale-[0.95] transition-all duration-200 shrink-0 shadow-[0_3px_8px_rgba(0,0,0,0.16)] hover:shadow-[0_5px_14px_rgba(0,0,0,0.22)]"
+              className="relative inline-flex items-center justify-center rounded-full hover:scale-[1.08] active:scale-[0.95] transition-all duration-200 shrink-0 shadow-[0_2px_6px_rgba(0,0,0,0.12)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.18)]"
               title="สั่งซื้อผ่าน Lazada"
             >
               <img 
                 src="/images/lazada_quick_badge.png" 
                 alt="Lazada" 
-                className="w-10 h-10 object-contain rounded-full" 
+                className="w-9 h-9 sm:w-10 sm:h-10 object-contain rounded-full" 
               />
             </a>
           ) : (
@@ -313,18 +372,18 @@ export default function ProductPricingSection({
               <img 
                 src="/images/lazada_quick_badge.png" 
                 alt="Lazada" 
-                className="w-10 h-10 object-contain pointer-events-none rounded-full" 
+                className="w-9 h-9 sm:w-10 sm:h-10 object-contain pointer-events-none rounded-full" 
               />
             </div>
           )}
-        </div>
 
-        {/* 👈🏼 ข้อความแนะนำสั่งซื้อ (บรรทัดตรง ตัวหนังสือเอียง italic เด่นชัด) */}
-        <div className="flex items-center gap-1.5 select-none">
-          <span className="text-xl md:text-2xl filter drop-shadow-xs">👈🏼</span>
-          <span className="text-sm md:text-base font-black italic tracking-tight text-[#f04e69]">
-            กดสั่ง ตรงนี้ได้นะคะ
-          </span>
+          {/* 👈🏼 ข้อความแนะนำสั่งซื้อ (ผูกติดกับกลุ่ม Marketplace โดยตรง ไม่หลุดโซน) */}
+          <div className="flex items-center gap-1 select-none shrink-0 ml-0.5">
+            <span className="text-lg sm:text-xl md:text-2xl filter drop-shadow-xs">👈🏼</span>
+            <span className="text-xs sm:text-sm md:text-base font-black italic tracking-tight text-[#f04e69] whitespace-nowrap">
+              กดสั่งตรงนี้ได้นะคะ
+            </span>
+          </div>
         </div>
       </div>
 
