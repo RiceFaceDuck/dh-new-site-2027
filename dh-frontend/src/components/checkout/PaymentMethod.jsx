@@ -168,7 +168,7 @@ export default function PaymentMethod({ orderMode = 'retail', onSlipChange, slip
 
   // 🛒 โหมดสั่งซื้อปกติ
   return (
-    <div className="bg-white rounded-md p-6 shadow-xs border border-slate-200 transition-all duration-300 hover:shadow-md font-sarabun">
+    <div className="w-full font-sarabun">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
           <CreditCard className="w-6 h-6 text-blue-600" />

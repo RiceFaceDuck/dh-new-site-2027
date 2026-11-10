@@ -128,12 +128,9 @@ export default function AddressSelector({ orderMode = 'retail', onUpdate }) {
   }, [formData, updateCheckoutConfig, onUpdate]);
 
   return (
-    <div className="bg-white rounded-md p-6 shadow-xs border border-slate-200/80 relative overflow-hidden transition-all duration-300">
-      {/* Decorative background accent (Deep Luxury Style) */}
-      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-bl-full -z-10 blur-2xl"></div>
-      
+    <div className="w-full">
       {/* หัวข้อ Component */}
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-slate-200">
+      <div className="flex items-center justify-between mb-6 pb-3 border-b border-slate-100">
         <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
           <div className={`p-2 rounded-md ${orderMode === 'wholesale' ? 'bg-amber-100 text-amber-600' : 'bg-indigo-100 text-indigo-600'}`}>
             <MapPin className="w-5 h-5" />

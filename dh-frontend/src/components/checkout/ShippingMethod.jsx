@@ -72,10 +72,7 @@ export default function ShippingMethod({ orderMode = 'retail', availableRules = 
   };
 
   return (
-    <div className="bg-white rounded-md p-6 shadow-xs border border-slate-200 relative overflow-hidden transition-all duration-300 hover:shadow-md">
-      {/* Decorative Background */}
-      <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-50/50 rounded-full blur-3xl -z-10"></div>
-
+    <div className="w-full">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
           <Truck className={`w-6 h-6 ${orderMode === 'wholesale' ? 'text-orange-500' : 'text-indigo-600'}`} />

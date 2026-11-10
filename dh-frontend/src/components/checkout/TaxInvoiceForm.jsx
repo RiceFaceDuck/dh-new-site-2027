@@ -85,7 +85,7 @@ export default function TaxInvoiceForm({ taxData, onUpdate }) {
   };
 
   return (
-    <div className="bg-white rounded-md p-6 shadow-xs border border-slate-200/80 relative overflow-hidden transition-all duration-300">
+    <div className="w-full">
       
       <div className={`flex items-center justify-between transition-all duration-300 ${requestTax ? 'mb-6 pb-4 border-b border-slate-200' : ''}`}>
         <div>
