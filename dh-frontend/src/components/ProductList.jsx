@@ -192,7 +192,7 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false, 
   }
 
   return (
-    <div className="mb-12 md:mb-20">
+    <div className="mb-2 md:mb-8">
       {(showTitle || title) && (
         <div className="flex justify-between items-end mb-5 px-1">
           <h2 className="text-lg md:text-xl font-bold text-slate-800 tracking-tight flex items-center gap-2">
@@ -214,6 +214,14 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false, 
         <div className="w-full bg-slate-50 border border-slate-200 rounded-xl p-10 flex flex-col items-center justify-center shadow-inner">
            <Cpu size={32} className="text-slate-300 mb-3" />
            <p className="text-slate-500 font-bold uppercase tracking-widest text-xs">No Products Found</p>
+        </div>
+      ) : mappedDisplayProducts.length <= 12 ? (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 md:gap-4 lg:gap-5 px-1">
+          {mappedDisplayProducts.map((item, index) => (
+            <div key={item.id || index} className="col-span-1 h-full animate-in fade-in duration-300">
+              {renderItem(index, item)}
+            </div>
+          ))}
         </div>
       ) : (
         <VirtuosoGrid

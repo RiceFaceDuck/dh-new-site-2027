@@ -148,7 +148,7 @@ const ProductDetail = () => {
   };
 
   return (
-    <div className="max-w-7xl mx-auto w-full animate-fade-in pb-36 lg:pb-10">
+    <div className="max-w-7xl mx-auto w-full animate-fade-in pb-1 lg:pb-10">
       <Helmet>
         <title>{product?.name || 'รายละเอียดสินค้า'} | DH Notebook</title>
         <meta name="description" content={product?.shortDescription || product?.name || 'รายละเอียดอะไหล่โน๊ตบุ๊คคุณภาพ'} />

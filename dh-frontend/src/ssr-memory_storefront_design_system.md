@@ -77,6 +77,10 @@
    - **ตำแหน่ง PC**: อยู่ใน Footer คอลัมน์แรก (`FooterBrand.jsx`) ใต้กรอบ 4 Trust Badges สไตล์ dark retro-tech
    - **ตำแหน่ง Mobile/Tablet (< lg)**: เนื่องจาก Footer บนจอมือถือถูกซ่อนไว้ จึงวาง `VisitorCounterBadge` โหมด `mobile-card` ไว้ด้านล่างสุดของ `MainLayout.jsx` เหนือ BottomNav ให้เห็นสบายตาพอดีเมื่อเลื่อนลงมาล่างสุด
    - **ความสอดคล้อง**: ขอบมนระดับ 0.1 (`rounded-[2px]`) และป้ายนิ่งสนิทตามหลัก Calm UI
+   - **การปรับสมดุลพื้นที่ว่างท้ายหน้าและระยะปลอดภัยมือถือ (Balanced Bottom Clearance)**:
+     - ลด Compound Padding ใน `<main>` บนจอมือถือเหลือ `pb-4 md:pb-12` ป้องกันพื้นที่สีขาวบวมทับซ้อนเกือบ 300px
+     - ตรวจจับเส้นทางหน้ารายละเอียดสินค้า (`/product/`) ใน `MainLayout.jsx` เพื่อปรับระยะเว้นก้นล่างอัตโนมัติ (`pb-36` สำหรับหน้าสินค้าที่มี Mobile Sticky Action Bar สูง 118px และ `pb-24` สำหรับหน้าทั่วไป) ทำให้ป้ายผู้เข้าชมแสดงผลเต็มชิ้น ไม่ถูกแถบปุ่มลอยหรือ BottomNav บังอย่างเด็ดขาด
+     - ยกระดับดีไซน์ `mobile-card` ด้วย Typography `ผู้เข้าชมทั้งหมด:` พร้อม Micro-divider คมชัดระดับ 0.1 และเงาซอฟต์โฟลตละมุนตา
 8. **Marketplace Buttons (Shopee & Lazada Official Badges)**:
    - เปลี่ยนจากปุ่ม SVG โค้ดดิ้งเองสีพื้นทึบ เป็นรูปภาพปุ่มแคปซูลมาตรฐานทางการ (`/images/shopee_btn.webp` และ `/images/lazada_btn.webp`)
    - หุ้มด้วยลิงก์ขอบมน `rounded-md` เพื่อความสอดคล้องกับ Retro Design System และผ่านการตรวจสอบของ Challenger M3 (`C1-PRC-08`)

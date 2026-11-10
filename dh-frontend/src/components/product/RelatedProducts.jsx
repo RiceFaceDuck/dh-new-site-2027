@@ -10,7 +10,7 @@ export default function RelatedProducts({ currentProductId, category }) {
   if (inView && !loading && products.length === 0) return null;
 
   return (
-    <div ref={inViewRef} className="mt-8 pt-8 min-h-[20px]">
+    <div ref={inViewRef} className="mt-4 pt-4 min-h-[20px]">
       {(loading || products.length > 0) && (
         <ProductList 
           products={products} 
