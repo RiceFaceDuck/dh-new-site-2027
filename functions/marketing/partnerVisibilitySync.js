@@ -185,7 +185,7 @@ const onActivePartnerWritten = onDocumentWritten({
 
   try {
     // Deleted (paused / closed / no credit) or flagged inactive -> remove from bundle
-    if (!after || after.isActive === false) {
+    if (!after || after.isActive === false || !after.storeName) {
       await syncBundleItem(db, uid, null);
       return null;
     }
@@ -211,7 +211,53 @@ const onActivePartnerWritten = onDocumentWritten({
   return null;
 });
 
+const onPartnerAdWritten = onDocumentWritten({
+  document: "partner_ads/{adId}",
+  region: REGION
+}, async (event) => {
+  const adBefore = event.data?.before?.data();
+  const adAfter = event.data?.after?.data();
+  const adData = adAfter || adBefore;
+
+  // กรองเฉพาะโฆษณาประเภทนามบัตรร้านช่าง (BUSINESS_CARD)
+  if (!adData || adData.type !== 'BUSINESS_CARD') return null;
+
+  const uid = adData.ownerId;
+  if (!uid) return null;
+
+  const db = getFirestore();
+  const isNowActive = adAfter && ACTIVE_AD_STATUSES.includes(String(adAfter.status)) && adAfter.isActive !== false;
+
+  try {
+    if (!isNowActive) {
+      // 🛑 เมื่อโฆษณานามบัตรถูกระงับ (paused), ปฏิเสธ (rejected), เครดิตหมด (OUT_OF_CREDIT) หรือถูกลบ
+      // ลบออกจาก ActivePartners และตัดออกจากก้อน Starter Bundle ทันทีด้วยสิทธิ์ Admin
+      await db.collection("ActivePartners").doc(uid).delete();
+      await syncBundleItem(db, uid, null);
+      console.log(`🛑 [partnerVisibilitySync] Removed partner ${uid} from radar (ad status: ${adAfter?.status || 'deleted'})`);
+    } else {
+      // 🎉 เมื่อโฆษณานามบัตรเปิดใช้งาน (active / approved)
+      const userSnap = await db.collection("users").doc(uid).get();
+      const userData = userSnap.exists ? userSnap.data() : null;
+      const credit = toCredit(userData);
+
+      if (credit <= 0) {
+        // หากไม่มีเครดิต ห้ามเปิดรับงาน
+        await hidePartnerForNoCredit(db, uid);
+        return null;
+      }
+
+      await restorePartnerForCredit(db, uid, credit, userData);
+      console.log(`🎉 [partnerVisibilitySync] Activated partner ${uid} on radar (credit: ${credit})`);
+    }
+  } catch (error) {
+    console.error(`[partnerVisibilitySync] onPartnerAdWritten failed for ${uid}:`, error);
+  }
+  return null;
+});
+
 module.exports = {
   onUserCreditChanged,
-  onActivePartnerWritten
+  onActivePartnerWritten,
+  onPartnerAdWritten
 };

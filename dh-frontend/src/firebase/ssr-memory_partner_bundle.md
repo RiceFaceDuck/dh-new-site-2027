@@ -76,4 +76,13 @@
   - เพิ่มฟังก์ชัน `findNearbyPartners(userLat, userLon, maxDistanceKm = 50)` คืนรายการร้านที่เรียงตามระยะทางจริงจากใกล้ไปไกล
   - รองรับการสลับดูร้านอื่น `onFindOtherPartner` หมุนเวียนดูร้านใกล้เคียงได้ทันที โดยไม่ยิง query ซ้ำ (ใช้แคชเดิม 0 Reads)
   - แสดงภาพโปรไฟล์ร้านขนาดเล็ก พร้อม Fallback และข้อความ "ห่างจากคุณ" ไร้กรอบ/Shape พร้อมเอฟเฟกต์ประกายวิบวับ
+
+- **🛡️ ร้านที่ระงับ (Paused) ยังแสดงนามบัตร & การกำจัดร้านผี (Zombie Elimination):**
+  - **ปัญหา:** ร้านช่างที่ปิดสวิตช์พักนามบัตร (`status: paused`) ยังคงแสดงผลในหน้ารวมช่าง (`/providers`) เนื่องจาก 1) ฝั่งหน้าบ้านไม่มีสิทธิ์เขียนแก้ `catalogs/active_partners_bundle` (ติด `PERMISSION_DENIED`), 2) `recordAdTelemetry.js` ทำการสร้างเอกสารใหม่ขึ้นมาใน `ActivePartners` เมื่อมีคนคลิกดูหน้าร้าน (`!snap.exists` -> `transaction.set`), 3) `partnerVisibilitySync.js` ขาดตัวดักฟัง `partner_ads` ทำให้ไม่มีตัวลบร้านออกจาก Bundle เมื่อลูกค้าสั่งพักโฆษณา
+  - **วิธีแก้:**
+    1. ปรับ `recordAdTelemetry.js` ตัดการสร้าง doc ผีใน `ActivePartners` ทิ้ง บันทึกยอดวิวลงเฉพาะ `users/{uid}/storeProfile/main`
+    2. เพิ่ม Cloud Function trigger `onPartnerAdWritten` ใน `partnerVisibilitySync.js` ให้ลบออกจาก `ActivePartners` และตัดออกจาก `catalogs/active_partners_bundle` ทันทีด้วยสิทธิ์ Admin เมื่อสถานะไม่ใช่ active/approved
+    3. เสริม `hasRealStoreName` ใน `nightlyChunkGuard.js` และ `partnerLocationService.js` ไม่ดึงร้านที่ไม่มีชื่อร้านจริง
+    4. ส่งสัญญาณเหตุการณ์ `dh:partners_cache_invalidated` ล้างแคช LocalStorage ในเบราว์เซอร์ทันที
+  - **สถานะ:** ส่งมอบสมบูรณ์ (Production-Ready)
 </pitfalls_and_solutions>

@@ -10,9 +10,18 @@ const CACHE_TTL_MINUTES = 15; // เก็บแคชไว้ 15 นาที 
 
 let inFlightFetchPromise = null;
 
-// 🛡️ Visibility Guard: ไม่แสดงร้านที่ปิด/พัก (isActive false) หรือไม่มีเครดิต (points <= 0)
+// 🛡️ Visibility Guard: ไม่แสดงร้านที่ปิด/พัก (isActive false), ไม่มีเครดิต (points <= 0), หรือไม่มีชื่อร้านจริง
 // `points` ถูกซิงค์จาก users.creditPoints โดย Cloud Function `partnerVisibilitySync`
-const isVisiblePartner = (p) => Boolean(p) && p.isActive !== false && Number(p.points || 0) > 0;
+const isVisiblePartner = (p) => Boolean(p) && p.isActive !== false && Boolean(p.storeName || p.partnerName) && Number(p.points || 0) > 0;
+
+// 🔔 Event Listener: ล้างแคชท้องถิ่นทันทีเมื่อได้รับสัญญาณการสลับสถานะโฆษณา
+if (typeof window !== 'undefined') {
+  window.addEventListener('dh:partners_cache_invalidated', () => {
+    try {
+      localStorage.removeItem(CACHE_KEY);
+    } catch (_) {}
+  });
+}
 
 /**
  * 📦 ดึงข้อมูลพาร์ทเนอร์ที่เปิดรับการสนับสนุนทั้งหมด

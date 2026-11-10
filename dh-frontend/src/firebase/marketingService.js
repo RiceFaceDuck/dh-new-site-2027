@@ -391,26 +391,14 @@ export const marketingService = {
         try {
           if (newStatus === 'paused') {
             await deleteDoc(activePartnerRef);
-            // 🌟 ตัดร้านออกจาก catalogs/active_partners_bundle ทันที
+            // 🌟 ล้างแคชเรดาร์ร้านค้าในเบราว์เซอร์ทันที (การตัดออกจาก catalogs/active_partners_bundle ดำเนินการโดย Cloud Function onPartnerAdWritten)
             try {
-              const bundleRef = doc(db, 'catalogs', 'active_partners_bundle');
-              const bundleSnap = await getDoc(bundleRef);
-              if (bundleSnap.exists()) {
-                const bData = bundleSnap.data() || {};
-                const items = Array.isArray(bData.items) ? bData.items : [];
-                const filtered = items.filter(i => (i.id !== partnerId && i.partnerId !== partnerId));
-                if (filtered.length !== items.length) {
-                  await setDoc(bundleRef, {
-                    items: filtered,
-                    totalActivePartners: filtered.length,
-                    bundledCount: filtered.length,
-                    updatedAt: serverTimestamp()
-                  }, { merge: true });
-                }
+              if (typeof window !== 'undefined' && window.localStorage) {
+                const curAppId = typeof window.__app_id !== 'undefined' ? window.__app_id : 'default-app-id';
+                window.localStorage.removeItem(`active_partners_cache_v6_${curAppId}`);
+                window.dispatchEvent(new CustomEvent('dh:partners_cache_invalidated'));
               }
-            } catch (bundleErr) {
-              console.warn("Could not remove partner from active_partners_bundle on pause:", bundleErr);
-            }
+            } catch (_) {}
           } else if (newStatus === 'active') {
             // ดึง storeProfile หรือใช้ข้อมูลใน adDocData กู้คืนลง ActivePartners
             let storeData = null;

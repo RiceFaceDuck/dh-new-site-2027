@@ -247,7 +247,7 @@ const commitTelemetryTransaction = async (db, adAggregates = {}, config = {}, st
         const profileRef = profileRefs[idx];
         const profileSnap = profileSnaps[idx];
 
-        // 🏪 1. ActivePartners Multi-Period Metrics
+        // 🏪 1. ActivePartners Multi-Period Metrics (🛡️ Zombie Guard: อัปเดตเฉพาะเมื่อร้านเปิดอยู่ใน ActivePartners เท่านั้น ห้ามสร้างเอกสารผี)
         if (snap.exists) {
           const storeData = snap.data() || {};
           const currentAllTime = Number(
@@ -268,18 +268,6 @@ const commitTelemetryTransaction = async (db, adAggregates = {}, config = {}, st
             },
             updatedAt: FieldValue.serverTimestamp()
           });
-        } else {
-          transaction.set(storeRef, {
-            partnerId: storeId,
-            viewCount: deltaViews,
-            views: {
-              allTime: deltaViews,
-              today: deltaViews,
-              dateKey: todayStr,
-              updatedAt: FieldValue.serverTimestamp()
-            },
-            updatedAt: FieldValue.serverTimestamp()
-          }, { merge: true });
         }
 
         // 🛡️ 2. Dual-Sync: บันทึกลง Permanent SSOT (users/{uid}/storeProfile/main)
