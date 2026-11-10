@@ -402,7 +402,7 @@ export default function ProductPricingSection({
             target="_blank" 
             rel="noopener noreferrer" 
             onClick={() => trackMarketplaceClick('line', product)}
-            className="relative inline-flex items-center gap-2 px-3.5 h-10 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-md shadow-xs hover:shadow-md hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 shrink-0 select-none group"
+            className="relative inline-flex items-center gap-2 px-3.5 h-10 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-md border-2 border-black shadow-xs hover:shadow-md hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 shrink-0 select-none group"
             title="สั่งซื้อกับแอดมินผ่าน LINE"
           >
             {/* Subtle pulse glow effect behind the button */}

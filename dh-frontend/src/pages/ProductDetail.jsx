@@ -279,15 +279,15 @@ const ProductDetail = () => {
       </div>
 
       {/* 📱 Mobile Sticky Action Bar (Floats above BottomNav on mobile screens) */}
-      <div className="fixed bottom-[60px] left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-4 py-2.5 flex items-center justify-between gap-3 lg:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+      <div className="fixed bottom-[60px] left-0 right-0 z-40 bg-slate-700/95 backdrop-blur-md border-t border-slate-600 px-4 py-2.5 flex items-center justify-between gap-3 lg:hidden shadow-[0_-4px_25px_rgba(0,0,0,0.2)]">
         <div className="flex-1 min-w-0">
-          <div className="text-xs text-slate-500 truncate font-medium">{product.name}</div>
+          <div className="text-xs text-slate-100 truncate font-medium">{product.name}</div>
           <div className="flex items-baseline gap-1.5">
-            <span className="text-base font-extrabold text-brand">
+            <span className="text-base font-extrabold text-amber-300">
               ฿{(currentProductInfo?.salePrice || currentProductInfo?.price || 0).toLocaleString()}
             </span>
             {currentProductInfo?.salePrice && (
-              <span className="text-xs text-slate-400 line-through">
+              <span className="text-xs text-slate-300 line-through">
                 ฿{currentProductInfo?.price?.toLocaleString()}
               </span>
             )}
@@ -318,7 +318,7 @@ const ProductDetail = () => {
               <img 
                 src={addToCartImg} 
                 alt="+ADD TO CART" 
-                className="h-9 w-auto max-w-[120px] object-contain pointer-events-none drop-shadow-xs" 
+                className="h-9 w-auto object-contain pointer-events-none drop-shadow-xs" 
               />
             )}
           </button>
@@ -329,7 +329,7 @@ const ProductDetail = () => {
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => trackMarketplaceClick('line', product)}
-            className="relative inline-flex items-center gap-1.5 px-3 h-9 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-md shadow-xs hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 shrink-0 select-none group"
+            className="relative inline-flex items-center gap-1.5 px-3 h-9 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-md border-2 border-black shadow-xs hover:scale-[1.03] active:scale-[0.98] transition-all duration-200 shrink-0 select-none group"
             title="สั่งซื้อกับแอดมินผ่าน LINE"
           >
             <div className="absolute inset-0 bg-[#06C755] opacity-20 group-hover:opacity-40 blur-md rounded-md transition-opacity duration-300 animate-pulse pointer-events-none"></div>
