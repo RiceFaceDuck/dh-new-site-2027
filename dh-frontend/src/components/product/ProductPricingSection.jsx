@@ -394,11 +394,11 @@ export default function ProductPricingSection({
 
       {/* Action Buttons */}
       <div className="pt-4 flex flex-col gap-3">
-        {/* Responsive Two-Tier Action Row (Mobile: Stepper row + Grid-2 Action buttons / Desktop: Single row) */}
-        <div className="flex flex-col md:flex-row md:items-center gap-3">
-          {/* Row 1 on Mobile: Quantity Stepper */}
-          <div className="flex items-center justify-between md:justify-start gap-3">
-            <span className="text-xs font-semibold text-slate-500 md:hidden select-none">จำนวน:</span>
+        {/* Responsive Action Row (Mobile: Stepper row + Balanced twin buttons / Desktop: Single unified row) */}
+        <div className="flex flex-col md:flex-row md:items-center gap-3.5 md:gap-4">
+          {/* Row 1 on Mobile: Quantity Stepper (Left-aligned, snug with label) */}
+          <div className="flex items-center justify-start gap-3">
+            <span className="text-sm font-semibold text-slate-700 select-none">จำนวน:</span>
             <div className="flex items-center border border-slate-200 rounded-full bg-slate-50 h-10 md:h-11 shrink-0 shadow-xs px-1">
               <button 
                 type="button"
@@ -424,13 +424,13 @@ export default function ProductPricingSection({
             </div>
           </div>
 
-          {/* Row 2 on Mobile: Side-by-Side 50/50 Dual Action Buttons (No overflow) */}
-          <div className="grid grid-cols-2 md:flex md:items-center gap-2.5 sm:gap-3 w-full md:w-auto">
+          {/* Row 2 on Mobile (Side-by-Side Symmetrical Twin Buttons): Add to Cart + LINE */}
+          <div className="flex items-center gap-2.5 sm:gap-3">
             {/* Add to Cart Button (ธีมภาพต้นฉบับ +ADD TO CART) */}
             <button 
               onClick={handleAddToCart}
               disabled={isOutOfStock || isAdding || addSuccess || (needsSelection && !isSelectionComplete)}
-              className={`h-10 w-full md:w-auto shrink-0 flex items-center justify-center transition-all duration-200 active:scale-[0.98] select-none ${
+              className={`h-10 shrink-0 flex items-center justify-center transition-all duration-200 active:scale-[0.98] select-none ${
                 isOutOfStock || (needsSelection && !isSelectionComplete)
                   ? 'opacity-60 cursor-not-allowed'
                   : isAdding || addSuccess
@@ -449,25 +449,25 @@ export default function ProductPricingSection({
               ) : addSuccess ? (
                 <><CheckCircle2 size={18} strokeWidth={2.5} className="mr-1.5" /> เพิ่มลงตะกร้าแล้ว</>
               ) : isOutOfStock ? (
-                <div className="h-10 w-full px-4 rounded-lg bg-slate-200 text-slate-500 font-bold text-sm flex items-center justify-center border-2 border-slate-300">สินค้าหมด</div>
+                <div className="h-10 px-4 rounded-lg bg-slate-200 text-slate-500 font-bold text-sm flex items-center justify-center border-2 border-slate-300">สินค้าหมด</div>
               ) : (needsSelection && !isSelectionComplete) ? (
-                <div className="h-10 w-full px-4 rounded-lg bg-amber-50 text-amber-700 font-bold text-xs md:text-sm flex items-center justify-center border-2 border-amber-300">โปรดเลือกตัวเลือก</div>
+                <div className="h-10 px-4 rounded-lg bg-amber-50 text-amber-700 font-bold text-xs md:text-sm flex items-center justify-center border-2 border-amber-300">โปรดเลือกตัวเลือก</div>
               ) : (
                 <img 
                   src={addToCartImg} 
                   alt="+ADD TO CART" 
-                  className="h-10 w-auto object-contain pointer-events-none drop-shadow-xs mx-auto" 
+                  className="h-10 w-auto object-contain pointer-events-none drop-shadow-xs" 
                 />
               )}
             </button>
 
-            {/* LINE สั่งกับแอดมิน */}
+            {/* LINE สั่งกับแอดมิน (ขนาดและสัดส่วนสมดุลเท่ากับปุ่มตะกร้า ~135px) */}
             <a 
               href={lineAddFriendUrl || "https://line.me/ti/p/"} 
               target="_blank" 
               rel="noopener noreferrer" 
               onClick={() => trackMarketplaceClick('line', product)}
-              className="relative inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 h-10 w-full md:w-auto bg-[#06C755] hover:bg-[#05b34c] text-white rounded-md border-2 border-black shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shrink-0 select-none group"
+              className="relative inline-flex items-center justify-center gap-1.5 sm:gap-2 px-3.5 h-10 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-md border-2 border-black shadow-xs hover:shadow-md hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 shrink-0 select-none group"
               title="สั่งซื้อกับแอดมินผ่าน LINE"
             >
               {/* Subtle pulse glow effect behind the button */}
