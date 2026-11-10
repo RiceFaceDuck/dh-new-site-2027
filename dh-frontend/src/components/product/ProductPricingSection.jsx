@@ -96,7 +96,7 @@ export default function ProductPricingSection({
       {/* Top Bar: SKU Chip + Favorite Button (Responsive Balance) */}
       <div className="mb-2 flex items-center justify-between gap-3">
         {/* Left: SKU Chip */}
-        <span className="text-sm font-tech text-slate-500 font-bold flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-md shrink-0">
+        <span className="text-sm text-slate-500 font-normal flex items-center gap-1.5 bg-slate-100 px-3 py-1 rounded-[2px] shrink-0">
           <Cpu size={14} className="text-slate-400" /> DH-SKU: {model}
           <button 
             type="button"
