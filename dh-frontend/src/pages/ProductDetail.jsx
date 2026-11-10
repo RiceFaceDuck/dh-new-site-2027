@@ -160,7 +160,7 @@ const ProductDetail = () => {
         </script>
       </Helmet>
       
-      <nav className="flex items-center flex-wrap text-xs sm:text-sm font-medium text-slate-500 mb-6 bg-white/80 backdrop-blur-xs py-2 px-3.5 rounded-[2px] border border-slate-200/80 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.08)] w-fit">
+      <nav className="flex items-center flex-wrap text-xs sm:text-sm font-normal text-slate-500 mb-6 bg-white/80 backdrop-blur-xs py-2 px-3.5 rounded-[2px] border border-slate-200/80 shadow-[0_2px_8px_-2px_rgba(15,23,42,0.08)] w-fit">
         <Link 
           to="/" 
           className="hover:text-brand transition-colors flex items-center gap-1"
@@ -179,7 +179,7 @@ const ProductDetail = () => {
             <span className="mx-2 text-slate-300">/</span>
           </>
         )}
-        <span className="text-slate-700 font-bold line-clamp-1 max-w-[200px] sm:max-w-[400px]">
+        <span className="text-slate-700 font-normal line-clamp-1 max-w-[200px] sm:max-w-[400px]">
           {product?.name || 'รายละเอียดสินค้า'}
         </span>
       </nav>
