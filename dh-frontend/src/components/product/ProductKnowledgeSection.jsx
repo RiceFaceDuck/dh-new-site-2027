@@ -114,20 +114,6 @@ export default function ProductKnowledgeSection({
   const [inputValue, setInputValue] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [alertMessage, setAlertMessage] = useState(null);
-  const [showTooltip, setShowTooltip] = useState(true);
-
-  useEffect(() => {
-    let timeout;
-    const cycleTooltip = () => {
-      setShowTooltip(true);
-      timeout = setTimeout(() => {
-        setShowTooltip(false);
-        timeout = setTimeout(cycleTooltip, 20000);
-      }, 3000);
-    };
-    cycleTooltip();
-    return () => clearTimeout(timeout);
-  }, []);
 
   useEffect(() => {
     const fetchConfig = async () => {
@@ -218,15 +204,13 @@ export default function ProductKnowledgeSection({
               <Layers size={22} className="text-slate-600" /> Compatible Models
             </h4>
             <button 
+              type="button"
               onClick={() => setShowForm(showForm === 'models' ? null : 'models')}
-              className="text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 h-8 rounded-full flex items-center transition-all duration-500 overflow-hidden shadow-xs border border-blue-100"
+              title="แนะนำรุ่นที่รองรับ"
+              aria-label="แนะนำรุ่นที่รองรับ"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-blue-600 bg-blue-50 hover:bg-blue-100 shadow-xs border border-blue-100 transition-colors cursor-pointer"
             >
-              <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                <Plus size={16} strokeWidth={3} />
-              </div>
-              <div className={`whitespace-nowrap transition-all duration-500 ease-in-out ${showTooltip ? 'max-w-[200px] pr-3 opacity-100' : 'max-w-0 pr-0 opacity-0'}`}>
-                แนะนำเรา +{creditReward} credit
-              </div>
+              <Plus size={16} strokeWidth={2.5} />
             </button>
           </div>
           
@@ -277,15 +261,13 @@ export default function ProductKnowledgeSection({
               <Layers size={22} className="text-slate-600" /> Compatible Part Number
             </h4>
             <button 
+              type="button"
               onClick={() => setShowForm(showForm === 'parts' ? null : 'parts')}
-              className="text-xs font-bold text-blue-600 bg-blue-50 hover:bg-blue-100 h-8 rounded-full flex items-center transition-all duration-500 overflow-hidden shadow-xs border border-blue-100"
+              title="แนะนำรหัสพาร์ทที่รองรับ"
+              aria-label="แนะนำรหัสพาร์ทที่รองรับ"
+              className="w-8 h-8 rounded-full flex items-center justify-center text-blue-600 bg-blue-50 hover:bg-blue-100 shadow-xs border border-blue-100 transition-colors cursor-pointer"
             >
-              <div className="w-8 h-8 flex items-center justify-center shrink-0">
-                <Plus size={16} strokeWidth={3} />
-              </div>
-              <div className={`whitespace-nowrap transition-all duration-500 ease-in-out ${showTooltip ? 'max-w-[200px] pr-3 opacity-100' : 'max-w-0 pr-0 opacity-0'}`}>
-                แนะนำเรา +{creditReward} credit
-              </div>
+              <Plus size={16} strokeWidth={2.5} />
             </button>
           </div>
           
