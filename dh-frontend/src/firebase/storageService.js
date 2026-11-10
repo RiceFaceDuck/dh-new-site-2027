@@ -44,5 +44,41 @@ export const storageService = {
       const adType = folder === 'profile' ? 'STORE_PROFILE' : 'STORE_GALLERY';
       return await driveService.uploadAdImage(file, adType);
     }
+  },
+
+  /**
+   * อัปโหลดภาพรีวิวของลูกค้า
+   * @param {File|Blob} file - ไฟล์ที่ผ่านการบีบอัดแล้ว
+   * @param {string} userId - UID ของผู้รีวิว
+   * @returns {Promise<string>} Download URL
+   */
+  uploadReviewImage: async (file, userId) => {
+    if (!file) throw new Error("ไม่พบไฟล์รูปภาพ");
+    const uid = userId || auth.currentUser?.uid;
+    if (!uid) throw new Error("กรุณาเข้าสู่ระบบก่อนอัปโหลดภาพ");
+
+    try {
+      const extension = file.type === 'image/webp' ? 'webp' : (file.name ? file.name.split('.').pop() : 'jpg');
+      const safeName = `review_${Date.now()}_${Math.random().toString(36).substring(2, 8)}.${extension}`;
+      const path = `stores/${uid}/reviews/${safeName}`;
+      
+      const fileRef = ref(storage, path);
+      const metadata = {
+        contentType: file.type || 'image/webp',
+        customMetadata: {
+          uploadedBy: uid,
+          folder: 'reviews',
+          originalName: file.name || safeName
+        }
+      };
+
+      const snapshot = await uploadBytes(fileRef, file, metadata);
+      const downloadUrl = await getDownloadURL(snapshot.ref);
+      console.log(`✅ [FirebaseStorage] อัปโหลดภาพรีวิวสำเร็จ: ${path}`);
+      return downloadUrl;
+    } catch (storageError) {
+      console.warn("⚠️ [FirebaseStorage] Upload review image failed, falling back to DriveService:", storageError);
+      return await driveService.uploadAdImage(file, 'STORE_REVIEW');
+    }
   }
 };

@@ -1,7 +1,11 @@
+import { useState } from 'react';
 import { formatDate } from 'dh-shared';
+import { X, Loader2 } from 'lucide-react';
 import { usePartnerReviews } from '../hooks/usePartnerReviews';
 
 const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
+  const [lightboxImage, setLightboxImage] = useState(null);
+
   const {
     reviews,
     newReview,
@@ -17,13 +21,20 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
     setReplyingTo,
     isOwner,
     avgRating,
+    imageFile,
+    imagePreview,
+    isCompressing,
+    handleImageSelect,
+    handleRemoveImage,
+    handleQuickReview,
+    quickReviews,
     handleSubmitReview,
     handleToggleHeart,
     handleSubmitReply
   } = usePartnerReviews(partnerId, ownerId, currentUser);
 
   return (
-    <div className="bg-white rounded-[2px] shadow-xs border border-slate-100 p-6 md:p-8">
+    <div className="w-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
         <h3 className="text-xl md:text-2xl font-bold text-slate-800 flex items-center">
@@ -49,11 +60,17 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
 
       {/* Review Form */}
       {currentUser && !isOwner && (
-        <form onSubmit={handleSubmitReview} className="bg-slate-50 rounded-[2px] p-5 mb-8 border border-slate-100 transition-all focus-within:ring-2 focus-within:ring-brand/30 focus-within:bg-white">
-          <div className="flex items-start gap-4">
-            <img src={currentUser.photoURL || 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100&h=100&fit=crop'} alt="User" className="w-10 h-10 rounded-full border-2 border-white shadow-xs"  loading="lazy" />
+        <form onSubmit={handleSubmitReview} className="mb-8">
+          <div className="flex items-start gap-3.5">
+            <img 
+              src={currentUser.photoURL || 'https://images.unsplash.com/photo-1511367461989-f85a21fda167?w=100&h=100&fit=crop'} 
+              alt="User" 
+              className="w-10 h-10 rounded-full border border-slate-200 shadow-2xs shrink-0 mt-1"  
+              loading="lazy" 
+            />
             <div className="flex-1">
-              <div className="flex items-center gap-1 mb-2">
+              {/* Star Rating Header */}
+              <div className="flex items-center gap-1.5 mb-2">
                 {[1, 2, 3, 4, 5].map((star) => (
                   <button
                     key={star}
@@ -63,26 +80,110 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
                     onMouseLeave={() => setHoverRating(0)}
                     className="focus:outline-hidden transform transition-transform hover:scale-110"
                   >
-                    <svg className={`w-7 h-7 ${(hoverRating || rating) >= star ? 'text-amber-500 fill-current' : 'text-slate-300'}`} viewBox="0 0 20 20">
+                    <svg className={`w-6 h-6 ${(hoverRating || rating) >= star ? 'text-amber-500 fill-current' : 'text-slate-300'}`} viewBox="0 0 20 20">
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                   </button>
                 ))}
+                <span className="text-xs text-slate-400 font-medium ml-1.5">
+                  {rating === 5 ? 'ยอดเยี่ยมมาก' : rating === 4 ? 'ดีมาก' : rating === 3 ? 'พอใช้' : rating === 2 ? 'ควรปรับปรุง' : 'แย่มาก'}
+                </span>
               </div>
-              <textarea
-                value={newReview}
-                onChange={(e) => setNewReview(e.target.value)}
-                placeholder="แบ่งปันประสบการณ์การใช้บริการของคุณกับร้านนี้..."
-                className="w-full bg-transparent border-none focus:ring-0 resize-none h-20 text-slate-700 placeholder-slate-400 p-0"
-              />
-              <div className="flex justify-end mt-2">
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !newReview.trim()}
-                  className="px-6 py-2 bg-brand text-white rounded-lg font-medium hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
-                >
-                  {isSubmitting ? 'กำลังส่ง...' : 'ส่งรีวิว'}
-                </button>
+
+              {/* 💬 Quick Reviews: ชิปคำพูดธรรมชาติแท้จริง */}
+              {quickReviews && quickReviews.length > 0 && (
+                <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+                  <span className="text-[11px] text-slate-400 font-medium mr-1">เลือกคำด่วน:</span>
+                  {quickReviews.map((phrase, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => handleQuickReview(phrase)}
+                      className="text-xs px-2.5 py-1 rounded-full bg-slate-100/80 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300 border border-slate-200/70 text-slate-600 transition-all cursor-pointer font-medium select-none shadow-2xs"
+                    >
+                      {phrase}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Modern Input Box with Enclosed Attachment & Submit Button */}
+              <div className="bg-white rounded-[2px] border border-slate-200 transition-all duration-200 focus-within:border-brand focus-within:ring-1 focus-within:ring-brand/30 shadow-2xs p-3">
+                <textarea
+                  value={newReview}
+                  onChange={(e) => setNewReview(e.target.value)}
+                  placeholder="แบ่งปันประสบการณ์การใช้บริการของคุณกับร้านนี้..."
+                  className="w-full bg-transparent border-none focus:outline-hidden focus:ring-0 resize-none h-20 text-slate-700 placeholder-slate-400 p-0 text-sm leading-relaxed"
+                />
+
+                {/* Enclosed Action Bar (Left: Attachment Icon & Preview, Right: Submit Button) */}
+                <div className="flex items-center justify-between pt-2 border-t border-slate-100 mt-1">
+                  <div className="flex items-center gap-2.5">
+                    {/* Hidden file input */}
+                    <input
+                      type="file"
+                      id="partner-review-image"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        if (e.target.files?.[0]) {
+                          handleImageSelect(e.target.files[0]);
+                          e.target.value = '';
+                        }
+                      }}
+                    />
+
+                    {/* 📸 Image Attachment Icon Button (styled as blue picture icon) */}
+                    <label
+                      htmlFor="partner-review-image"
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-[6px] bg-sky-50 hover:bg-sky-100 border border-sky-200 text-sky-600 cursor-pointer transition-colors shadow-2xs group"
+                      title="แนบรูปภาพรีวิว (บีบอัดขนาดอัตโนมัติ)"
+                    >
+                      {isCompressing ? (
+                        <Loader2 className="w-4 h-4 animate-spin text-sky-600" />
+                      ) : (
+                        <svg className="w-4 h-4 text-sky-600 group-hover:scale-105 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                          <rect x="3" y="3" width="18" height="18" rx="3" ry="3" />
+                          <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" stroke="none" />
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M21 15l-5-5L5 21" />
+                        </svg>
+                      )}
+                    </label>
+
+                    {/* Image Preview Thumbnail with Close Button */}
+                    {imagePreview && (
+                      <div className="relative inline-flex items-center gap-1.5 px-2 py-1 bg-slate-50 border border-slate-200 rounded-[2px]">
+                        <img
+                          src={imagePreview}
+                          alt="Thumbnail preview"
+                          className="w-7 h-7 object-cover rounded-[2px] border border-slate-200"
+                        />
+                        <span className="text-[11px] text-slate-500 font-medium">แนบภาพแล้ว</span>
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="w-4 h-4 rounded-full bg-slate-200 hover:bg-rose-500 hover:text-white text-slate-600 flex items-center justify-center transition-colors cursor-pointer ml-1"
+                          title="ยกเลิกรูปภาพ"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <span className="text-[11px] text-slate-400">
+                      {newReview.length > 0 ? `${newReview.length} ตัวอักษร` : ''}
+                    </span>
+                    <button
+                      type="submit"
+                      disabled={isSubmitting || isCompressing || !newReview.trim()}
+                      className="px-5 py-1.5 bg-brand text-white rounded-lg text-sm font-medium hover:bg-brand-dark transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
+                    >
+                      {isSubmitting ? 'กำลังส่ง...' : 'ส่งรีวิว'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -138,6 +239,19 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
                 </div>
                 
                 <p className="text-slate-600 leading-relaxed">{review.comment}</p>
+                
+                {/* Attached Review Image */}
+                {review.imageUrl && (
+                  <div className="mt-3">
+                    <img
+                      src={review.imageUrl}
+                      alt="Review attachment"
+                      className="max-h-44 sm:max-h-56 rounded-[2px] border border-slate-200 object-cover cursor-pointer hover:opacity-95 transition-opacity shadow-2xs"
+                      onClick={() => setLightboxImage(review.imageUrl)}
+                      loading="lazy"
+                    />
+                  </div>
+                )}
                 
                 {/* Reply Action for Owner */}
                 {isOwner && !review.ownerReply && replyingTo !== review.id && (
@@ -205,6 +319,29 @@ const PartnerReviews = ({ partnerId, ownerId, currentUser }) => {
           </div>
         ))}
       </div>
+
+      {/* 🔍 Lightbox สำหรับดูรูปภาพรีวิวขนาดใหญ่ */}
+      {lightboxImage && (
+        <div 
+          className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4 backdrop-blur-xs cursor-pointer animate-in fade-in duration-200"
+          onClick={() => setLightboxImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh] flex flex-col items-center">
+            <img 
+              src={lightboxImage} 
+              alt="Enlarged review attachment" 
+              className="max-w-full max-h-[85vh] object-contain rounded-[2px] shadow-2xl" 
+            />
+            <button
+              type="button"
+              onClick={() => setLightboxImage(null)}
+              className="absolute -top-10 right-0 text-white hover:text-rose-400 p-1 flex items-center gap-1 text-sm"
+            >
+              <X className="w-5 h-5" /> ปิด
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
