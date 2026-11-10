@@ -25,13 +25,14 @@ const SearchTechnicianCardItem = ({ ad, onContactClick }) => {
   });
 
   return (
-    <div ref={cardRef} className="bg-white rounded-[0.1rem] border border-slate-200/90 p-4 shadow-xs space-y-3">
+    <div ref={cardRef} className="bg-white rounded-[0.3rem] border border-slate-200/90 p-4 shadow-xs space-y-3">
       {ad.imageUrl && (
-        <div className="w-full h-36 bg-slate-100 rounded-[0.1rem] overflow-hidden border border-slate-100 flex items-center justify-center">
+        <div className="w-full aspect-video bg-slate-100 rounded-[0.3rem] overflow-hidden flex items-center justify-center">
           <LazyImage 
             src={ad.imageUrl} 
             alt={ad.title || ad.partnerName || "นามบัตรช่าง"} 
-            className="w-full h-full object-contain" 
+            className="w-full h-full object-cover" 
+            imgClassName="object-cover"
             fallbackSrc="/logo.png"
           />
         </div>
@@ -47,7 +48,7 @@ const SearchTechnicianCardItem = ({ ad, onContactClick }) => {
         </div>
       </div>
       {ad.description && (
-        <p className="text-xs text-slate-600 bg-slate-50 p-2.5 rounded-[0.1rem] border border-slate-100 leading-relaxed">
+        <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line break-words py-0.5">
           {ad.description}
         </p>
       )}
@@ -56,9 +57,9 @@ const SearchTechnicianCardItem = ({ ad, onContactClick }) => {
           <a
             href={`tel:${ad.phone}`}
             onClick={() => onContactClick(ad, 'phone_call', `tel:${ad.phone}`)}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-normal tracking-wide transition-all shadow-2xs cursor-pointer active:scale-95"
           >
-            <Phone size={13} /> โทร: {ad.phone}
+            <Phone size={13} /> โทรหาช่าง
           </a>
         )}
         {ad.messengerUrl && (
@@ -67,7 +68,7 @@ const SearchTechnicianCardItem = ({ ad, onContactClick }) => {
             target="_blank"
             rel="noreferrer"
             onClick={() => onContactClick(ad, 'facebook_chat', ad.messengerUrl)}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#1877F2] hover:bg-[#166FE5] text-white rounded-md text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#1877F2] hover:bg-[#166FE5] text-white rounded-md text-xs font-normal tracking-wide transition-all shadow-2xs cursor-pointer active:scale-95"
           >
             <MessageCircle size={13} /> แชท Facebook
           </a>
@@ -78,7 +79,7 @@ const SearchTechnicianCardItem = ({ ad, onContactClick }) => {
             target="_blank"
             rel="noreferrer"
             onClick={() => onContactClick(ad, 'line_chat', ad.lineUrl)}
-            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-md text-xs font-bold transition-all shadow-2xs cursor-pointer active:scale-95"
+            className="flex items-center justify-center gap-1.5 px-3 py-2 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-md text-xs font-normal tracking-wide transition-all shadow-2xs cursor-pointer active:scale-95"
           >
             <MessageCircle size={13} /> ทัก LINE ร้าน
           </a>
@@ -590,7 +591,7 @@ const SearchPage = () => {
                     technicianAds.map((ad) => (<SearchTechnicianCardItem key={ad.id} ad={ad} onContactClick={handleTechnicianContactClick} />))
                   ) : (
                     /* บัตรมาตรฐานศูนย์ช่าง DH Notebook */
-                    <div className="bg-white rounded-[0.1rem] border border-slate-200/90 p-5 shadow-xs space-y-4">
+                    <div className="bg-white rounded-[0.3rem] border border-slate-200/90 p-5 shadow-xs space-y-4">
                       <div className="flex items-center gap-3">
                         <div className="w-12 h-12 rounded-[0.1rem] bg-gradient-to-br from-brand to-brand-dark text-white flex items-center justify-center font-black text-xl shadow-xs">
                           DH
@@ -620,7 +621,7 @@ const SearchPage = () => {
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
                         <a
                           href="tel:0832328988"
-                          className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-bold transition-all shadow-xs active:scale-95"
+                          className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-normal tracking-wide transition-all shadow-xs active:scale-95"
                         >
                           <Phone size={14} /> โทรปรึกษาช่าง: 083-232-8988
                         </a>
@@ -628,7 +629,7 @@ const SearchPage = () => {
                           href="https://line.me"
                           target="_blank"
                           rel="noreferrer"
-                          className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-md text-xs font-bold transition-all shadow-xs active:scale-95"
+                          className="flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#06C755] hover:bg-[#05b34c] text-white rounded-md text-xs font-normal tracking-wide transition-all shadow-xs active:scale-95"
                         >
                           <MessageCircle size={14} /> ทักแชท LINE ช่าง
                         </a>
