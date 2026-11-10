@@ -49,4 +49,6 @@
    - Solution: คงชื่อ import / alt tag ให้มี `Clock` เพื่อให้เทสต์ตรวจผ่าน 100%
 3. **Issue: Phone icon image had opaque white background in corners**:
    - Solution: ใช้ Supersampled 4x Anti-aliasing Circular Mask ไดคัตพื้นหลังสีขาวรอบวงกลม Teal ออก 100% พร้อม Inset 1.5px กำจัด White Fringe ไม่ให้มีรอยขอบขาวลอยบน Dark Theme
+4. **Issue: Ghost border divider (border-t border-slate-200) floating above footer**:
+   - Solution: ลบ `border-t border-slate-200` ออกจาก wrapper `div` ใน `MainLayout.jsx` เพื่อไม่ให้เกิดเส้นเทาลอยเคว้งกั้นกลางช่องว่าง 96px เหนือ Footer สีเข้ม
 </pitfalls_and_solutions>

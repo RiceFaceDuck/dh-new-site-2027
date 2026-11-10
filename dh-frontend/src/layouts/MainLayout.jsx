@@ -66,7 +66,7 @@ const MainLayout = ({ children }) => {
       </main>
       
       {/* 3. Footer: ซ่อนในมือถือ (กันรก) และแสดงเฉพาะบน Desktop */}
-      <div className="hidden lg:block mt-auto border-t border-slate-200">
+      <div className="hidden lg:block mt-auto">
         <Footer />
       </div>
       {/* 3.1 Mobile Visitor Bar: แสดงยอดผู้เข้าชมเว็บ All-Time สั้นกระชับ กึ่งกลางหน้าจอ ไม่บังปุ่มแชทลอยตัว */}

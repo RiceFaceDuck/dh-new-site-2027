@@ -355,10 +355,10 @@ check('C4-CLR-01', 'Viewport layer coordination: MainLayout padding-bottom clear
   return 'MainLayout allocates pb-32 (128px) on mobile, cleanly preventing BottomNav & FloatingMessenger overlap.';
 });
 
-check('C4-DIV-02', 'MainLayout desktop footer wrapper upgraded to crisp border-slate-200', () => {
-  assert.ok(mainLayoutSrc.includes('border-t border-slate-200'), 'MainLayout footer missing border-slate-200');
+check('C4-DIV-02', 'MainLayout desktop footer wrapper cleanly docked', () => {
+  assert.ok(mainLayoutSrc.includes('hidden lg:block mt-auto'), 'MainLayout footer wrapper missing desktop display class');
   assert.ok(!mainLayoutSrc.includes('border-t border-gray-100'), 'MainLayout footer retains washed-out border-gray-100');
-  return 'MainLayout desktop footer uses crisp tactile border-slate-200.';
+  return 'MainLayout desktop footer wrapper cleanly docked.';
 });
 
 // ==============================================================================

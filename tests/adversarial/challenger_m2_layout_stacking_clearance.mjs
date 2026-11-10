@@ -197,7 +197,7 @@ check('CH-M2-09', 'Desktop Viewport (>= 1024px): BottomNav and Product sticky ba
   assert.ok(/md:bottom-6/.test(floatingMessengerSrc), 'FloatingMessenger must specify md:bottom-6');
 
   // Verify MainLayout footer appears on desktop
-  assert.ok(/hidden lg:block mt-auto border-t border-slate-200/.test(mainLayoutSrc), 'MainLayout footer must appear at lg:block');
+  assert.ok(/hidden lg:block mt-auto/.test(mainLayoutSrc), 'MainLayout footer must appear at lg:block');
 
   return `Desktop parity verified: mobile controls hidden via lg:hidden, FAB positioned at bottom-6 (24px)`;
 });
@@ -268,13 +268,13 @@ check('CH-M2-13', 'Navbar.jsx: Search bar calibrated to rounded-md, user dropdow
   return `Navbar retro calibration & dark header verified`;
 });
 
-check('CH-M2-14', 'MainLayout.jsx: Anti-whiteout divider elevated to border-slate-200, gutters preserved', () => {
-  assert.ok(/hidden lg:block mt-auto border-t border-slate-200/.test(mainLayoutSrc), 'MainLayout footer divider must use border-slate-200');
+check('CH-M2-14', 'MainLayout.jsx: Desktop footer cleanly docked, gutters preserved', () => {
+  assert.ok(/hidden lg:block mt-auto/.test(mainLayoutSrc), 'MainLayout footer wrapper preserved at desktop');
   assert.ok(!/hidden lg:block mt-auto border-t border-gray-100/.test(mainLayoutSrc), 'MainLayout footer must not retain washed-out border-gray-100');
   assert.ok(/max-w-7xl mx-auto px-4 sm:px-6 lg:px-8/.test(mainLayoutSrc), 'MainLayout desktop boundaries preserved');
   assert.ok(/overflow-hidden/.test(mainLayoutSrc), 'MainLayout overflow-hidden horizontal leak guard preserved');
 
-  return `MainLayout anti-whiteout divider & responsive boundaries verified`;
+  return `MainLayout clean desktop footer docking & responsive boundaries verified`;
 });
 
 check('CH-M2-15', 'BottomNav.jsx: Retro top border border-slate-300, active line rounded-b-sm', () => {

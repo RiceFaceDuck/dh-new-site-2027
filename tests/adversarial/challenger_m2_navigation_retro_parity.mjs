@@ -131,8 +131,8 @@ assert(
 // Challenge 5: MainLayout Anti-Whiteout & Mobile Clearance
 assert(
   'CH-M2-10',
-  'MainLayout footer wrapper divider elevated to border-t border-slate-200 (no border-gray-100)',
-  mainLayoutCode.includes('hidden lg:block mt-auto border-t border-slate-200') &&
+  'MainLayout footer wrapper cleanly docked (no border-gray-100)',
+  mainLayoutCode.includes('hidden lg:block mt-auto') &&
   !mainLayoutCode.includes('border-t border-gray-100'),
   'MainLayout still contains washed-out border-gray-100'
 );
