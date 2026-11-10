@@ -3,10 +3,12 @@ import { createPortal } from 'react-dom';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import ProductList from '../components/ProductList';
 import LazyImage from '../components/common/LazyImage';
-import { Search, Sparkles, ChevronLeft, Database, Wrench, Phone, MessageCircle, X, ShieldCheck, Store, Clock } from 'lucide-react';
+import { Search, Sparkles, ChevronLeft, Database, Wrench, Phone, MessageCircle, X, ShieldCheck, Store, Clock, MapPin } from 'lucide-react';
 import { filterProductsByQuery, findRelatedProducts } from '../utils/searchMatcher';
 import { getStorefrontCatalog, subscribeStorefrontCatalogUpdates } from '../services/storefrontCatalogService';
 import { marketingService } from '../firebase/marketingService';
+import { fetchAllActivePartners } from '../firebase/partnerLocationService';
+import { calculateDistance } from '../utils/geoUtils';
 import useAdViewTracker from '../hooks/useAdViewTracker';
 
 const SearchTechnicianCardItem = ({ ad, onContactClick }) => {
@@ -24,6 +26,18 @@ const SearchTechnicianCardItem = ({ ad, onContactClick }) => {
     }
   });
 
+  // 🛡️ Distance Formatter: จัดรูปแบบระยะทางมาตรฐาน
+  const getDisplayDistance = () => {
+    if (typeof ad.distanceKm === 'number' && !isNaN(ad.distanceKm)) {
+      return ad.distanceKm < 1 
+        ? `${Math.round(ad.distanceKm * 1000)} เมตร` 
+        : `${Math.floor(ad.distanceKm)} กม.`;
+    }
+    if (ad.formattedDistance) return ad.formattedDistance;
+    return null;
+  };
+  const displayDistance = getDisplayDistance();
+
   return (
     <div ref={cardRef} className="bg-white rounded-[0.3rem] border border-slate-200/90 p-4 shadow-xs space-y-3">
       {ad.imageUrl && (
@@ -37,21 +51,36 @@ const SearchTechnicianCardItem = ({ ad, onContactClick }) => {
           />
         </div>
       )}
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <div className="flex items-center gap-1.5 mb-1">
-            <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded flex items-center gap-1">
-              <ShieldCheck size={11} /> ช่างที่ผ่านการรับรอง
-            </span>
+      {/* ส่วนข้อมูลร้าน: ป้ายระยะทาง + ชื่อร้าน + รายละเอียดร้าน */}
+      <div className="space-y-1">
+        {/* Row 1: ป้ายบอกระยะทางสายรุ้งวิบวับ ตัวหนังสือไม่หนา มองชัด ขนาดกำลังดี */}
+        <div className="inline-flex max-w-full">
+          <div className="p-[1px] rounded-[2px] bg-gradient-to-r from-violet-500 via-pink-500 via-amber-400 via-emerald-400 to-cyan-500 shadow-xs max-w-full">
+            <div className="flex items-center gap-1.5 bg-white/95 backdrop-blur-xs px-2 py-0.5 rounded-[2px] max-w-full">
+              <MapPin size={11} className="text-violet-600 shrink-0" />
+              <span className="text-[11px] sm:text-xs font-normal text-slate-700 tracking-tight truncate">
+                {displayDistance ? (
+                  <>เดินทาง <span className="text-violet-700 font-medium">{displayDistance}</span></>
+                ) : (
+                  <span>ไม่ทราบระยะทาง</span>
+                )}
+              </span>
+            </div>
           </div>
-          <h4 className="font-bold text-slate-800 text-base">{ad.title || ad.partnerName || "ร้านช่างซ่อมโน๊ตบุ๊ค"}</h4>
         </div>
+
+        {/* Row 2: ชื่อร้าน ขยายใหญ่ขึ้น */}
+        <h4 className="font-bold text-slate-900 text-lg leading-tight pt-0.5">
+          {ad.title || ad.partnerName || "ร้านช่างซ่อมโน๊ตบุ๊ค"}
+        </h4>
+
+        {/* Row 3: รายละเอียดร้าน ขยายใหญ่ขึ้นและเลื่อนตำแหน่งขึ้นไปชิดชื่อร้าน */}
+        {ad.description && (
+          <p className="text-sm text-slate-600 font-normal leading-relaxed whitespace-pre-line break-words pt-0.5">
+            {ad.description}
+          </p>
+        )}
       </div>
-      {ad.description && (
-        <p className="text-xs text-slate-600 leading-relaxed whitespace-pre-line break-words py-0.5">
-          {ad.description}
-        </p>
-      )}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
         {ad.phone && (
           <a
@@ -132,16 +161,86 @@ const SearchPage = () => {
     }
   };
 
-  // 🪪 โหลดข้อมูลนามบัตรช่าง/พาร์ทเนอร์
+  // 🪪 โหลดข้อมูลนามบัตรช่าง/พาร์ทเนอร์ พร้อมคำนวณระยะทางและจำกัดสูงสุด 8 รายการ
   useEffect(() => {
     let isMounted = true;
-    marketingService.getActivePartnerAds('BUSINESS_CARD').then(ads => {
-      if (isMounted && Array.isArray(ads) && ads.length > 0) {
-        setTechnicianAds(ads);
+
+    const loadAdsAndLocation = async () => {
+      try {
+        const [ads, activePartners] = await Promise.all([
+          marketingService.getActivePartnerAds('BUSINESS_CARD'),
+          fetchAllActivePartners().catch(() => [])
+        ]);
+
+        if (!isMounted || !Array.isArray(ads) || ads.length === 0) return;
+
+        // 📍 ดึงพิกัดผู้ใช้งานจาก sessionStorage
+        let userLat = null;
+        let userLng = null;
+        try {
+          const locStr = sessionStorage.getItem('dh_user_location');
+          if (locStr) {
+            const parsed = JSON.parse(locStr);
+            if (parsed && parsed.lat && parsed.lng) {
+              userLat = Number(parsed.lat);
+              userLng = Number(parsed.lng);
+            }
+          }
+        } catch (_) {}
+
+        // สร้าง Partners Map เพื่อจับคู่พิกัดร้านค้า
+        const partnersMap = new Map();
+        (activePartners || []).forEach(p => {
+          const id = p.id || p.partnerId || p.userId;
+          if (id) partnersMap.set(id, p);
+        });
+
+        // เสริมข้อมูลพิกัดและคำนวณระยะทาง
+        const enrichedAds = ads.map(ad => {
+          const partnerId = ad.ownerId || ad.partnerId || (ad.id?.startsWith('AD-CARD-') ? ad.id.replace('AD-CARD-', '') : ad.id);
+          const matchedPartner = partnersMap.get(partnerId);
+
+          const lat = Number(ad.latitude || matchedPartner?.latitude);
+          const lng = Number(ad.longitude || matchedPartner?.longitude);
+          const points = Number(ad.creditPoints ?? matchedPartner?.points ?? 0);
+
+          let distanceKm = null;
+          let formattedDistance = null;
+          if (userLat && userLng && lat && lng) {
+            distanceKm = calculateDistance(userLat, userLng, lat, lng);
+            formattedDistance = distanceKm < 1 ? `${Math.round(distanceKm * 1000)} เมตร` : `${Math.floor(distanceKm)} กม.`;
+          }
+
+          return {
+            ...ad,
+            partnerId,
+            latitude: lat || null,
+            longitude: lng || null,
+            points,
+            distanceKm,
+            formattedDistance
+          };
+        });
+
+        // 🚀 จัดเรียงลำดับ: หากมี GPS เรียงจากใกล้ไปไกล 100% ถ้าไม่มีเรียงตามคะแนน
+        if (userLat && userLng) {
+          enrichedAds.sort((a, b) => {
+            const distA = typeof a.distanceKm === 'number' ? a.distanceKm : Infinity;
+            const distB = typeof b.distanceKm === 'number' ? b.distanceKm : Infinity;
+            if (distA !== distB) return distA - distB;
+            return (b.points || 0) - (a.points || 0);
+          });
+        }
+
+        // 🛡️ จำกัดการแสดงผลสูงสุดไม่เกิน 8 รายการ
+        setTechnicianAds(enrichedAds.slice(0, 8));
+      } catch (err) {
+        console.warn('⚠️ [SearchPage] Could not load technician ads:', err?.message || err);
       }
-    }).catch(err => {
-      console.warn('⚠️ [SearchPage] Could not load technician ads:', err?.message || err);
-    });
+    };
+
+    loadAdsAndLocation();
+
     return () => { isMounted = false; };
   }, []);
 
@@ -316,47 +415,29 @@ const SearchPage = () => {
 
         {/* Search Query Display & Notice Banner: ปลด Border และ Shapes ออกให้โปร่ง สะอาดตา */}
         {queryParam && (
-          <div className="py-2.5 flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="flex flex-wrap items-center gap-2.5">
+          <div className="py-2.5 flex flex-wrap items-center gap-2.5 sm:gap-3">
+            {/* 1. ย้ายจำนวนรายการที่พบมาไว้หน้าสุด (ซ้ายสุด) */}
+            {!loading ? (
+              <div className="flex items-center gap-2">
+                <span className="font-normal text-slate-600 text-xs sm:text-sm shrink-0">
+                  พบ <span className="font-semibold text-orange-600">{filteredProducts.length}</span> รายการ
+                </span>
+                {catalogMeta?.isPartial && (
+                  <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-slate-400 bg-white/70 px-2 py-0.5 rounded border border-slate-200/50" title="กำลังซิงค์คลังสินค้าฉบับเต็มในเบื้องหลัง">
+                    <Database size={11} className="text-brand animate-pulse" /> ซิงค์คลังเบื้องหลัง...
+                  </span>
+                )}
+              </div>
+            ) : (
+              <span className="text-xs sm:text-sm text-slate-500 font-medium shrink-0">กำลังค้นหา...</span>
+            )}
+
+            {/* 2. คำค้นหา */}
+            <div className="flex items-center gap-1.5">
               <span className="text-slate-500 font-medium text-sm">คำค้นหา:</span>
               <span className="text-brand font-black text-base sm:text-lg">
                 &quot;{queryParam}&quot;
               </span>
-              
-              {/* ข้อความแจ้งสถานะเมื่อไม่พบสินค้าตรงเป๊ะ: ปลด Border และ Box Shapes ออก */}
-              {!loading && filteredProducts.length === 0 && (
-                <div className="flex flex-wrap items-center gap-2 text-amber-700 text-xs font-medium animate-fade-in pl-1">
-                  <Sparkles size={14} className="text-amber-500 shrink-0" />
-                  <span className="font-semibold text-amber-800">ไม่พบสินค้าที่ตรงกับคำนี้</span>
-                  {relatedProducts.length > 0 && (
-                    <span className="text-slate-600 hidden sm:inline">— แนะนำสินค้าใกล้เคียงในหมวดเดียวกันด้านล่างนี้ค่ะ</span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setShowTechnicianModal(true)}
-                    className="ml-1 inline-flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-[11px] font-bold shadow-2xs cursor-pointer active:scale-95"
-                  >
-                    <Wrench size={11} /> ติดต่อช่างทันที
-                  </button>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-2 text-xs sm:text-sm text-slate-500 font-medium shrink-0 ml-auto md:ml-0">
-              {loading ? (
-                <span>กำลังค้นหา...</span>
-              ) : (
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-600">
-                    พบ {filteredProducts.length} รายการ
-                  </span>
-                  {catalogMeta?.isPartial && (
-                    <span className="hidden sm:inline-flex items-center gap-1 text-[11px] text-slate-400 bg-white/70 px-2 py-0.5 rounded border border-slate-200/50" title="กำลังซิงค์คลังสินค้าฉบับเต็มในเบื้องหลัง">
-                      <Database size={11} className="text-brand animate-pulse" /> ซิงค์คลังเบื้องหลัง...
-                    </span>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         )}
@@ -414,52 +495,58 @@ const SearchPage = () => {
             </div>
           ) : queryParam ? (
             <div className="space-y-8 animate-fade-in">
-              <div className="text-center py-10 px-5 bg-gradient-to-b from-slate-50/95 via-white to-slate-50/80 rounded-[0.1rem] border border-slate-200/90 shadow-md shadow-slate-200/40 max-w-xl mx-auto">
-                <div className="w-16 h-16 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4 shadow-inner">
-                  <Search size={28} />
+              <div className="text-center py-7 px-5 sm:px-8 bg-gradient-to-b from-slate-50/95 via-white to-slate-50/80 rounded-[0.1rem] border border-slate-200/90 shadow-md shadow-slate-200/40 max-w-xl mx-auto space-y-4">
+                {/* ชั้นที่ 1: ⚠️ วางตรงกลางด้านบน + ไม่พบสินค้าตรงเป๊ะสำหรับ "..." + คำแนะนำตัวสะกด */}
+                <div className="space-y-1">
+                  <div className="text-2xl mb-1 select-none">⚠️</div>
+                  <h3 className="text-lg sm:text-xl font-bold text-amber-700">
+                    ไม่พบสินค้าตรงเป๊ะสำหรับ &quot;{queryParam}&quot;
+                  </h3>
+                  <p className="text-slate-500 text-xs sm:text-sm max-w-md mx-auto">
+                    ลองตรวจสอบตัวสะกด หรือใช้คำค้นหาที่สั้นลง เช่น ชื่อแบรนด์ หรือรหัสอะไหล่
+                  </p>
                 </div>
-                <h3 className="text-lg font-bold text-slate-800 mb-1">
-                  ไม่พบสินค้าตรงเป๊ะสำหรับ &quot;{queryParam}&quot;
-                </h3>
-                <p className="text-slate-500 text-sm max-w-md mx-auto mb-5">
-                  ลองตรวจสอบตัวสะกด หรือใช้คำค้นหาที่สั้นลง เช่น ชื่อแบรนด์ หรือรหัสอะไหล่
-                </p>
 
-                {/* 🌟 การ์ดติดต่อช่างทันที: ปลด Border และ Shapes ออกให้กลมกลืน เรียบหรู */}
-                <div className="my-5 p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 text-left">
-                  <div className="flex items-center gap-3">
-                    <Wrench size={22} className="text-emerald-600 shrink-0" />
-                    <div>
-                      <div className="font-bold text-sm text-slate-800 flex items-center gap-1.5">
-                        หาอะไหล่ไม่เจอ หรือต้องการให้ช่างช่วยเช็ค?
-                        <span className="text-[10px] text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded">ฟรี</span>
-                      </div>
-                      <div className="text-xs text-slate-500">ส่งรูปโน๊ตบุ๊คหรืออาการเสียให้ช่างประจำร้านช่วยเทียบได้เลย</div>
-                    </div>
-                  </div>
+                {/* ชั้นที่ 2: หาอะไหล่ไม่เจอ หรือต้องการให้ช่างช่วยเช็ค? (ปลดป้ายฟรีออก) */}
+                <div className="space-y-1 pt-1">
+                  <h4 className="font-bold text-sm sm:text-base text-slate-800">
+                    หาอะไหล่ไม่เจอ หรือต้องการให้ช่างช่วยเช็ค?
+                  </h4>
+                  <p className="text-xs sm:text-sm text-slate-500">
+                    ส่งรูปโน๊ตบุ๊คหรืออาการเสียให้ช่างประจำร้านช่วยเทียบได้เลย
+                  </p>
+                </div>
+
+                {/* ชั้นที่ 3: [ติดต่อช่างทันที] */}
+                <div className="pt-1">
                   <button
                     type="button"
                     onClick={() => setShowTechnicianModal(true)}
-                    className="w-full sm:w-auto px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95 shrink-0 inline-flex items-center justify-center gap-1.5"
+                    className="inline-flex items-center justify-center gap-1.5 px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md text-xs font-normal tracking-wide transition-all shadow-xs cursor-pointer active:scale-95"
                   >
                     <Phone size={13} /> ติดต่อช่างทันที
                   </button>
                 </div>
 
-                <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-                  <span className="text-xs text-slate-400 font-medium mr-1">ลองค้นหาด้วยคำเหล่านี้:</span>
-                  {["อะแดปเตอร์", "พัดลม", "คีย์บอร์ด", "หน้าจอ", "ลำโพง"].map(term => (
-                    <button
-                      key={term}
-                      onClick={() => {
-                        setTypedQuery(term);
-                        setSearchParams({ q: term });
-                      }}
-                      className="px-3 py-1 bg-white hover:bg-brand-light/20 hover:text-brand border border-slate-200 hover:border-brand-light/50 rounded-lg text-xs font-semibold text-slate-600 transition-all cursor-pointer shadow-2xs"
-                    >
-                      {term}
-                    </button>
-                  ))}
+                {/* ชั้นที่ 4 & 5: ลองค้นหาด้วยคำเหล่านี้: ↓ ปุ่มหมวดหมู่ */}
+                <div className="pt-2 space-y-2">
+                  <div className="text-xs text-slate-400 font-normal">
+                    ลองค้นหาด้วยคำเหล่านี้:
+                  </div>
+                  <div className="flex flex-wrap items-center justify-center gap-2">
+                    {["อะแดปเตอร์", "พัดลม", "คีย์บอร์ด", "หน้าจอ", "ลำโพง"].map(term => (
+                      <button
+                        key={term}
+                        onClick={() => {
+                          setTypedQuery(term);
+                          setSearchParams({ q: term });
+                        }}
+                        className="px-3 py-1 bg-white hover:bg-slate-50 border border-slate-200 hover:border-brand-light/60 rounded text-xs font-normal text-slate-600 hover:text-brand transition-all cursor-pointer shadow-2xs active:scale-95"
+                      >
+                        {term}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -568,7 +655,7 @@ const SearchPage = () => {
                 {/* Header */}
                 <div className="p-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white flex items-center justify-between border-b border-slate-700">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/20 border border-emerald-400/40 text-emerald-400 flex items-center justify-center shrink-0">
                       <Wrench size={16} />
                     </div>
                     <div>
@@ -576,19 +663,29 @@ const SearchPage = () => {
                       <p className="text-[11px] text-slate-300">ปรึกษาปัญหาซ่อม เทียบสเปกอะไหล่โดยตรง</p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setShowTechnicianModal(false)}
-                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer"
-                  >
-                    <X size={18} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <Link
+                      to="/providers"
+                      onClick={() => setShowTechnicianModal(false)}
+                      className="inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded text-xs font-medium transition-all shadow-xs active:scale-95 cursor-pointer"
+                    >
+                      <Search size={13} />
+                      <span className="whitespace-nowrap">ค้นหาช่างทั้งหมด</span>
+                    </Link>
+                    <button
+                      type="button"
+                      onClick={() => setShowTechnicianModal(false)}
+                      className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer shrink-0"
+                    >
+                      <X size={18} />
+                    </button>
+                  </div>
                 </div>
 
                 {/* Modal Body */}
                 <div className="p-5 overflow-y-auto space-y-4 bg-slate-50/50">
                   {technicianAds.length > 0 ? (
-                    technicianAds.map((ad) => (<SearchTechnicianCardItem key={ad.id} ad={ad} onContactClick={handleTechnicianContactClick} />))
+                    technicianAds.slice(0, 8).map((ad) => (<SearchTechnicianCardItem key={ad.id} ad={ad} onContactClick={handleTechnicianContactClick} />))
                   ) : (
                     /* บัตรมาตรฐานศูนย์ช่าง DH Notebook */
                     <div className="bg-white rounded-[0.3rem] border border-slate-200/90 p-5 shadow-xs space-y-4">
