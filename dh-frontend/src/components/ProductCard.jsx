@@ -10,7 +10,7 @@ const ProductCard = ({ product, hasStock, addingState, onAddToCart }) => {
   return (
     <div 
       onClick={() => navigate(`/product/${id}`, { state: { product } })} 
-      className="group cursor-pointer p-1 md:p-1.5 flex flex-col hover:-translate-y-1 active:scale-[0.99] transition-all duration-300 relative animate-in fade-in"
+      className="group cursor-pointer p-1 md:p-1.5 flex flex-col hover:-translate-y-1 active:scale-[0.99] transition-all duration-300 relative animate-in fade-in [content-visibility:auto] [contain-intrinsic-size:auto_280px]"
     >
       <div className="relative aspect-square w-full rounded-sm flex items-center justify-center overflow-hidden mb-2.5">
         <div className="absolute inset-0 bg-linear-to-br from-brand-light/10 to-transparent opacity-60 pointer-events-none"></div>

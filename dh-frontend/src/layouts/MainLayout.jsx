@@ -39,15 +39,22 @@ const MainLayout = ({ children }) => {
   }, [theme.backgroundUrl]);
 
   return (
-    <div className={`min-h-screen flex flex-col font-sans text-gray-800 relative selection:bg-brand-light selection:text-brand-dark ${theme.themeId || 'theme-tech-professional'}`}>
+    <div className={`min-h-screen min-h-[100dvh] flex flex-col font-sans text-gray-800 relative selection:bg-brand-light selection:text-brand-dark ${theme.themeId || 'theme-tech-professional'}`}>
       
       {/* พื้นหลังเบลอแบบไล่ระดับความโปร่งแสง (Dynamic Gradient Frosted Glass) */}
       <div 
-        className="fixed inset-0 z-[-1] pointer-events-none"
+        className="fixed inset-0 z-[-1] pointer-events-none hidden md:block"
         style={{
           backdropFilter: `blur(${theme.blurLevel}px)`,
           WebkitBackdropFilter: `blur(${theme.blurLevel}px)`, // For Safari support
           background: `linear-gradient(to bottom, rgba(255,255,255,${theme.opacityTop / 100}), rgba(255,255,255,${theme.opacityMid / 100}), rgba(255,255,255,${theme.opacityBottom / 100}))`
+        }}
+      ></div>
+      {/* Mobile Fallback: Solid Tinted Background (Zero GPU Blur Load) */}
+      <div 
+        className="fixed inset-0 z-[-1] pointer-events-none md:hidden"
+        style={{
+          background: 'linear-gradient(to bottom, rgba(248,250,252,0.92), rgba(241,245,249,0.95), rgba(248,250,252,0.98))'
         }}
       ></div>
 

@@ -180,10 +180,10 @@ const FloatingMessenger = () => {
         </div>
 
         <div className="relative group cursor-pointer" onClick={toggleMessenger}>
-          <div className={`absolute inset-0 rounded-full blur-xl transition-all duration-500 pointer-events-none ${isOpen ? 'bg-rose-500/30 scale-110' : 'bg-indigo-600/40 group-hover:bg-indigo-600/60 animate-pulse scale-125'}`}></div>
+          <div className={`absolute inset-0 rounded-full blur-xl transition-all duration-500 pointer-events-none ${isOpen ? 'bg-rose-500/30 scale-110' : 'bg-indigo-600/40 group-hover:bg-indigo-600/60 scale-125'}`}></div>
           <button className={`relative w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-white shadow-2xl transition-all duration-500 transform ${isOpen ? 'bg-slate-800 rotate-90 scale-90 hover:bg-rose-500' : 'bg-linear-to-br from-indigo-500 via-[#0870B8] to-blue-600 hover:scale-110 hover:-translate-y-1'}`}>
             {isOpen ? <X size={26} strokeWidth={2.5}/> : <MessageCircle size={28} strokeWidth={2.5} />}
-            {!isOpen && <span className="absolute top-0 right-0 w-4 h-4 bg-rose-500 border-2 border-white rounded-full animate-bounce shadow-xs"></span>}
+            {!isOpen && <span className="absolute top-0 right-0 w-4 h-4 bg-rose-500 border-2 border-white rounded-full shadow-xs"></span>}
           </button>
         </div>
       </div>
