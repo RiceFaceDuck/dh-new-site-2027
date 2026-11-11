@@ -63,6 +63,24 @@ export function detectRowChanges(item, existing) {
     }
   });
 
+  // 🌐 External Marketplace Links Change Detection
+  const marketplacePlatforms = [
+    { key: 'shopee', label: 'Shopee' },
+    { key: 'lazada', label: 'Lazada' },
+    { key: 'tiktok', label: 'TikTok' },
+    { key: 'facebook', label: 'Facebook' }
+  ];
+
+  marketplacePlatforms.forEach(({ key, label }) => {
+    if (item.externalLinks && item.externalLinks[key] !== undefined) {
+      const oldUrl = String(existing.externalLinks?.[key] || '').trim();
+      const newUrl = String(item.externalLinks[key] || '').trim();
+      if (newUrl && newUrl !== oldUrl) {
+        changes.push({ field: label, old: oldUrl || '-', new: newUrl });
+      }
+    }
+  });
+
   // 🛡️ Full Description Phantom Change Guard:
   // Shards intentionally omit fullDescription to prevent hitting Firestore 1MB doc limits.
   // Only detect diff if existing record explicitly contains fullDescription.

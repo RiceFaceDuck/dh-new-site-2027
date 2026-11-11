@@ -16,7 +16,11 @@ export default function ColumnMappingModal({ isOpen, onClose, onSaved }) {
     addStock: '',
     price: '',
     retailPrice: '',
-    name: ''
+    name: '',
+    shopee: '',
+    lazada: '',
+    tiktok: '',
+    facebook: ''
   });
 
   useEffect(() => {
@@ -109,6 +113,34 @@ export default function ColumnMappingModal({ isOpen, onClose, onSaved }) {
       required: false,
       desc: 'ชื่อหรือหัวข้อสินค้า',
       tagColor: 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700'
+    },
+    {
+      key: 'shopee',
+      label: 'ลิงก์ Shopee',
+      required: false,
+      desc: 'หัวคอลัมน์ลิงก์สินค้าบน Shopee',
+      tagColor: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-300 dark:border-orange-800'
+    },
+    {
+      key: 'lazada',
+      label: 'ลิงก์ Lazada',
+      required: false,
+      desc: 'หัวคอลัมน์ลิงก์สินค้าบน Lazada',
+      tagColor: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:border-indigo-800'
+    },
+    {
+      key: 'tiktok',
+      label: 'ลิงก์ TikTok',
+      required: false,
+      desc: 'หัวคอลัมน์ลิงก์สินค้าบน TikTok Shop',
+      tagColor: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800'
+    },
+    {
+      key: 'facebook',
+      label: 'ลิงก์ Facebook',
+      required: false,
+      desc: 'หัวคอลัมน์ลิงก์สินค้าบน Facebook',
+      tagColor: 'bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800'
     }
   ];
 

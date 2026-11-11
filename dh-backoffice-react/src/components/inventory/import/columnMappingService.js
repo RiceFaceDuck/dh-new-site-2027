@@ -60,6 +60,44 @@ export const DEFAULT_COLUMN_MAPPINGS = {
     'ชื่อ', 
     'หัวข้อ', 
     'รายการสินค้า'
+  ],
+  shopee: [
+    'Shopee',
+    'shopee',
+    'Shopee Link',
+    'ShopeeLink',
+    'ลิงก์ Shopee',
+    'ลิงก์shopee',
+    'ShopeeUrl'
+  ],
+  lazada: [
+    'Lazada',
+    'lazada',
+    'Lazada Link',
+    'LazadaLink',
+    'ลิงก์ Lazada',
+    'ลิงก์lazada',
+    'LazadaUrl'
+  ],
+  tiktok: [
+    'TikTok',
+    'tiktok',
+    'Tiktok',
+    'TikTok Shop',
+    'TikTok Link',
+    'TikTokLink',
+    'ลิงก์ TikTok',
+    'ลิงก์tiktok',
+    'TikTokUrl'
+  ],
+  facebook: [
+    'Facebook',
+    'facebook',
+    'Facebook Link',
+    'FacebookLink',
+    'ลิงก์ Facebook',
+    'ลิงก์facebook',
+    'FacebookUrl'
   ]
 };
 
@@ -91,7 +129,11 @@ export function getColumnMappings() {
       addStock: Array.isArray(parsed.addStock) && parsed.addStock.length ? parsed.addStock : DEFAULT_COLUMN_MAPPINGS.addStock,
       price: Array.isArray(parsed.price) && parsed.price.length ? parsed.price : DEFAULT_COLUMN_MAPPINGS.price,
       retailPrice: Array.isArray(parsed.retailPrice) && parsed.retailPrice.length ? parsed.retailPrice : DEFAULT_COLUMN_MAPPINGS.retailPrice,
-      name: Array.isArray(parsed.name) && parsed.name.length ? parsed.name : DEFAULT_COLUMN_MAPPINGS.name
+      name: Array.isArray(parsed.name) && parsed.name.length ? parsed.name : DEFAULT_COLUMN_MAPPINGS.name,
+      shopee: Array.isArray(parsed.shopee) && parsed.shopee.length ? parsed.shopee : DEFAULT_COLUMN_MAPPINGS.shopee,
+      lazada: Array.isArray(parsed.lazada) && parsed.lazada.length ? parsed.lazada : DEFAULT_COLUMN_MAPPINGS.lazada,
+      tiktok: Array.isArray(parsed.tiktok) && parsed.tiktok.length ? parsed.tiktok : DEFAULT_COLUMN_MAPPINGS.tiktok,
+      facebook: Array.isArray(parsed.facebook) && parsed.facebook.length ? parsed.facebook : DEFAULT_COLUMN_MAPPINGS.facebook
     };
   } catch (e) {
     console.warn('Error reading column mappings from localStorage:', e);
