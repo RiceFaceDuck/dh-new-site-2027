@@ -290,7 +290,7 @@ export default function ProductPricingSection({
       </div>
 
       {/* 💬 LINE Add Friend & Quick Marketplace Badges (Responsive Sizing & Spacing) */}
-      <div className="mb-5 flex items-center justify-start gap-3 sm:gap-4 md:gap-6 flex-wrap">
+      <div className="mb-5 flex items-center justify-start gap-2 sm:gap-2.5 md:gap-4 flex-wrap">
         {/* LINE สั่งกับแอดมิน */}
         <a 
           href={lineAddFriendUrl || "https://line.me/ti/p/"} 
@@ -301,7 +301,7 @@ export default function ProductPricingSection({
           title="สั่งซื้อกับแอดมินผ่าน LINE"
         >
           {/* Subtle pulse glow effect behind the button */}
-          <div className="absolute inset-0 bg-[#06C755] opacity-20 group-hover:opacity-40 blur-md rounded-md transition-opacity duration-300 animate-pulse pointer-events-none"></div>
+          <div className="absolute inset-0 bg-[#06C755] opacity-20 group-hover:opacity-40 blur-md rounded-md transition-opacity duration-300 pointer-events-none"></div>
           
           {/* LINE Speech Bubble Vector (ไดคัทเฉพาะบอลลูนขาว ตัวอักษรฉลุโปร่งใสรับพื้นหลังปุ่ม) */}
           <svg 
@@ -377,8 +377,8 @@ export default function ProductPricingSection({
             </div>
           )}
 
-          {/* 👈🏼 ข้อความแนะนำสั่งซื้อ (ผูกติดกับกลุ่ม Marketplace โดยตรง ไม่หลุดโซน) */}
-          <div className="flex items-center gap-1 select-none shrink-0 ml-0.5">
+          {/* 👈🏼 ข้อความแนะนำสั่งซื้อ (ซ่อนบนมือถือเพื่อความสมดุล แสดงเฉพาะจอขนาดกลางขึ้นไป) */}
+          <div className="hidden md:flex items-center gap-1 select-none shrink-0 ml-1">
             <span className="text-lg sm:text-xl md:text-2xl filter drop-shadow-xs">👈🏼</span>
             <span className="text-xs sm:text-sm md:text-base font-black italic tracking-tight text-[#f04e69] whitespace-nowrap">
               กดสั่งตรงนี้ได้นะคะ
