@@ -192,6 +192,7 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    overscroll-behavior-y: none;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
@@ -220,6 +221,7 @@
   }
 
   body {
+    overscroll-behavior-y: none;
     background: var(--color-slate-50, #f8fafc);
     background-color: var(--color-slate-50);
     font-family: var(--font-sans);
