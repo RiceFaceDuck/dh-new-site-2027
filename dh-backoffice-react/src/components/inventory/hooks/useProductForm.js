@@ -90,20 +90,36 @@ export default function useProductForm(productData, isOpen, categoriesData = [])
       setActiveImageUrl(initData.images?.[0] || '');
       setLinkValidation({ shopee: null, lazada: null, tiktok: null, facebook: null });
 
-      // 🛡️ Self-Healing Image Recovery: If cached product lacked images, fetch live doc from Firestore
-      if (initData.sku && (!initData.images || initData.images.length === 0)) {
-        setIsImageHealing(true);
+      // 🛡️ Self-Healing Recovery: If cached product lacked images or externalLinks, fetch live doc from Firestore
+      const hasLinks = initData.externalLinks && Object.values(initData.externalLinks).some(Boolean);
+      const hasImages = Array.isArray(initData.images) && initData.images.length > 0;
+
+      if (initData.sku && (!hasImages || !hasLinks)) {
+        setIsImageHealing(!hasImages);
         inventoryService.getProductBySku(initData.sku).then(freshDoc => {
-          if (freshDoc?.images && freshDoc.images.length > 0) {
+          if (freshDoc) {
             setForm(prev => {
               if (prev.sku !== initData.sku) return prev;
-              return {
-                ...prev,
-                images: freshDoc.images,
-                image: freshDoc.image || freshDoc.images[0]
-              };
+              const updates = {};
+              if (!hasImages && freshDoc.images?.length > 0) {
+                updates.images = freshDoc.images;
+                updates.image = freshDoc.image || freshDoc.images[0];
+                setActiveImageUrl(freshDoc.image || freshDoc.images[0]);
+              }
+              if (!hasLinks && freshDoc.externalLinks) {
+                updates.externalLinks = {
+                  shopee: freshDoc.externalLinks.shopee || '',
+                  lazada: freshDoc.externalLinks.lazada || '',
+                  tiktok: freshDoc.externalLinks.tiktok || '',
+                  facebook: freshDoc.externalLinks.facebook || ''
+                };
+              }
+              if (freshDoc.fullDescription && !prev.fullDescription) {
+                updates.fullDescription = freshDoc.fullDescription;
+                updates.description = freshDoc.fullDescription;
+              }
+              return { ...prev, ...updates };
             });
-            setActiveImageUrl(freshDoc.image || freshDoc.images[0]);
           }
         }).catch(() => null).finally(() => {
           setIsImageHealing(false);

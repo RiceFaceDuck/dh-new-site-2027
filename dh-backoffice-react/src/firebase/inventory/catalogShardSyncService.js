@@ -102,8 +102,18 @@ function sanitizeItemForShard(item) {
     sellingModel: String(item.sellingModel || '').trim(),
     substituteSkus: Array.isArray(item.substituteSkus) ? item.substituteSkus.filter(Boolean) : [],
     warehouseLocation: String(item.warehouseLocation || '').trim(),
+    landingPageUrl: String(item.landingPageUrl || '').trim(),
     isActive: item.isActive !== false
   };
+
+  if (item.externalLinks && typeof item.externalLinks === 'object') {
+    cleaned.externalLinks = {
+      shopee: String(item.externalLinks.shopee || '').trim(),
+      lazada: String(item.externalLinks.lazada || '').trim(),
+      tiktok: String(item.externalLinks.tiktok || '').trim(),
+      facebook: String(item.externalLinks.facebook || '').trim()
+    };
+  }
 
   if (item.adjustmentHistory && typeof item.adjustmentHistory === 'object') {
     cleaned.adjustmentHistory = item.adjustmentHistory;

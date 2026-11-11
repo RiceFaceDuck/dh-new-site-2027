@@ -364,6 +364,15 @@ export const updateCatalogCacheWithProducts = async (updatedProducts = [], optio
         if (rawP.category_lower) {
           mergedObj.category_lower = rawP.category_lower;
         }
+        if (rawP.externalLinks && typeof rawP.externalLinks === 'object') {
+          mergedObj.externalLinks = {
+            ...(mergedObj.externalLinks || {}),
+            ...rawP.externalLinks
+          };
+        }
+        if (rawP.landingPageUrl !== undefined) {
+          mergedObj.landingPageUrl = rawP.landingPageUrl;
+        }
 
         mergedObj.images = finalImages;
         mergedObj.image = finalImage;

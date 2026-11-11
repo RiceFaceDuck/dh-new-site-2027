@@ -81,6 +81,10 @@ export default function ImportPreviewTable({ headers, parsedData }) {
          if (isHeaderMatching(h, mappings.price)) return c.field === 'Price';
          if (isHeaderMatching(h, mappings.retailPrice)) return c.field === 'RetailPrice';
          if (isHeaderMatching(h, mappings.name)) return c.field === 'Name';
+         if (isHeaderMatching(h, mappings.shopee)) return c.field === 'Shopee';
+         if (isHeaderMatching(h, mappings.lazada)) return c.field === 'Lazada';
+         if (isHeaderMatching(h, mappings.tiktok)) return c.field === 'TikTok';
+         if (isHeaderMatching(h, mappings.facebook)) return c.field === 'Facebook';
          return c.field === h;
        });
 

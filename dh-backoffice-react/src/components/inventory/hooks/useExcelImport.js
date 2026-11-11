@@ -12,6 +12,7 @@ import {
 export const EXPECTED_HEADERS = [
   'SKU', 'Name', 'Category', 'Brand', 'Unit', 'Price (ราคาส่ง)', 'RetailPrice', 
   'นับสต๊อค', 'AddStock', 'BufferStock', 'WarehouseLocation',
+  'Shopee', 'Lazada', 'TikTok', 'Facebook',
   'CompatibleModels', 'CompatiblePartNumbers', 'SubstituteSkus', 
   'LandingPageUrl', 'ShortDescription', 'Description', 
   'PackageW', 'PackageL', 'PackageH', 'Tags'
@@ -36,6 +37,7 @@ export function useExcelImport(onSuccess) {
       [
         'EXM-001', 'Example Screen 15.6', 'Screen', 'Generic', 'ชิ้น', 1000, 1500,
         10, '', 2, 'A1',
+        'https://s.shopee.co.th/example', 'https://s.lazada.co.th/s.example', 'https://shop.tiktok.com/view/product/example', 'https://facebook.com/commerce/products/example',
         'ModelA, ModelB', 'Part123, Part456', 'ALT-001',
         'https://store.com/exm-001', 'Short desc', 'Full long desc',
         '30', '40', '5', 'tag1, tag2'
@@ -165,12 +167,28 @@ export function useExcelImport(onSuccess) {
     if (tagsArr !== undefined) mapped.tags = tagsArr;
     else if (isNew) mapped.tags = [];
 
+    // 🌐 External Marketplace Links (Shopee, Lazada, TikTok, Facebook)
+    const rawShopee = getValueByAliases(rawRow, currentMappings.shopee) ?? rawRow['Shopee'];
+    const rawLazada = getValueByAliases(rawRow, currentMappings.lazada) ?? rawRow['Lazada'];
+    const rawTiktok = getValueByAliases(rawRow, currentMappings.tiktok) ?? rawRow['TikTok'];
+    const rawFacebook = getValueByAliases(rawRow, currentMappings.facebook) ?? rawRow['Facebook'];
+
+    const shopeeStr = str(rawShopee);
+    const lazadaStr = str(rawLazada);
+    const tiktokStr = str(rawTiktok);
+    const facebookStr = str(rawFacebook);
+
     if (isNew) {
       mapped.images = [];
       // 🔒 นโยบายความปลอดภัย: สินค้าใหม่จาก Excel ต้อง "ถูกซ่อน" (isActive: false) ไว้เสมอ
       // จนกว่าจะมีพนักงานไปตรวจสอบข้อมูลและเปิดด้วยมือตนเอง
       mapped.isActive = false;
-      mapped.externalLinks = { shopee: '', lazada: '', tiktok: '', facebook: '' };
+      mapped.externalLinks = {
+        shopee: shopeeStr || '',
+        lazada: lazadaStr || '',
+        tiktok: tiktokStr || '',
+        facebook: facebookStr || ''
+      };
       mapped.internalComments = [];
       mapped.randomSeed = Math.random();
     } else if (existing) {
@@ -180,9 +198,17 @@ export function useExcelImport(onSuccess) {
       }
       if (existing.image) mapped.image = existing.image;
       if (existing.imageUrl) mapped.imageUrl = existing.imageUrl;
-      if (existing.externalLinks && mapped.externalLinks === undefined) {
-        mapped.externalLinks = existing.externalLinks;
-      }
+      
+      // 🛡️ Selective Column-Level Patching for Marketplace Links:
+      // ช่องว่าง/ไม่มีคอลัมน์ในไฟล์ = คงค่าเดิมไว้ | มีค่า URL = เขียนทับเฉพาะคอลัมน์นั้น
+      const existingLinks = existing.externalLinks || { shopee: '', lazada: '', tiktok: '', facebook: '' };
+      mapped.externalLinks = {
+        shopee: shopeeStr !== undefined ? shopeeStr : (existingLinks.shopee || ''),
+        lazada: lazadaStr !== undefined ? lazadaStr : (existingLinks.lazada || ''),
+        tiktok: tiktokStr !== undefined ? tiktokStr : (existingLinks.tiktok || ''),
+        facebook: facebookStr !== undefined ? facebookStr : (existingLinks.facebook || '')
+      };
+
       // 🔒 สินค้าเดิม: คงสถานะ isActive เดิมไว้ 100% (ถ้าเคยซ่อนอยู่ ก็ต้องซ่อนต่อไปเด็ดขาด)
       mapped.isActive = existing.isActive !== undefined ? existing.isActive : true;
       if (existing.internalComments && mapped.internalComments === undefined) {

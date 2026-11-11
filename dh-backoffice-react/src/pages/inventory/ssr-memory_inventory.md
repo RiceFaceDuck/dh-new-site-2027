@@ -199,6 +199,13 @@
 40. **การย้ายท่ออัปโหลดภาพสินค้าหลังบ้านเข้า Firebase Storage และคุมขนาด WebP (Phase 1):**
     - *ปัญหา:* เดิม `ProductImageUpload.jsx` เรียก `driveService.uploadImage` ส่ง Base64 เข้า Google Apps Script (GAS) เพื่อบันทึกเข้า Google Drive ทำให้ช้า มีคอขวด และเสี่ยงโดนบล็อก
     - *วิธีแก้:* สร้าง `productStorageService.js` บีบอัดภาพด้วย `browser-image-compression` (<=300KB, <=1200px, quality 0.7, WebP) และอัปโหลดตรงเข้า Firebase Storage (`products/{sku}/...`) พร้อมสร้าง `useProductImageUpload.js` แยกหน้าที่ตาม Clean Architecture & SRP และใส่ `referrerPolicy="no-referrer"` ป้องกัน Google CDN 429 [สถานะ: ส่งมอบเฟส 1 เรียบร้อย]
+41. **การรองรับลิงก์ Marketplace (Shopee, Lazada, TikTok, Facebook) ใน Template และตัวนำเข้า Excel:**
+    - *ปัญหา:* Template Excel เดิมไม่มีคอลัมน์รองรับลิงก์ร้านค้าภายนอก เมื่อแอดมินนำเข้าข้อมูล ระบบไม่สามารถเชื่อมโยง URL สินค้าบน Shopee, Lazada, TikTok, Facebook เข้าฟิลด์ `externalLinks` ได้โดยตรง
+    - *วิธีแก้:*
+      1) ใน `useExcelImport.js` เพิ่ม `Shopee`, `Lazada`, `TikTok`, `Facebook` ใน `EXPECTED_HEADERS` และ `handleDownloadTemplate` พร้อมตัวอย่าง URL
+      2) ใน `columnMappingService.js` และ `ColumnMappingModal.jsx` เพิ่มหมวดหมู่หัวคอลัมน์ Aliases สำหรับ 4 แพลตฟอร์ม รองรับทั้งภาษาไทยและอังกฤษ
+      3) ใน `excelDiffService.js` และ `ImportPreviewTable.jsx` เพิ่มการตรวจจับความต่าง (Diff Detection) แสดงผลเปรียบเทียบ URL เก่า vs ใหม่ พร้อมขีดฆ่าในหน้าพรีวิว
+      4) ยึดมั่นกฎ Selective Column-Level Patching: หากใน Excel คอลัมน์ลิงก์ว่างไว้ ระบบจะรักษาลิงก์เดิมของสินค้าไว้ 100% ไม่ถูกล้างค่าทิ้ง [สถานะ: ส่งมอบเรียบร้อย]
 </pitfalls_and_solutions>
 
 
