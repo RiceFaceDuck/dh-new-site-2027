@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Phone, CheckCircle2, MapPin, Award, Store } from 'lucide-react';
+import { Phone, CheckCircle2, MapPin, Store } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { useNearestPartner } from './hooks/useNearestPartner';
 import useAdViewTracker from '../../hooks/useAdViewTracker';
@@ -178,11 +178,6 @@ const PartnerSupportBox = () => {
             <span className="text-[9px] font-bold text-slate-400 text-center leading-tight">ร้านพาร์ทเนอร์</span>
           </div>
         )}
-        <div className="absolute inset-0 bg-linear-to-t from-slate-900/60 via-transparent to-transparent pointer-events-none"></div>
-        <div className="absolute bottom-1.5 left-1.5 bg-white/95 backdrop-blur-md px-1.5 py-0.5 rounded-[2px] text-slate-900 flex items-center gap-1 shadow-md border border-white/50">
-          <Award size={10} className="text-amber-500 shrink-0" />
-          <span className="font-bold text-[7px] uppercase tracking-wider text-slate-800">Verified</span>
-        </div>
       </div>
 
       {/* 🔴 ฝั่งขวา: รายละเอียดร้านชัดเจน ขยายขนาดให้อ่านง่าย */}
