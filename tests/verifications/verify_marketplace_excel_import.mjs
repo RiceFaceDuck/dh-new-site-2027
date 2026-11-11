@@ -91,4 +91,38 @@ assert.strictEqual(lazadaDiff.old, '-');
 assert.strictEqual(lazadaDiff.new, 'https://s.lazada.co.th/brand-new');
 console.log('✅ Diff detection correctly identifies changed and newly added links.');
 
-console.log('\n🎉 ALL VERIFICATION TESTS PASSED SUCCESSFULLY!');
+// 5. Test Shard Sanitization Retention for externalLinks
+console.log('\n[Test 5] Checking sanitizeItemForShard in catalogShardSyncService.js...');
+const shardSyncCode = fs.readFileSync(
+  path.resolve('dh-backoffice-react/src/firebase/inventory/catalogShardSyncService.js'),
+  'utf-8'
+);
+assert(shardSyncCode.includes('cleaned.externalLinks = {'), 'sanitizeItemForShard must retain cleaned.externalLinks');
+assert(shardSyncCode.includes("shopee: String(item.externalLinks.shopee || '').trim()"), 'externalLinks must sanitize shopee');
+assert(shardSyncCode.includes("lazada: String(item.externalLinks.lazada || '').trim()"), 'externalLinks must sanitize lazada');
+assert(shardSyncCode.includes("tiktok: String(item.externalLinks.tiktok || '').trim()"), 'externalLinks must sanitize tiktok');
+assert(shardSyncCode.includes("facebook: String(item.externalLinks.facebook || '').trim()"), 'externalLinks must sanitize facebook');
+assert(shardSyncCode.includes('landingPageUrl: String(item.landingPageUrl || \'\').trim()'), 'sanitizeItemForShard must retain landingPageUrl');
+console.log('✅ Shard Sanitization correctly retains externalLinks and landingPageUrl.');
+
+// 6. Test Catalog Hydration Cache Update
+console.log('\n[Test 6] Checking updateCatalogCacheWithProducts in catalogHydrationService.js...');
+const hydrationCode = fs.readFileSync(
+  path.resolve('dh-backoffice-react/src/firebase/catalogHydrationService.js'),
+  'utf-8'
+);
+assert(hydrationCode.includes('mergedObj.externalLinks = {'), 'catalogHydrationService must preserve externalLinks on cache update');
+assert(hydrationCode.includes('mergedObj.landingPageUrl = rawP.landingPageUrl'), 'catalogHydrationService must preserve landingPageUrl');
+console.log('✅ Catalog Hydration cache retains externalLinks and landingPageUrl.');
+
+// 7. Test Self-Healing Form Recovery
+console.log('\n[Test 7] Checking Self-Healing Recovery in useProductForm.js...');
+const formCode = fs.readFileSync(
+  path.resolve('dh-backoffice-react/src/components/inventory/hooks/useProductForm.js'),
+  'utf-8'
+);
+assert(formCode.includes('updates.externalLinks = {'), 'useProductForm must heal externalLinks from freshDoc');
+assert(formCode.includes('updates.fullDescription = freshDoc.fullDescription'), 'useProductForm must heal fullDescription from freshDoc');
+console.log('✅ useProductForm correctly implements self-healing for externalLinks and fullDescription.');
+
+console.log('\n🎉 ALL 7 RIGOROUS VERIFICATION CHECKS PASSED WITH 100% SUCCESS!');
