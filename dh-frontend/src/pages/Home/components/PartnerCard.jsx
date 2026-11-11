@@ -65,7 +65,12 @@ const PartnerCard = ({ partner, placement = 'home_squad_highlight' }) => {
   };
 
   return (
-    <div ref={cardRef} className="group relative bg-white p-3 md:p-3.5 rounded-[2px] flex items-center space-x-3 md:space-x-4 border border-slate-200/80 shadow-[0_4px_16px_-2px_rgba(15,23,42,0.12),0_2px_4px_-1px_rgba(15,23,42,0.06)] transition-all duration-300 hover:shadow-[0_16px_32px_-4px_rgba(15,23,42,0.16),0_6px_12px_-2px_rgba(15,23,42,0.08)] hover:-translate-y-1 hover:border-brand/40">
+    <Link 
+      ref={cardRef} 
+      to={`/store/${partner.id || partner.userId}`}
+      onClick={handleClick}
+      className="group relative bg-white p-3 md:p-3.5 rounded-[2px] flex items-center space-x-3 md:space-x-4 border border-slate-200/80 shadow-[0_4px_16px_-2px_rgba(15,23,42,0.12),0_2px_4px_-1px_rgba(15,23,42,0.06)] transition-all duration-300 hover:shadow-[0_16px_32px_-4px_rgba(15,23,42,0.16),0_6px_12px_-2px_rgba(15,23,42,0.08)] hover:-translate-y-1 hover:border-brand/40 cursor-pointer block"
+    >
       
       {/* Avatar Container */}
       <div className="relative shrink-0">
@@ -94,14 +99,14 @@ const PartnerCard = ({ partner, placement = 'home_squad_highlight' }) => {
           </div>
         )}
         
-        <Link onClick={handleClick} to={`/store/${partner.id || partner.userId}`} className="px-3.5 py-1.5 md:px-4 md:py-2 bg-slate-800 text-white rounded-md font-normal text-xs md:text-sm hover:bg-indigo-600 active:scale-95 transition-all duration-300 w-fit max-w-full shadow-md hover:shadow-indigo-500/30 flex items-center justify-center gap-1.5 md:gap-2">
+        <div className="px-3.5 py-1.5 md:px-4 md:py-2 bg-slate-800 text-white rounded-md font-normal text-xs md:text-sm group-hover:bg-indigo-600 active:scale-95 transition-all duration-300 w-fit max-w-full shadow-md group-hover:shadow-indigo-500/30 flex items-center justify-center gap-1.5 md:gap-2">
           <span>ติดต่อช่าง</span>
           <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 shrink-0 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
           </svg>
-        </Link>
+        </div>
       </div>
-    </div>
+    </Link>
   );
 };
 
