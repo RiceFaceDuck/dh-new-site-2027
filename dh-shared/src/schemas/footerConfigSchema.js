@@ -139,7 +139,7 @@ export const DEFAULT_BUSINESS_HOURS = {
 export const DEFAULT_MARKETING_USP = {
   enabled: true,
   items: [
-    { id: 'm1', title: 'อะไหล่แท้มาตรฐานสากล', subtitle: 'คัดสรรคุณภาพเกรด A+ ทุกชิ้น', icon: 'Sparkles', active: true },
+    { id: 'm1', title: 'อะไหล่มาตรฐานสากล', subtitle: 'คัดสรรคุณภาพเกรด A+ ทุกชิ้น', icon: 'Sparkles', active: true },
     { id: 'm2', title: 'เครือข่ายช่างครอบคลุม', subtitle: 'บริการส่งด่วนถึงร้านช่างทั่วประเทศ', icon: 'Truck', active: true },
     { id: 'm3', title: 'รับประกันเคลมง่าย', subtitle: 'เปลี่ยนตัวใหม่ทันทีตามเงื่อนไข', icon: 'ShieldCheck', active: true },
     { id: 'm4', title: 'ปรึกษาเทคนิคฟรี', subtitle: 'ทีมวิศวกรผู้เชี่ยวชาญพร้อมดูแล', icon: 'HelpCircle', active: true }

@@ -64,7 +64,7 @@ const AdFormModal = ({
               <label className="block text-[11px] font-bold text-slate-500 uppercase mb-1.5">
                 {formData.type === 'BILLBOARD' ? 'หัวข้อโฆษณา / แคมเปญแบนเนอร์' : 'ชื่อสินค้า'} <span className="text-rose-500">*</span>
               </label>
-              <input type="text" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} required placeholder={formData.type === 'BILLBOARD' ? 'เช่น โปรโมชั่นซ่อมลด 50% เดือนนี้' : 'เช่น หน้าจอ iPhone 13 แท้'} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-md focus:border-indigo-500" />
+              <input type="text" value={formData.title || ''} onChange={(e) => setFormData({...formData, title: e.target.value})} required placeholder={formData.type === 'BILLBOARD' ? 'เช่น โปรโมชั่นซ่อมลด 50% เดือนนี้' : 'เช่น หน้าจอ iPhone 13'} className="w-full px-4 py-3 bg-white border border-slate-200 rounded-md focus:border-indigo-500" />
             </div>
 
             {formData.type === 'BILLBOARD' && (

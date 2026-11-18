@@ -20,7 +20,7 @@ const HeroBanner = () => {
         
         {/* Title: ลด Margin ด้านล่างลงเหลือ mb-2 */}
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white mb-2 tracking-tight">
-          ยกระดับศูนย์บริการของคุณ<br className="hidden sm:block" />ด้วยอะไหล่แท้คุณภาพสูง
+          ยกระดับศูนย์บริการของคุณ<br className="hidden sm:block" />ด้วยอะไหล่คุณภาพสูง
         </h1>
 
         {/* Description: เพิ่ม line-clamp-2 ป้องกันข้อความยาวจนกินพื้นที่แนวตั้ง */}
