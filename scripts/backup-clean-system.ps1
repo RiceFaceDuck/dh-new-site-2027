@@ -1,4 +1,4 @@
-# ==============================================================================
+﻿# ==============================================================================
 # DH NOTEBOOK - DUAL TARGET SYSTEM BACKUP (5 Core Rules Compliant)
 # ==============================================================================
 
@@ -67,9 +67,9 @@ function Sync-CleanFolder {
         }
     }
 
-    # 2. Sync _agents (Agent Memory)
-    $srcAgents = Join-Path $sourceRoot "_agents"
-    $dstAgents = Join-Path $TargetDir "_agents"
+    # 2. Sync .agents (Central Agent Memory, Rules, Skills & Checklists)
+    $srcAgents = Join-Path $sourceRoot ".agents"
+    $dstAgents = Join-Path $TargetDir ".agents"
     if (Test-Path $srcAgents) {
         robocopy $srcAgents $dstAgents /MIR /R:1 /W:1 /NFL /NDL /NP /NJH /NJS | Out-Null
     }
