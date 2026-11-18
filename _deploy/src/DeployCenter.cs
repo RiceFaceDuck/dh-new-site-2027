@@ -478,11 +478,10 @@ namespace DHNotebook.DeployCenter
 
                 // 4. Cloud Functions
                 long fnLastDeploy = deployState.ContainsKey("functions") ? deployState["functions"] : 0;
-                long fnLastCommit = GetLastCommitTimestamp("functions");
-                int fnUncommitted = CountFilesStartingWith(statusLines, "functions/");
                 List<string> fnTargets = new List<string>();
+                bool fnCodeChanged = false;
 
-                // ตรวจหาฟังก์ชันที่มีการเปลี่ยนแปลงทั้งจาก uncommitted และ git diff
+                // ตรวจหาฟังก์ชันที่มีการเปลี่ยนแปลงเฉพาะไฟล์โค้ด/คอนฟิก (.js, .mjs, .cjs, .ts, .json) ข้ามไฟล์เอกสาร .md
                 string fnDiffFiles = RunHiddenCmd(string.Format("git log --since=\"@{0}\" --name-only --format=\"\" -- functions", fnLastDeploy), null);
                 string combinedFnText = gitStatusOutput + "\n" + fnDiffFiles;
                 string[] fnCheckLines = combinedFnText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
@@ -490,9 +489,18 @@ namespace DHNotebook.DeployCenter
                 foreach (var line in fnCheckLines)
                 {
                     string f = line.Trim();
-                    if (f.StartsWith("M ") || f.StartsWith("??") || f.StartsWith("A ")) f = f.Substring(2).Trim();
+                    if (f.StartsWith("M ") || f.StartsWith("??") || f.StartsWith("A ") || f.StartsWith("D ")) f = f.Substring(2).Trim();
+                    f = f.Trim('"');
                     if (f.StartsWith("functions/", StringComparison.OrdinalIgnoreCase))
                     {
+                        bool isFnCodeFile = f.EndsWith(".js", StringComparison.OrdinalIgnoreCase)
+                            || f.EndsWith(".mjs", StringComparison.OrdinalIgnoreCase)
+                            || f.EndsWith(".cjs", StringComparison.OrdinalIgnoreCase)
+                            || f.EndsWith(".ts", StringComparison.OrdinalIgnoreCase)
+                            || f.EndsWith(".json", StringComparison.OrdinalIgnoreCase);
+                        if (!isFnCodeFile) continue;
+
+                        fnCodeChanged = true;
                         string name = DetectSpecificFunctionName(f);
                         if (!string.IsNullOrEmpty(name) && !fnTargets.Contains(name))
                         {
@@ -501,7 +509,7 @@ namespace DHNotebook.DeployCenter
                     }
                 }
 
-                if (fnUncommitted > 0 || fnLastCommit > fnLastDeploy)
+                if (fnCodeChanged)
                 {
                     deployItems[3].HasChanges = true;
                     if (fnTargets.Count > 0)

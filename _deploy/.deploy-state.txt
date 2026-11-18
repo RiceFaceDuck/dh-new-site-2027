@@ -3,6 +3,6 @@
 dh-backoffice-react=1794987413
 dh-frontend=1794987374
 dh-staff-app=1794987429
-functions=1794300053
+functions=1794987350
 rules=1794987446
 indexes=1793251320
