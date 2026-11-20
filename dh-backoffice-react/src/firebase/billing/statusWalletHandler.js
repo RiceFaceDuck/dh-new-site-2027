@@ -127,6 +127,7 @@ export const handlePointsEarned = async (
         }
         
         if (earnedPoints > 0) {
+            const resolvedOrderId = updates.orderId || orderId;
             await adjustUserCreditWithTransaction(
                 transaction,
                 userSnap.id,
@@ -134,7 +135,7 @@ export const handlePointsEarned = async (
                 'earn',
                 'ได้รับจากการซื้อสินค้า (ยืนยันชำระเงิน)',
                 actualActorUid,
-                `TXP_${orderId}`,
+                `TXP_${resolvedOrderId}`,
                 creditPreloadSnaps
             );
             updates.earnedPoints = earnedPoints; 

@@ -1,8 +1,86 @@
-import { useMemo, useCallback } from 'react';
-import { calculateVat } from 'dh-shared';
+import { useMemo, useCallback, useState, useEffect } from 'react';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../../../../firebase/config';
+import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { unwrapCreditConfig } from 'dh-shared/src/utils/creditUtils';
+import { calculateEarnedPoints, fetchAndCacheRoleTiers, setCachedTiers } from '../../../../firebase/credit/creditFormatService';
+
+const CREDIT_CONFIG_CACHE_KEY = 'dh_pos_credit_config_cache_v1';
+const ROLE_TIERS_CACHE_KEY = 'dh_pos_role_tiers_cache_v1';
+const CREDIT_CACHE_TIME_KEY = 'dh_pos_credit_cache_time_v1';
+const CREDIT_CACHE_TTL = 10 * 60 * 1000; // 10 minutes
+let memoryCreditConfig = null;
+let memoryTiersLoaded = false;
+
 const sanitizeNum = (val) => { const parsed = Number(val); return isNaN(parsed) ? 0 : parsed; };
 
 export function usePosPayment({ activeTab, activePromotions, activeFreebies, currentCustomerType }) {
+    const [creditConfig, setCreditConfig] = useState(() => memoryCreditConfig);
+    const [tiersLoaded, setTiersLoaded] = useState(() => memoryTiersLoaded);
+
+    // ⚡ Read-only Session & Memory Cache for Credit Config + Role Tiers (Cold Start +2 reads, Warm Cache 0 reads)
+    useEffect(() => {
+        if (memoryCreditConfig && memoryTiersLoaded) return;
+        let isMounted = true;
+
+        const hydrateCreditConfigs = async () => {
+            const now = Date.now();
+            try {
+                const cachedTime = sessionStorage.getItem(CREDIT_CACHE_TIME_KEY);
+                if (cachedTime && (now - Number(cachedTime)) < CREDIT_CACHE_TTL) {
+                    const rawCfg = sessionStorage.getItem(CREDIT_CONFIG_CACHE_KEY);
+                    const rawTiers = sessionStorage.getItem(ROLE_TIERS_CACHE_KEY);
+                    if (rawCfg) {
+                        const parsedCfg = JSON.parse(rawCfg);
+                        memoryCreditConfig = parsedCfg;
+                        if (isMounted) setCreditConfig(parsedCfg);
+                    }
+                    if (rawTiers) {
+                        const parsedTiers = JSON.parse(rawTiers);
+                        if (Array.isArray(parsedTiers) && parsedTiers.length > 0) {
+                            setCachedTiers(parsedTiers);
+                        }
+                        memoryTiersLoaded = true;
+                        if (isMounted) setTiersLoaded(true);
+                    }
+                    if (rawCfg) return;
+                }
+            } catch (e) {
+                console.warn('[usePosPayment] SessionStorage credit cache read warning:', e);
+            }
+
+            try {
+                const [cfgSnap, tiers] = await Promise.all([
+                    getDoc(doc(db, getCollectionPath('settings'), 'credit_config')),
+                    fetchAndCacheRoleTiers()
+                ]);
+                const resolvedCfg = cfgSnap.exists() ? unwrapCreditConfig(cfgSnap.data()) : { earningRate: 100 };
+                memoryCreditConfig = resolvedCfg;
+                memoryTiersLoaded = true;
+
+                try {
+                    sessionStorage.setItem(CREDIT_CONFIG_CACHE_KEY, JSON.stringify(resolvedCfg));
+                    if (Array.isArray(tiers)) {
+                        sessionStorage.setItem(ROLE_TIERS_CACHE_KEY, JSON.stringify(tiers));
+                    }
+                    sessionStorage.setItem(CREDIT_CACHE_TIME_KEY, String(Date.now()));
+                } catch (storageErr) {
+                    console.warn('[usePosPayment] SessionStorage credit cache write warning:', storageErr);
+                }
+
+                if (isMounted) {
+                    setCreditConfig(resolvedCfg);
+                    setTiersLoaded(true);
+                }
+            } catch (err) {
+                console.warn('[usePosPayment] Could not load credit_config/role_tier_config:', err);
+            }
+        };
+
+        hydrateCreditConfigs();
+        return () => { isMounted = false; };
+    }, []);
+
     const itemSubTotal = activeTab?.items?.reduce((sum, item) => sum + ((sanitizeNum(item.price) - sanitizeNum(item.discount)) * Math.max(1, sanitizeNum(item.qty))), 0) || 0;
     const itemTotalQty = activeTab?.items?.reduce((sum, item) => sum + Math.max(1, sanitizeNum(item.qty)), 0) || 0;
     
@@ -154,7 +232,16 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
     }
     
     const remainingToPay = Math.max(0, Math.round((netTotal - walletUsed) * 100) / 100);
-    const earnedPoints = activeTab?.customer ? Math.floor(remainingToPay / 100) : 0;
+    const earnedPoints = useMemo(() => {
+        if (!activeTab?.customer || activeTab.customer.uid === 'WALK-IN' || remainingToPay <= 0) return 0;
+        const userTotalAccumulated = sanitizeNum(
+            activeTab.customer.totalAccumulatedPoints ?? activeTab.customer.creditPoints ?? 0
+        );
+        if (creditConfig) {
+            return calculateEarnedPoints(remainingToPay, creditConfig, activeTab.items || [], userTotalAccumulated);
+        }
+        return Math.floor(remainingToPay / 100);
+    }, [activeTab?.customer, activeTab?.items, remainingToPay, creditConfig, tiersLoaded]);
     const changeAmount = (activeTab?.paymentMethod === 'Cash' && activeTab?.cashReceived) 
         ? Math.round((sanitizeNum(activeTab.cashReceived) - remainingToPay) * 100) / 100 : 0;
 

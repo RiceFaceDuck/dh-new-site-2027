@@ -135,11 +135,29 @@ export const billingStatusTransaction = {
           }
 
           const currentOrderId = orderData.orderId || orderId || '';
+          const needsNewOrderId = !/^DH-\d{2}-\d+/.test(currentOrderId);
+          const willUpgradeOrderId = needsNewOrderId && (normalizedNewStatus === 'paid' || normalizedNewStatus === 'approved' || normalizedNewStatus === 'completed');
+
+          // 🔢 Pre-read counter during READ phase so TXP_{resolvedOrderId} uses official DH-YY-XXXX ID
+          let counterRef = null;
+          let nextSeqNumber = null;
+          let counterYearStr = null;
+          let resolvedOrderIdForCredit = currentOrderId || orderId;
+          if (willUpgradeOrderId) {
+              counterYearStr = new Date().getFullYear().toString();
+              counterRef = doc(db, getCollectionPath('counters'), `receipt_sequence_global`);
+              const counterSnap = await transaction.get(counterRef);
+              nextSeqNumber = counterSnap.exists() ? ((counterSnap.data()[counterYearStr] || 0) + 1) : 1;
+              const seqStr = String(nextSeqNumber);
+              const paddedSeq = seqStr.length >= 5 ? seqStr : seqStr.padStart(4, '0');
+              resolvedOrderIdForCredit = `DH-${counterYearStr.slice(2)}-${paddedSeq}`;
+          }
           
           let creditPreloadSnaps = null;
           const totalSaleAmount = Number(orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || orderData.finalPayable || 0);
           const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
-          const amountForPoints = totalSaleAmount - walletUsed;
+          const amountForPoints = Math.max(0, totalSaleAmount - walletUsed);
+          const shouldPreloadEarn = isConfirmingPayment && (amountForPoints > 0 || Number(orderData.pendingCredits || 0) > 0);
           
           let earnedPoints = Number(orderData.pendingCredits || 0);
           if (earnedPoints <= 0 && amountForPoints > 0) {
@@ -158,9 +176,9 @@ export const billingStatusTransaction = {
               let typeForPreload = null;
               let refForPreload = null;
 
-              if (isConfirmingPayment && earnedPoints > 0) {
+              if (shouldPreloadEarn) {
                   typeForPreload = 'earn';
-                  refForPreload = `TXP_${currentOrderId || orderId}`;
+                  refForPreload = `TXP_${resolvedOrderIdForCredit}`;
               } else if (isCancelling && clawbackPoints > 0) {
                   typeForPreload = 'clawback';
                   refForPreload = `CB_${currentOrderId || orderId}`;
@@ -189,21 +207,11 @@ export const billingStatusTransaction = {
             updatedAt: serverTimestamp() 
           };
 
-          const needsNewOrderId = !/^DH-\d{2}-\d+/.test(currentOrderId);
-
-          if (needsNewOrderId && (normalizedNewStatus === 'paid' || normalizedNewStatus === 'approved' || normalizedNewStatus === 'completed')) {
-             const terminalId = 'O1'; // Default fallback 
-             const yearStr = new Date().getFullYear().toString();
-             const counterRef = doc(db, getCollectionPath('counters'), `receipt_sequence_global`);
-             const counterSnap = await transaction.get(counterRef);
-             let currentSeq = 1;
-             if (counterSnap.exists()) currentSeq = (counterSnap.data()[yearStr] || 0) + 1;
-             
-             transaction.set(counterRef, { [yearStr]: currentSeq, updatedAt: serverTimestamp() }, { merge: true });
-             const seqStr = String(currentSeq);
-             const paddedSeq = seqStr.length >= 5 ? seqStr : seqStr.padStart(4, '0');
-             updates.orderId = `DH-${yearStr.slice(2)}-${paddedSeq}`;
+          if (willUpgradeOrderId && counterRef && nextSeqNumber !== null) {
+             transaction.set(counterRef, { [counterYearStr]: nextSeqNumber, updatedAt: serverTimestamp() }, { merge: true });
+             updates.orderId = resolvedOrderIdForCredit;
           }
+
 
           if (isConfirmingPayment) {
              const canBypassBuffer = Boolean(orderData?.canBypassBuffer || orderData?.canBypassBufferStock || orderData?.actorName === 'POS');
