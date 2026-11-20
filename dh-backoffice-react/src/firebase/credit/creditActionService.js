@@ -158,14 +158,14 @@ export const getCreditPreloadRefs = (uid, type, referenceId = null) => {
     const settingsRef = doc(db, getCollectionPath('settings'), 'credit_config');
     const usersColPathTx = getUsersPath();
     const userRef = doc(db, usersColPathTx, uid);
-    const walletRef = doc(db, usersColPathTx, uid, 'wallet', 'default');
+    // ⚡ Phase 4 Quota Optimization: Legacy wallet/default removed (0 readers across monorepo)
     let txRef = null;
     if (referenceId) {
       txRef = doc(db, getCollectionPath('credit_transactions'), `ADJ_${type}_${referenceId}`);
     }
     const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), uid);
     
-    return { settingsRef, userRef, walletRef, txRef, activePartnerRef };
+    return { settingsRef, userRef, txRef, activePartnerRef };
 };
 
 export const adjustUserCreditWithTransaction = async (transaction, uid, amount, type, note, actorUid, referenceId = null, preloadedSnaps = null, options = {}) => {
@@ -186,7 +186,7 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
     const usersColPathTx = getUsersPath();
     const userRef = doc(db, usersColPathTx, uid);
     // ⚠️ Legacy Wallet (Deprecated) - คงไว้เพื่อ Sync ข้อมูลเก่าเท่านั้น ห้ามใช้อ่านเป็น Source of truth
-    const walletRef = doc(db, usersColPathTx, uid, 'wallet', 'default');
+    // ⚡ Phase 4 Quota Optimization: Legacy wallet/default removed (0 readers across monorepo)
     const activePartnerRef = doc(db, getCollectionPath('ActivePartners'), uid);
     
     let txRef;
@@ -197,13 +197,13 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
       txRef = doc(collection(db, getCollectionPath(COLLECTIONS.CREDIT_TRANSACTIONS)));
     }
 
-    let txSnap, settingsSnap, userSnap, walletSnap, activePartnerSnap;
+    let txSnap, settingsSnap, userSnap, activePartnerSnap;
     
     if (preloadedSnaps) {
        txSnap = preloadedSnaps.txSnap;
        settingsSnap = preloadedSnaps.settingsSnap;
        userSnap = preloadedSnaps.userSnap;
-       walletSnap = preloadedSnaps.walletSnap;
+       // walletSnap removed (Legacy wallet/default deprecated)
        activePartnerSnap = preloadedSnaps.activePartnerSnap;
        
        if (referenceId && txSnap && txSnap.exists()) {
@@ -214,10 +214,10 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
          txSnap = await transaction.get(txRef);
          if (txSnap.exists()) throw new Error("รายการอ้างอิงนี้ถูกดำเนินการไปแล้ว (Duplicate Transaction Prevention)");
        }
-       [settingsSnap, userSnap, walletSnap, activePartnerSnap] = await Promise.all([
+       [settingsSnap, userSnap, activePartnerSnap] = await Promise.all([
          transaction.get(settingsRef),
          transaction.get(userRef),
-         transaction.get(walletRef),
+         // transaction.get(walletRef) removed (Phase 4 Quota Optimization)
          transaction.get(activePartnerRef)
        ]);
     }
@@ -233,9 +233,7 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
     // ✨ Canonical Source of Truth คือ creditPoints บน userDoc เท่านั้น!
     let currentPoints = Number(userData.creditPoints || 0);
     let totalAccumulated = Number(userData.totalAccumulatedPoints || 0);
-    if (walletSnap.exists()) {
-      totalAccumulated = Math.max(totalAccumulated, Number(walletSnap.data().totalAccumulated) || 0);
-    }
+    // totalAccumulated อ่านตรงจาก userData.totalAccumulatedPoints (Canonical Source of Truth)
 
     const safeCurrentPoints = Math.round(currentPoints * 100) / 100;
     const sysMax = Number(ledger.systemPoolMax) || 1000000;
@@ -279,11 +277,7 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
       updatedAt: serverTimestamp()
     }, { merge: true });
 
-    transaction.set(walletRef, {
-      balance: newPointsBalance,
-      totalAccumulated: newTotalAccumulated,
-      updatedAt: serverTimestamp()
-    }, { merge: true });
+    // ⚡ Phase 4 Quota Optimization: Legacy wallet/default write removed (0 readers across monorepo)
 
     const syncPayload = {
       creditPoints: newPointsBalance,  

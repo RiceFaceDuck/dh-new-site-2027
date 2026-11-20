@@ -127,14 +127,14 @@ export const returnActionService = {
         if (hasCustomer && refundAmount > 0) {
           const { getCreditPreloadRefs } = await import('../credit/creditActionService');
           const creditRefs = getCreditPreloadRefs(payload.customerUid, 'clawback', `RTN_${payload.returnId}`);
-          const [txSnap, settingsSnap, userSnap, walletSnap, activePartnerSnap] = await Promise.all([
+          const [txSnap, settingsSnap, userSnap, activePartnerSnap] = await Promise.all([
             transaction.get(creditRefs.txRef),
             transaction.get(creditRefs.settingsRef),
             transaction.get(creditRefs.userRef),
-            transaction.get(creditRefs.walletRef),
+            // creditRefs.walletRef removed (Phase 4 Quota Optimization)
             transaction.get(creditRefs.activePartnerRef)
           ]);
-          creditPreloadSnaps = { txSnap, settingsSnap, userSnap, walletSnap, activePartnerSnap };
+          creditPreloadSnaps = { txSnap, settingsSnap, userSnap, activePartnerSnap };
 
           // 🛡️ คำนวณแต้มคืนตามสัดส่วนที่เคยได้รับจริงจากบิล หรือคำนวณตาม Tier Multiplier / SKU Bonus
           const orderData = orderSnap?.exists() ? orderSnap.data() : null;

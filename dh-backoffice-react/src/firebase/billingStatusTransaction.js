@@ -186,14 +186,14 @@ export const billingStatusTransaction = {
 
               if (typeForPreload) {
                   const creditRefs = getCreditPreloadRefs(customerUid, typeForPreload, refForPreload);
-                  const [txSnap, settingsSnap2, userSnap2, walletSnap, activePartnerSnap] = await Promise.all([
+                  const [txSnap, settingsSnap2, userSnap2, activePartnerSnap] = await Promise.all([
                       creditRefs.txRef ? transaction.get(creditRefs.txRef) : Promise.resolve(null),
-                      transaction.get(creditRefs.settingsRef),
-                      transaction.get(creditRefs.userRef),
-                      transaction.get(creditRefs.walletRef),
+                      settingsSnap ? Promise.resolve(settingsSnap) : transaction.get(creditRefs.settingsRef),
+                      userSnap ? Promise.resolve(userSnap) : transaction.get(creditRefs.userRef),
+                      // creditRefs.walletRef removed (Phase 4 Quota Optimization)
                       transaction.get(creditRefs.activePartnerRef)
                   ]);
-                  creditPreloadSnaps = { txSnap, settingsSnap: settingsSnap2, userSnap: userSnap2, walletSnap, activePartnerSnap };
+                  creditPreloadSnaps = { txSnap, settingsSnap: settingsSnap2, userSnap: userSnap2, activePartnerSnap };
               }
           }
 

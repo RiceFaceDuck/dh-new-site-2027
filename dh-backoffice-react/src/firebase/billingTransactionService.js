@@ -73,17 +73,17 @@ async function fetchDependencies(transaction, orderData, statusLower) {
   return { productSnaps, productRefs, settingsSnap, userSnap, counterSnap, terminalId, yearStr, customerUid, promoFreebieSnaps };
 }
 
-async function fetchCreditPreloads(transaction, customerUid, finalOrderId, statusLower) {
+async function fetchCreditPreloads(transaction, customerUid, finalOrderId, statusLower, existingUserSnap = null) {
   if (customerUid && customerUid !== 'WALK-IN' && (statusLower === 'paid' || statusLower === 'approved')) {
     const creditRefs = getCreditPreloadRefs(customerUid, 'earn', `TXP_${finalOrderId}`);
     const snaps = await Promise.all([
       creditRefs.txRef ? transaction.get(creditRefs.txRef) : Promise.resolve(null),
       transaction.get(creditRefs.settingsRef),
-      transaction.get(creditRefs.userRef),
-      transaction.get(creditRefs.walletRef),
+      existingUserSnap ? Promise.resolve(existingUserSnap) : transaction.get(creditRefs.userRef),
+      // creditRefs.walletRef removed (Phase 4 Quota Optimization)
       transaction.get(creditRefs.activePartnerRef)
     ]);
-    return { txSnap: snaps[0], settingsSnap: snaps[1], userSnap: snaps[2], walletSnap: snaps[3], activePartnerSnap: snaps[4] };
+    return { txSnap: snaps[0], settingsSnap: snaps[1], userSnap: snaps[2], activePartnerSnap: snaps[3] };
   }
   return null;
 }
@@ -261,7 +261,7 @@ export const billingTransactionService = {
             finalOrderId = `DH-TEMP-${rand4}`;
           }
 
-          const creditPreloadSnaps = await fetchCreditPreloads(transaction, customerUid, finalOrderId, statusLower);
+          const creditPreloadSnaps = await fetchCreditPreloads(transaction, customerUid, finalOrderId, statusLower, userSnap);
           
           // 3. Validate & Calculate Logic
           const defaultBuffer = settingsSnap.exists() ? (settingsSnap.data().defaultBufferStock ?? 2) : 2;

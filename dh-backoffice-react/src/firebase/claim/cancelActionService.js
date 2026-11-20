@@ -132,14 +132,14 @@ export const cancelActionService = {
            if (pointsToRestore > 0) {
              const { getCreditPreloadRefs } = await import('../credit/creditActionService');
              const creditRefs = getCreditPreloadRefs(payload.customerUid, 'deposit', `CB_RTN_${payload.returnId || Date.now()}`);
-             const [txSnap, settingsSnap, userSnapCredit, walletSnap, activePartnerSnap] = await Promise.all([
+             const [txSnap, settingsSnap, userSnapCredit, activePartnerSnap] = await Promise.all([
                transaction.get(creditRefs.txRef),
                transaction.get(creditRefs.settingsRef),
-               transaction.get(creditRefs.userRef),
-               transaction.get(creditRefs.walletRef),
+               userSnap ? Promise.resolve(userSnap) : transaction.get(creditRefs.userRef),
+               // creditRefs.walletRef removed (Phase 4 Quota Optimization)
                transaction.get(creditRefs.activePartnerRef)
              ]);
-             creditPreloadSnaps = { txSnap, settingsSnap, userSnap: userSnapCredit, walletSnap, activePartnerSnap };
+             creditPreloadSnaps = { txSnap, settingsSnap, userSnap: userSnapCredit, activePartnerSnap };
            }
         }
 

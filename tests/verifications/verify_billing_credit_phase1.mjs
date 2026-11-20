@@ -43,11 +43,10 @@ assert.ok(
 );
 console.log('✅ 2. isStaff PERMISSION_DENIED guard on ActivePartners verified');
 
-// 3. totalAccumulatedPoints reads canonical userData.totalAccumulatedPoints with Math.max fallback
+// 3. totalAccumulatedPoints reads canonical userData.totalAccumulatedPoints (Phase 4 removed legacy wallet/default)
 assert.ok(
-  creditActionSrc.includes('let totalAccumulated = Number(userData.totalAccumulatedPoints || 0);') &&
-  creditActionSrc.includes('totalAccumulated = Math.max(totalAccumulated, Number(walletSnap.data().totalAccumulated) || 0);'),
-  'totalAccumulated must read canonical userData.totalAccumulatedPoints and take Math.max with legacy wallet'
+  creditActionSrc.includes('let totalAccumulated = Number(userData.totalAccumulatedPoints || 0);'),
+  'totalAccumulated must read canonical userData.totalAccumulatedPoints'
 );
 console.log('✅ 3. totalAccumulatedPoints non-reset guard verified');
 
