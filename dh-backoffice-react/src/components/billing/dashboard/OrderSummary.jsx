@@ -17,6 +17,7 @@ export default function OrderSummary({ selectedOrder, isCancelled, paymentStat, 
     const paymentFee = Number(selectedOrder.paymentFee || selectedOrder.chargeAmount || selectedOrder.feeAmount || selectedOrder.summary?.paymentFee || 0);
     const walletUsed = Number(selectedOrder.walletUsed || selectedOrder.walletUsedAmount || selectedOrder.summary?.walletUsed || selectedOrder.calculationLog?.usedWallet || 0);
     const pointsUsed = Number(selectedOrder.pointsUsed || selectedOrder.summary?.pointsUsed || selectedOrder.pointsDiscount || selectedOrder.calculationLog?.pointsUsed || 0);
+    const earnedPoints = Number(selectedOrder.earnedPoints || 0);
     const netTotal = canonical.netTotal;
 
     // 🟢 [FALLBACK CALCULATION] If discount is 0 but subTotal > netTotal, calculate actual discount
@@ -71,6 +72,7 @@ export default function OrderSummary({ selectedOrder, isCancelled, paymentStat, 
                 vat={vat}
                 walletUsed={walletUsed}
                 pointsUsed={pointsUsed}
+                earnedPoints={earnedPoints}
                 netTotal={netTotal}
                 isCancelled={isCancelled}
                 paymentStat={pStat}

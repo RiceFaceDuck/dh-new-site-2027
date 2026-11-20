@@ -264,7 +264,7 @@ export const returnActionService = {
           financialDelta: {
             netTotal: -refundAmount,
             walletDelta: refundAmount,
-            creditPointsDelta: 0
+            creditPointsDelta: clawbackPoints > 0 ? -clawbackPoints : 0
           },
           tags: {
             category: 'RETURN',

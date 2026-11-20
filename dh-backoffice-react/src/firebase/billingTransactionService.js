@@ -238,6 +238,7 @@ export const billingTransactionService = {
       let newDocId = null;
       let successfulUpdates = [];
       let logsToPost = [];
+      let updatedCreditPoints = null;
       const statusLower = (orderData.orderStatus || orderData.status || '').toLowerCase();
       const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid || orderData.customer?.id || null;
 
@@ -459,7 +460,8 @@ export const billingTransactionService = {
             transaction.update(userRef, customerUpdates);
 
             if (earnedPoints > 0 && isPaidOrApproved) {
-              await adjustUserCreditWithTransaction(transaction, customerUid, earnedPoints, 'earn', 'ได้รับจากการซื้อสินค้า', actorUid, `TXP_${finalOrderId}`, creditPreloadSnaps);
+              const creditRes = await adjustUserCreditWithTransaction(transaction, customerUid, earnedPoints, 'earn', 'ได้รับจากการซื้อสินค้า', actorUid, `TXP_${finalOrderId}`, creditPreloadSnaps);
+              if (creditRes && typeof creditRes.newBalance === 'number') updatedCreditPoints = creditRes.newBalance;
             }
           }
         });
@@ -499,7 +501,8 @@ export const billingTransactionService = {
           id: customerUid,
           phone: orderData.customer?.phone || orderData.customerInfo?.phone || '',
           name: orderData.customer?.accountName || orderData.customer?.name || '',
-          lastOrderDate: Date.now()
+          lastOrderDate: Date.now(),
+          ...(updatedCreditPoints !== null ? { creditPoints: updatedCreditPoints, points: updatedCreditPoints } : {})
         };
         syncCustomerToDirectoryChunk(customerPayload, 'upsert').catch(e => 
           console.warn("[CustomerSync] Background customer last order sync warning:", e)

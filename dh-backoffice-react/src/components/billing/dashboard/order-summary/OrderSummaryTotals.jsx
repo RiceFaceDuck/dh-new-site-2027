@@ -19,6 +19,7 @@ export default function OrderSummaryTotals({
     vat,
     walletUsed = 0,
     pointsUsed = 0,
+    earnedPoints = 0,
     netTotal,
     isCancelled,
     paymentStat,
@@ -96,6 +97,13 @@ export default function OrderSummaryTotals({
                             </span>
                         </div>
                     </div>
+
+                    {!isCancelled && earnedPoints > 0 && (
+                        <div className="flex items-center justify-between text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-xs">
+                            <span>แต้มสะสมที่ได้รับ</span>
+                            <span>+{earnedPoints.toLocaleString('th-TH', { maximumFractionDigits: 2 })} Pts</span>
+                        </div>
+                    )}
 
                     {isCancelled ? (
                         <div className="text-center text-rose-600 font-black text-[11px] border border-rose-500/30 bg-rose-500/10 py-1.5 rounded-xs flex items-center justify-center gap-1 dh-glow">
