@@ -168,7 +168,7 @@ export const getCreditPreloadRefs = (uid, type, referenceId = null) => {
     return { settingsRef, userRef, walletRef, txRef, activePartnerRef };
 };
 
-export const adjustUserCreditWithTransaction = async (transaction, uid, amount, type, note, actorUid, referenceId = null, preloadedSnaps = null) => {
+export const adjustUserCreditWithTransaction = async (transaction, uid, amount, type, note, actorUid, referenceId = null, preloadedSnaps = null, options = {}) => {
   try {
     if (!uid) throw new Error("ระบบปฏิเสธการทำรายการ: ไม่พบรหัสผู้ใช้งาน (UID Missing)");
 
@@ -232,9 +232,9 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
 
     // ✨ Canonical Source of Truth คือ creditPoints บน userDoc เท่านั้น!
     let currentPoints = Number(userData.creditPoints || 0);
-    let totalAccumulated = 0;
+    let totalAccumulated = Number(userData.totalAccumulatedPoints || 0);
     if (walletSnap.exists()) {
-      totalAccumulated = Number(walletSnap.data().totalAccumulated) || 0;
+      totalAccumulated = Math.max(totalAccumulated, Number(walletSnap.data().totalAccumulated) || 0);
     }
 
     const safeCurrentPoints = Math.round(currentPoints * 100) / 100;
@@ -292,10 +292,10 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
     };
 
     // 🛡️ Data Healing: หากเอกสารยังไม่มี accountId หรือ customerCode ให้บันทึกรหัสมาตรฐานลงไปพร้อมกัน
-    if (userData && !userData.accountId) {
+    if (options?.allowIdentityHeal && userData && !userData.accountId) {
       syncPayload.accountId = userData.customerCode || uid.substring(0, 8).toUpperCase();
     }
-    if (userData && !userData.customerCode) {
+    if (options?.allowIdentityHeal && userData && !userData.customerCode) {
       syncPayload.customerCode = syncPayload.accountId || uid.substring(0, 8).toUpperCase();
     }
 
@@ -303,7 +303,7 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
 
     // ✨ NEW FIX: Sync points to ActivePartners to prevent denormalization issues
     if (activePartnerSnap.exists()) {
-      transaction.set(activePartnerRef, { points: newPointsBalance, isActive: true, updatedAt: serverTimestamp() }, { merge: true });
+      transaction.set(activePartnerRef, { points: newPointsBalance, updatedAt: serverTimestamp() }, { merge: true });
     }
 
     const userEmail = userData.email || 'Migrated User';
@@ -355,7 +355,7 @@ export const adjustUserCredit = async (inputUid, amount, type, note, actorUid, r
     let transactionId = null;
     let newBalance = 0;
     await runTransaction(db, async (transaction) => {
-      const result = await adjustUserCreditWithTransaction(transaction, uid, amount, type, note, actorUid, referenceId);
+      const result = await adjustUserCreditWithTransaction(transaction, uid, amount, type, note, actorUid, referenceId, null, { allowIdentityHeal: true });
       transactionId = result.transactionId;
       newBalance = result.newBalance;
     });

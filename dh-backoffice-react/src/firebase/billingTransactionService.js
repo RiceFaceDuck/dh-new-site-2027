@@ -74,7 +74,7 @@ async function fetchDependencies(transaction, orderData, statusLower) {
 }
 
 async function fetchCreditPreloads(transaction, customerUid, finalOrderId, statusLower) {
-  if (customerUid && customerUid !== 'WALK-IN' && statusLower === 'paid') {
+  if (customerUid && customerUid !== 'WALK-IN' && (statusLower === 'paid' || statusLower === 'approved')) {
     const creditRefs = getCreditPreloadRefs(customerUid, 'earn', `TXP_${finalOrderId}`);
     const snaps = await Promise.all([
       creditRefs.txRef ? transaction.get(creditRefs.txRef) : Promise.resolve(null),
@@ -193,7 +193,11 @@ function calculateWalletAndPoints(orderData, userSnap, finalSecureNetTotal, stat
   walletToUse = Math.min(walletToUse, finalSecureNetTotal);
   
   // 1. ดึงแต้มจากระบบตะกร้าออนไลน์ก่อน ถ้ามีการคำนวณไว้
+  const amountForPoints = Math.max(0, finalSecureNetTotal - walletToUse);
   let earnedPoints = Number(orderData.pendingCredits || 0);
+  if (earnedPoints >= amountForPoints && amountForPoints > 0) {
+    earnedPoints = 0;
+  }
   
   if (userSnap && userSnap.exists()) {
     const currentWallet = Number(userSnap.data().walletBalance || 0);
@@ -202,8 +206,8 @@ function calculateWalletAndPoints(orderData, userSnap, finalSecureNetTotal, stat
     }
     
     // 2. ถ้าไม่มี ค่อยคำนวณเอง (กรณีมาจาก POS สร้างบิลเอง)
-    if (statusLower === 'paid' && earnedPoints <= 0) {
-      const amountForPoints = finalSecureNetTotal - walletToUse;
+    if ((statusLower === 'paid' || statusLower === 'approved') && earnedPoints <= 0) {
+      // ใช้ amountForPoints จากด้านบน (Math.max(0, finalSecureNetTotal - walletToUse))
       if (amountForPoints > 0) {
         const settingsSnap = creditPreloadSnaps?.settingsSnap;
         if (settingsSnap && settingsSnap.exists()) {
