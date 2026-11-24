@@ -99,7 +99,10 @@ export default function OrderSummaryTotals({
                     </div>
 
                     {!isCancelled && earnedPoints > 0 && (
-                        <div className="flex items-center justify-between text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-xs">
+                        <div
+                            className="flex items-center justify-between text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-1 rounded-xs cursor-help"
+                            title="คำนวณจากยอดชำระสุทธิหลังหักส่วนลดและ Wallet ตามอัตรา Credit Config และระดับสมาชิก ณ วันเปิดบิล"
+                        >
                             <span>แต้มสะสมที่ได้รับ</span>
                             <span>+{earnedPoints.toLocaleString('th-TH', { maximumFractionDigits: 2 })} Pts</span>
                         </div>

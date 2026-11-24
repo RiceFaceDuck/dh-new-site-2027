@@ -5,7 +5,7 @@ import PaymentMethods from './payment/PaymentMethods';
 import PaymentActions from './payment/PaymentActions';
 
 export default function PaymentPanel({
-    itemSubTotal, manualDiscount, promoDiscount, otherFeeAmount, shippingFee, vatOnShipping, vatAmount, vatType, walletUsed, remainingToPay, earnedPoints,
+    itemSubTotal, manualDiscount, promoDiscount, otherFeeAmount, shippingFee, vatOnShipping, vatAmount, vatType, walletUsed, remainingToPay, earnedPoints, pointsBreakdown,
     activeTab, updateActiveTab, changeAmount, handleFileUpload, setPreviewSlip, handleCheckout, isProcessing, hasOutOfStock, setShowPreview, convertToThaiBahtText,
     isUploadingSlip,
     isCollapsed, setIsCollapsed, isLocked, setIsLocked,
@@ -141,7 +141,7 @@ export default function PaymentPanel({
                 <BillSummary 
                     itemSubTotal={itemSubTotal} manualDiscount={manualDiscount} promoDiscount={promoDiscount} 
                     otherFeeAmount={otherFeeAmount} shippingFee={shippingFee} vatAmount={vatAmount} 
-                    walletUsed={walletUsed} remainingToPay={remainingToPay} earnedPoints={earnedPoints} 
+                    walletUsed={walletUsed} remainingToPay={remainingToPay} earnedPoints={earnedPoints} pointsBreakdown={pointsBreakdown} 
                     activeTab={activeTab} setShowPreview={setShowPreview} convertToThaiBahtText={convertToThaiBahtText} 
                     onOpenVatModal={onOpenVatModal} onOpenShippingModal={onOpenShippingModal}
                 />

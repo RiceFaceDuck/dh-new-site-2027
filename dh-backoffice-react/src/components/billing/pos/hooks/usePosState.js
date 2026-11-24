@@ -572,7 +572,7 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
         shippingFee: paymentState.shippingFee, otherFeeAmount: paymentState.otherFeeAmount, 
         vatAmount: paymentState.vatAmount, netTotal: paymentState.netTotal,
         walletUsed: paymentState.walletUsed, remainingToPay: paymentState.remainingToPay, 
-        earnedPoints: paymentState.earnedPoints, changeAmount: paymentState.changeAmount, 
+        earnedPoints: paymentState.earnedPoints, pointsBreakdown: paymentState.pointsBreakdown, changeAmount: paymentState.changeAmount, 
         eligibleFreebies: paymentState.eligibleFreebies, 
         appliedPromoDetails: paymentState.appliedPromoDetails, 
         validPromotions: paymentState.validPromotions

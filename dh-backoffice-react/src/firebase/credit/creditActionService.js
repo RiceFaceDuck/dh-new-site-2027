@@ -259,6 +259,10 @@ export const adjustUserCreditWithTransaction = async (transaction, uid, amount, 
       }
       newPointsBalance -= safeAmount;
       newTotalAllocated = Math.max(0, newTotalAllocated - safeAmount);
+      if (type === 'clawback') {
+        // 🛡️ Anti-Tier-Farming & Return Reversal Parity: ดึงยอดสะสม Tier คืนเฉพาะกรณี clawback (ยกเลิกบิล/คืนสินค้า)
+        newTotalAccumulated = Math.max(0, newTotalAccumulated - safeAmount);
+      }
     } else {
       throw new Error("ประเภทการปรับปรุงเครดิตไม่ถูกต้องในระบบ");
     }

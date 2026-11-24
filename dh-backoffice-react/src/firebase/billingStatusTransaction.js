@@ -6,9 +6,11 @@ import { handleSalesStatsUpdate } from './billing/statusSalesHandler';
 import { handleWalletRefundAndClawback, handlePointsEarned, handleWalletDeduction } from './billing/statusWalletHandler';
 import { handlePromoFreebieReversal } from './billing/statusPromoHandler';
 import { getCreditPreloadRefs } from './credit/creditActionService';
+import { fetchAndCacheRoleTiers } from './credit/creditFormatService';
 import { withToastError } from '../utils/safeAsync';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { syncRecentOrdersCatalog } from './orderSyncService';
+import { syncCustomerToDirectoryChunk } from '../pages/Customers/services/customerCacheService';
 
 const COLLECTION_NAME = getCollectionPath('orders');
 
@@ -17,6 +19,11 @@ export const billingStatusTransaction = {
     return withToastError((async () => {
       const actualActorUid = actorUid || (typeof currentStatus === 'string' && currentStatus.length > 15 ? currentStatus : 'system');
       const normalizedNewStatus = (newStatus || '').toLowerCase();
+
+      // ⚡ Preload Role Tier Config into memory cache (0 reads if already cached)
+      if (['paid', 'approved', 'completed'].includes(normalizedNewStatus)) {
+        await fetchAndCacheRoleTiers().catch(() => {});
+      }
 
       // 🌟 ดึง Todos ที่เกี่ยวข้องกับบิลนี้ "ก่อน" เข้า Transaction
       let pendingTodoRefs = [];
@@ -102,7 +109,7 @@ export const billingStatusTransaction = {
                   productSnaps.push(await transaction.get(prod.ref));
               }
 
-              const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
+              const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid || orderData.customer?.id || orderData.userId || orderData.customerId || null;
               if (customerUid && customerUid !== 'WALK-IN') {
                   userRef = doc(db, getCollectionPath('users'), customerUid);
                   userSnap = await transaction.get(userRef);
@@ -110,7 +117,7 @@ export const billingStatusTransaction = {
           }
 
           if (isCancelling) {
-              const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
+              const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid || orderData.customer?.id || orderData.userId || orderData.customerId || null;
               if (customerUid && customerUid !== 'WALK-IN') {
                   settingsRef = doc(db, getCollectionPath('settings'), 'credit_config');
                   settingsSnap = await transaction.get(settingsRef);
@@ -171,7 +178,7 @@ export const billingStatusTransaction = {
               clawbackPoints = 0; 
           }
           
-          const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
+          const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid || orderData.customer?.id || orderData.userId || orderData.customerId || null;
           if (customerUid && customerUid !== 'WALK-IN') {
               let typeForPreload = null;
               let refForPreload = null;
@@ -196,6 +203,8 @@ export const billingStatusTransaction = {
                   creditPreloadSnaps = { txSnap, settingsSnap: settingsSnap2, userSnap: userSnap2, activePartnerSnap };
               }
           }
+
+          let updatedCreditPoints = null;
 
           if (isConfirmingPayment) {
               inventorySettingsSnap = await transaction.get(doc(db, getCollectionPath('settings'), 'inventory'));
@@ -237,7 +246,8 @@ export const billingStatusTransaction = {
 
              if (userSnap && userSnap.exists()) {
                  handleWalletDeduction(transaction, db, orderId, orderData, userSnap, userRef, actualActorUid, updates);
-                 await handlePointsEarned(transaction, db, orderId, totalSaleAmount, orderData, userSnap, userRef, actualActorUid, updates, creditPreloadSnaps);
+                 const earnedNewBal = await handlePointsEarned(transaction, db, orderId, totalSaleAmount, orderData, userSnap, userRef, actualActorUid, updates, creditPreloadSnaps);
+                 if (typeof earnedNewBal === 'number') updatedCreditPoints = earnedNewBal;
              }
              
              updates.isStockDeducted = true;
@@ -253,10 +263,12 @@ export const billingStatusTransaction = {
              }
 
              if (userSnap && userSnap.exists()) {
-                 await handleWalletRefundAndClawback(
+                 const clawbackNewBal = await handleWalletRefundAndClawback(
                      transaction, db, orderId, orderData, userSnap, userRef, 
-                     settingsSnap, settingsRef, actualActorUid, normalizedCurrentStatus, updates, creditPreloadSnaps
+                     settingsSnap, settingsRef, actualActorUid, normalizedCurrentStatus, updates, creditPreloadSnaps,
+                     currentOrderId || orderId
                  );
+                 if (typeof clawbackNewBal === 'number') updatedCreditPoints = clawbackNewBal;
              }
              
              await handlePromoFreebieReversal(transaction, db, orderData, promoFreebieSnaps);
@@ -341,10 +353,12 @@ export const billingStatusTransaction = {
           return {
               finalOrderId: finalResultOrderId,
               manualRefundAmount: isCancelling ? (totalSaleAmount - walletUsed) : 0,
-              customerUid: orderData.customer?.uid || orderData.customerInfo?.uid || 'Unknown',
-              customerName: orderData.customer?.name || orderData.customer?.displayName || 'ลูกค้า',
+              customerUid: customerUid || 'Unknown',
+              customerName: orderData.customer?.name || orderData.customer?.displayName || orderData.customer?.accountName || 'ลูกค้า',
+              customerPhone: orderData.customer?.phone || orderData.customerInfo?.phone || '',
               walletUsed,
-              normalizedCurrentStatus
+              normalizedCurrentStatus,
+              updatedCreditPoints
           };
       }, { maxAttempts: 15 });
 
@@ -359,6 +373,18 @@ export const billingStatusTransaction = {
 
       // ⚡ Background Cache Sync: Refresh catalogs/recent_orders without blocking UI
       syncRecentOrdersCatalog().catch(e => console.warn("[OrderSync] Background catalog sync error:", e));
+
+      // ⚡ Directory Chunk Parity: ซิงก์ creditPoints ล่าสุดเข้าแคตตาล็อกลูกค้า (non-blocking)
+      if (result?.updatedCreditPoints !== null && typeof result?.updatedCreditPoints === 'number' && result?.customerUid && result.customerUid !== 'Unknown' && result.customerUid !== 'WALK-IN') {
+        syncCustomerToDirectoryChunk({
+          uid: result.customerUid,
+          id: result.customerUid,
+          name: result.customerName || '',
+          phone: result.customerPhone || '',
+          creditPoints: result.updatedCreditPoints,
+          points: result.updatedCreditPoints
+        }, 'upsert').catch(e => console.warn("[CustomerSync] Background credit directory sync warning:", e));
+      }
 
       // 🧹 Best-effort cleanup of old temp draft (silently ignores if cashier lacks delete permissions)
       if (result?.finalOrderId && result.finalOrderId !== orderId && String(orderId).startsWith('DH-TEMP-')) {

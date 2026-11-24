@@ -4,7 +4,8 @@ import { historyService } from './historyService';
 import { gasStockService } from './gasStockService';
 import { gasHistoryService } from './gasHistoryService';
 import { getCreditPreloadRefs, adjustUserCreditWithTransaction } from './credit/creditActionService';
-import { calculateEarnedPoints, getUserTier } from './credit/creditFormatService';
+import { calculateEarnedPoints, getUserTier, fetchAndCacheRoleTiers } from './credit/creditFormatService';
+import { unwrapCreditConfig } from 'dh-shared/src/utils/creditUtils';
 import { withToastError } from '../utils/safeAsync';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { resolveEffectiveBuffer } from 'dh-shared';
@@ -212,9 +213,9 @@ function calculateWalletAndPoints(orderData, userSnap, finalSecureNetTotal, stat
         const settingsSnap = creditPreloadSnaps?.settingsSnap;
         if (settingsSnap && settingsSnap.exists()) {
             const settingsData = settingsSnap.data() || {};
-            const creditConfig = settingsData.config || settingsData.creditConfig || settingsData;
+            const creditConfig = unwrapCreditConfig(settingsSnap.data());
             const userData = userSnap.data() || {};
-            const userTotalAccumulatedPoints = userData.totalAccumulatedPoints || 0;
+            const userTotalAccumulatedPoints = Number(userData.totalAccumulatedPoints ?? userData.creditPoints ?? 0);
             
             // คำนวณแต้มด้วย Tier Multiplier อย่างถูกต้อง
             earnedPoints = calculateEarnedPoints(amountForPoints, creditConfig, orderData.items || [], userTotalAccumulatedPoints);
@@ -241,6 +242,10 @@ export const billingTransactionService = {
       let updatedCreditPoints = null;
       const statusLower = (orderData.orderStatus || orderData.status || '').toLowerCase();
       const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid || orderData.customer?.id || null;
+      // ⚡ Preload Role Tier Config into memory cache (0 reads if already cached)
+      if (customerUid && customerUid !== 'WALK-IN' && (statusLower === 'paid' || statusLower === 'approved')) {
+        await fetchAndCacheRoleTiers().catch(() => {});
+      }
 
       try {
         await runTransaction(db, async (transaction) => {

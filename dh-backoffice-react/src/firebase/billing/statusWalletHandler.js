@@ -2,6 +2,7 @@ import { doc, collection, serverTimestamp, increment } from 'firebase/firestore'
 import { adjustUserCreditWithTransaction } from '../credit/creditActionService';
 import { calculateEarnedPoints } from '../credit/creditFormatService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+import { unwrapCreditConfig } from 'dh-shared/src/utils/creditUtils';
 
 export const handleWalletRefundAndClawback = async (
     transaction, 
@@ -15,7 +16,8 @@ export const handleWalletRefundAndClawback = async (
     actualActorUid, 
     normalizedCurrentStatus, 
     updates,
-    creditPreloadSnaps = null
+    creditPreloadSnaps = null,
+    resolvedOrderId = null
 ) => {
     try {
         // ✅ [SECURITY FIX] คืนเงินเข้า Wallet เฉพาะยอดที่จ่ายด้วย Wallet จริงๆ เท่านั้น (ไม่เอาส่วนที่โอนเงินสดมาทบเข้า Wallet)
@@ -68,17 +70,20 @@ export const handleWalletRefundAndClawback = async (
         }
 
         if (clawbackPoints > 0) {
-            await adjustUserCreditWithTransaction(
+            const cancelRefOrderId = resolvedOrderId || orderId;
+            const creditRes = await adjustUserCreditWithTransaction(
                 transaction,
                 userSnap.id,
                 clawbackPoints,
                 'clawback',
                 'ดึงแต้มสะสมคืนอัตโนมัติ (ยกเลิกบิล)',
                 actualActorUid,
-                `CB_${orderId}`,
+                `CB_${cancelRefOrderId}`,
                 creditPreloadSnaps
             );
+            return creditRes?.newBalance ?? null;
         }
+        return null;
     } catch (error) {
         console.error("🔥 Error in handleWalletRefundAndClawback:", error);
         throw error;
@@ -98,6 +103,9 @@ export const handlePointsEarned = async (
     creditPreloadSnaps = null
 ) => {
     try {
+        // 🛡️ Idempotency Guard: ป้องกันการแจกแต้มซ้ำโดยไม่ทำให้ Transaction พัง
+        if (orderData.pointsAwarded) return null;
+
         const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
         const amountForPoints = Math.max(0, totalSaleAmount - walletUsed);
 
@@ -112,10 +120,9 @@ export const handlePointsEarned = async (
         if (earnedPoints <= 0 && amountForPoints > 0) {
             const settingsSnap = creditPreloadSnaps?.settingsSnap;
             if (settingsSnap && settingsSnap.exists()) {
-                const settingsData = settingsSnap.data() || {};
-                const creditConfig = settingsData.config || settingsData.creditConfig || settingsData;
+                const creditConfig = unwrapCreditConfig(settingsSnap.data());
                 const userData = userSnap.data() || {};
-                const userTotalAccumulatedPoints = userData.totalAccumulatedPoints || 0;
+                const userTotalAccumulatedPoints = Number(userData.totalAccumulatedPoints ?? userData.creditPoints ?? 0);
                 
                 // คำนวณแต้มด้วย Tier Multiplier อย่างถูกต้อง
                 earnedPoints = calculateEarnedPoints(amountForPoints, creditConfig, orderData.items || [], userTotalAccumulatedPoints);
@@ -128,7 +135,7 @@ export const handlePointsEarned = async (
         
         if (earnedPoints > 0) {
             const resolvedOrderId = updates.orderId || orderId;
-            await adjustUserCreditWithTransaction(
+            const creditRes = await adjustUserCreditWithTransaction(
                 transaction,
                 userSnap.id,
                 earnedPoints,
@@ -144,7 +151,9 @@ export const handlePointsEarned = async (
             updates.pointsAwarded = true;
             // ✅ เคลียร์ pendingCredits เพื่อไม่ให้ซ้ำซ้อน
             updates.pendingCredits = 0;
+            return creditRes?.newBalance ?? null;
         }
+        return null;
     } catch (error) {
         console.error("🔥 Error in handlePointsEarned:", error);
         throw error;

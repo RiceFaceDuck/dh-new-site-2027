@@ -57,7 +57,12 @@ export default function DiscountSettings({
                         max={isPercent ? "100" : undefined}
                         placeholder={isPercent ? "0 %" : "0 ฿"} 
                         value={localDiscount} 
-                        onChange={(e) => setLocalDiscount(e.target.value)} 
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setLocalDiscount(val);
+                            const parsed = parseFloat(val);
+                            updateActiveTab({ overallDiscount: Number.isFinite(parsed) ? Math.max(0, parsed) : 0, overallDiscountType: discountType });
+                        }} 
                         onBlur={() => updateActiveTab({ overallDiscount: parseFloat(localDiscount) || 0, overallDiscountType: discountType })} 
                         onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ overallDiscount: parseFloat(localDiscount) || 0, overallDiscountType: discountType }); }} 
                         className="w-full h-full bg-white border border-gray-300 rounded-none rounded-tr-md px-3 text-right text-xs font-black text-rose-600 outline-hidden focus:border-indigo-600 focus:ring-1 focus:ring-indigo-500/20 shadow-xs placeholder-gray-400" 
@@ -95,7 +100,16 @@ export default function DiscountSettings({
                         type="number" 
                         placeholder="0" 
                         value={localOtherAmount} 
-                        onChange={(e) => setLocalOtherAmount(e.target.value)} 
+                        onChange={(e) => {
+                            const val = e.target.value;
+                            setLocalOtherAmount(val);
+                            if (val === '' || val === '-') {
+                                updateActiveTab({ otherFeeAmount: 0 });
+                            } else {
+                                const parsed = parseFloat(val);
+                                if (Number.isFinite(parsed)) updateActiveTab({ otherFeeAmount: parsed });
+                            }
+                        }} 
                         onBlur={() => updateActiveTab({ otherFeeAmount: parseFloat(localOtherAmount) || 0 })} 
                         onKeyDown={(e) => { if (e.key === 'Enter') updateActiveTab({ otherFeeAmount: parseFloat(localOtherAmount) || 0 }); }} 
                         className="w-1/2 h-full bg-transparent px-2.5 text-xs text-right font-black text-slate-900 outline-hidden placeholder-gray-400" 

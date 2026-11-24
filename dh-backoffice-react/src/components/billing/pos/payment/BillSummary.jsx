@@ -3,7 +3,7 @@ import { Calculator, Eye, HelpCircle } from 'lucide-react';
 
 export default function BillSummary({
     itemSubTotal, manualDiscount, promoDiscount, otherFeeAmount, shippingFee, 
-    vatAmount, walletUsed, remainingToPay, earnedPoints, activeTab, 
+    vatAmount, walletUsed, remainingToPay, earnedPoints, pointsBreakdown, activeTab, 
     setShowPreview, convertToThaiBahtText, onOpenShippingModal, onOpenVatModal
 }) {
     const [copied, setCopied] = useState(false);
@@ -101,7 +101,12 @@ export default function BillSummary({
                         <span className="text-slate-500 text-[11px] font-extrabold uppercase tracking-wider">ยอดชำระสุทธิ</span>
                         {earnedPoints > 0 && (
                             <div className="mt-1">
-                                <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-950 text-[11px] font-black px-2 py-0.5 rounded-full border border-amber-300/80 shadow-2xs">
+                                <span
+                                    className="inline-flex items-center gap-1 bg-amber-100 text-amber-950 text-[11px] font-black px-2 py-0.5 rounded-full border border-amber-300/80 shadow-2xs cursor-help"
+                                    title={pointsBreakdown
+                                        ? `อัตรา ฿${pointsBreakdown.earningRate.toLocaleString()} = 1 Pt • ระดับ ${pointsBreakdown.tierName} (×${pointsBreakdown.tierMultiplier})${pointsBreakdown.skuBonusPoints > 0 ? ` • โบนัส SKU +${pointsBreakdown.skuBonusPoints} Pts` : ''}`
+                                        : 'คำนวณจากยอดชำระสุทธิหลังหักส่วนลดและ Wallet'}
+                                >
                                     🌟 + ได้รับ {earnedPoints.toLocaleString()} Points
                                 </span>
                             </div>

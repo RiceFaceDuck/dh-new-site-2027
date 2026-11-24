@@ -3,7 +3,7 @@ import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../../../../firebase/config';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { unwrapCreditConfig } from 'dh-shared/src/utils/creditUtils';
-import { calculateEarnedPoints, fetchAndCacheRoleTiers, setCachedTiers } from '../../../../firebase/credit/creditFormatService';
+import { calculateEarnedPoints, getUserTier, fetchAndCacheRoleTiers, setCachedTiers } from '../../../../firebase/credit/creditFormatService';
 
 const CREDIT_CONFIG_CACHE_KEY = 'dh_pos_credit_config_cache_v1';
 const ROLE_TIERS_CACHE_KEY = 'dh_pos_role_tiers_cache_v1';
@@ -232,15 +232,35 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
     }
     
     const remainingToPay = Math.max(0, Math.round((netTotal - walletUsed) * 100) / 100);
-    const earnedPoints = useMemo(() => {
-        if (!activeTab?.customer || activeTab.customer.uid === 'WALK-IN' || remainingToPay <= 0) return 0;
+    const { earnedPoints, pointsBreakdown } = useMemo(() => {
+        if (!activeTab?.customer || activeTab.customer.uid === 'WALK-IN' || remainingToPay <= 0) {
+            return { earnedPoints: 0, pointsBreakdown: null };
+        }
         const userTotalAccumulated = sanitizeNum(
             activeTab.customer.totalAccumulatedPoints ?? activeTab.customer.creditPoints ?? 0
         );
         if (creditConfig) {
-            return calculateEarnedPoints(remainingToPay, creditConfig, activeTab.items || [], userTotalAccumulated);
+            const earningRate = creditConfig.earningRate || creditConfig.pointsEarningRate || 100;
+            const tier = getUserTier(userTotalAccumulated, creditConfig.tiers || creditConfig.tierList);
+            const multiplier = creditConfig.tierMultiplier || tier.multiplier || 1;
+            const basePoints = Math.floor(remainingToPay / earningRate);
+            const tierPoints = Math.floor(basePoints * multiplier);
+            const totalPts = calculateEarnedPoints(remainingToPay, creditConfig, activeTab.items || [], userTotalAccumulated);
+            const skuBonusPoints = Math.max(0, totalPts - tierPoints);
+            return {
+                earnedPoints: totalPts,
+                pointsBreakdown: {
+                    earningRate,
+                    tierName: tier?.name || 'Member',
+                    tierMultiplier: multiplier,
+                    skuBonusPoints
+                }
+            };
         }
-        return Math.floor(remainingToPay / 100);
+        return {
+            earnedPoints: Math.floor(remainingToPay / 100),
+            pointsBreakdown: { earningRate: 100, tierName: 'Member', tierMultiplier: 1, skuBonusPoints: 0 }
+        };
     }, [activeTab?.customer, activeTab?.items, remainingToPay, creditConfig, tiersLoaded]);
     const changeAmount = (activeTab?.paymentMethod === 'Cash' && activeTab?.cashReceived) 
         ? Math.round((sanitizeNum(activeTab.cashReceived) - remainingToPay) * 100) / 100 : 0;
@@ -248,7 +268,7 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
     return {
         itemSubTotal, manualDiscount, promoDiscount, totalDiscount,
         shippingFee, otherFeeAmount, vatAmount, netTotal,
-        walletUsed, remainingToPay, earnedPoints, changeAmount, 
+        walletUsed, remainingToPay, earnedPoints, pointsBreakdown, changeAmount, 
         eligibleFreebies, appliedPromoDetails, validPromotions
     };
 }

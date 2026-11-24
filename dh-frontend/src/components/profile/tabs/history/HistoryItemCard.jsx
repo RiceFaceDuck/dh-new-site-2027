@@ -115,9 +115,16 @@ const HistoryItemCard = ({
             <span className="font-semibold text-gray-900">สินค้า: </span>
             {itemsList}
           </p>
-          <p className="text-base text-indigo-700 font-black mt-2">
-            ยอดชำระสุทธิ: ฿{finalPayable.toLocaleString()}
-          </p>
+          <div className="flex items-center flex-wrap gap-2 mt-2">
+            <p className="text-base text-indigo-700 font-black">
+              ยอดชำระสุทธิ: ฿{finalPayable.toLocaleString()}
+            </p>
+            {order.status !== 'cancelled' && order.status !== 'void' && Number(order.earnedPoints || 0) > 0 && (
+              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-amber-800 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                🌟 ได้รับ +{Number(order.earnedPoints).toLocaleString('th-TH', { maximumFractionDigits: 2 })} แต้ม
+              </span>
+            )}
+          </div>
         </div>
         
         {/* ปุ่ม Action */}

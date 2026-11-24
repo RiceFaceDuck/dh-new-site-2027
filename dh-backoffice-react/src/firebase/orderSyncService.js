@@ -82,6 +82,10 @@ export const syncRecentOrdersCatalog = async () => {
         trackingNumber: d.trackingNumber || d.trackingNo || d.shippingTracking || '',
         shippingFee: Number(d.shippingFee || d.shippingCost || 0),
         netTotal: Number(d.netTotal || d.totals?.netTotal || 0),
+        earnedPoints: Number(d.earnedPoints || 0),
+        pointsAwarded: Boolean(d.pointsAwarded),
+        walletUsed: Number(d.walletUsed || d.walletUsedAmount || d.summary?.walletUsed || 0),
+        walletUsedAmount: Number(d.walletUsedAmount || d.walletUsed || d.summary?.walletUsed || 0),
         createdAt: createdTime,
         customer: d.customer ? {
           uid: d.customer.uid || d.customerUid || '',

@@ -4,6 +4,7 @@ import { productService } from '../firebase/productService';
 import { getCreditSettings, calculateEarnedPoints } from '../firebase/creditService';
 import { useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartProvider';
+import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import { resolveEffectiveBuffer, isStockAvailableForSale } from 'dh-shared';
 
@@ -17,6 +18,7 @@ export const useCartLogic = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { cartItems, totals, updateQuantity, removeFromCart, checkoutState, updateCheckoutConfig, isInitialized } = useCart();
+  const { profile } = useAuth();
   
   const [user, setUser] = useState(null);
   const [creditConfig, setCreditConfig] = useState(null);
@@ -288,7 +290,8 @@ export const useCartLogic = () => {
   const subTotal = parseSafeNumber(totals.subtotal);
   const promoDiscount = (checkoutState.appliedPromotions || []).reduce((sum, p) => sum + (p.discountValue || 0), 0);
   const netTotal = Math.max(0, subTotal - promoDiscount);
-  const earnedPoints = creditConfig ? calculateEarnedPoints(netTotal, creditConfig, cartItems) : 0;
+  const userTotalAccumulatedPoints = Number(profile?.totalAccumulatedPoints ?? profile?.creditPoints ?? 0);
+  const earnedPoints = creditConfig ? calculateEarnedPoints(netTotal, creditConfig, cartItems, userTotalAccumulatedPoints) : 0;
   
   const isValidCart = Object.keys(itemErrors).length === 0;
 

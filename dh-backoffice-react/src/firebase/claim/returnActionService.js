@@ -4,7 +4,8 @@ import { gasHistoryService } from '../gasHistoryService';
 import { gasStockService } from '../gasStockService';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
 import { unwrapCreditConfig } from 'dh-shared';
-import { calculateEarnedPoints } from '../credit/creditFormatService';
+import { calculateEarnedPoints, fetchAndCacheRoleTiers } from '../credit/creditFormatService';
+import { syncCustomerToDirectoryChunk } from '../../pages/Customers/services/customerCacheService';
 
 const CLAIMS_COLLECTION = getCollectionPath('claims');
 
@@ -58,6 +59,12 @@ export const returnActionService = {
       let productData = null;
       let calculatedRefundAmount = 0;
       let finalPenalty = 0;
+      let updatedCreditPoints = null;
+
+      // ⚡ Preload Role Tier Config into memory cache (0 reads if already cached)
+      if (payload.customerUid && payload.customerUid !== 'Walk-in' && payload.customerUid !== 'WALK-IN') {
+        await fetchAndCacheRoleTiers().catch(() => {});
+      }
 
       await runTransaction(db, async (transaction) => {
         // --- 1. READ OPERATIONS (All reads must be executed before writes) ---
@@ -136,16 +143,25 @@ export const returnActionService = {
           ]);
           creditPreloadSnaps = { txSnap, settingsSnap, userSnap, activePartnerSnap };
 
-          // 🛡️ คำนวณแต้มคืนตามสัดส่วนที่เคยได้รับจริงจากบิล หรือคำนวณตาม Tier Multiplier / SKU Bonus
+          // 🛡️ คำนวณแต้มคืนตามสัดส่วนฐานคิดแต้มจริง (หัก Wallet และหักยอดที่เคยยึดไปแล้วในรอบก่อน)
           const orderData = orderSnap?.exists() ? orderSnap.data() : null;
-          const orderFinalTotal = Number(orderData?.finalTotal ?? orderData?.totals?.finalTotal ?? 0);
+          const orderFinalTotal = Number(orderData?.finalTotal ?? orderData?.totals?.finalTotal ?? orderData?.netTotal ?? 0);
+          const orderWalletUsed = Number(orderData?.summary?.walletUsed || orderData?.walletUsedAmount || orderData?.walletUsed || 0);
+          const orderAmountForPoints = Math.max(0, orderFinalTotal - orderWalletUsed);
           const earnedInOrder = Number(orderData?.earnedPoints || 0);
+          const pastReturnsForClawback = (orderData?.refundsAndClaims || []).filter(rc => rc.type === 'Return');
+          const totalPastClawback = pastReturnsForClawback.reduce((sum, r) => sum + (Number(r.clawbackPoints) || 0), 0);
+          const remainingClawbackable = Math.max(0, earnedInOrder - totalPastClawback);
 
-          if (earnedInOrder > 0 && orderFinalTotal > 0) {
-            clawbackPoints = Math.min(earnedInOrder, Math.round(earnedInOrder * (refundAmount / orderFinalTotal)));
+          if (earnedInOrder > 0 && orderAmountForPoints > 0) {
+            clawbackPoints = Math.min(remainingClawbackable, Math.round(earnedInOrder * (refundAmount / orderAmountForPoints)));
+          } else if (earnedInOrder > 0 && orderFinalTotal > 0) {
+            clawbackPoints = Math.min(remainingClawbackable, Math.round(earnedInOrder * (refundAmount / orderFinalTotal)));
+          } else if (earnedInOrder === 0 && orderData?.pointsAwarded === false) {
+            clawbackPoints = 0;
           } else {
             const creditConfig = unwrapCreditConfig(settingsSnap.exists() ? settingsSnap.data() : null);
-            const userTotalAccumulated = Number(userSnap?.exists() ? (userSnap.data()?.totalAccumulatedPoints || 0) : 0);
+            const userTotalAccumulated = Number(userSnap?.exists() ? (userSnap.data()?.totalAccumulatedPoints ?? userSnap.data()?.creditPoints ?? 0) : 0);
             clawbackPoints = calculateEarnedPoints(refundAmount, creditConfig, [{ sku: payload.sku, qty }], userTotalAccumulated);
             if (!clawbackPoints && clawbackPoints !== 0) {
               clawbackPoints = Math.floor(refundAmount / (creditConfig?.earningRate || 100));
@@ -217,7 +233,7 @@ export const returnActionService = {
           // 4.1 หักแต้มสะสม (Clawback)
           if (clawbackPoints > 0 && creditPreloadSnaps) {
             const { adjustUserCreditWithTransaction } = await import('../credit/creditActionService');
-            await adjustUserCreditWithTransaction(
+            const creditRes = await adjustUserCreditWithTransaction(
               transaction,
               payload.customerUid,
               clawbackPoints,
@@ -227,6 +243,9 @@ export const returnActionService = {
               `RTN_${payload.returnId}`,
               creditPreloadSnaps
             );
+            if (creditRes && typeof creditRes.newBalance === 'number') {
+              updatedCreditPoints = creditRes.newBalance;
+            }
           }
 
           // 4.2 คืนเงินเข้า Wallet Cash
@@ -307,6 +326,15 @@ export const returnActionService = {
       });
 
       // 7. ซิงก์สต๊อกไป GAS เฉพาะเมื่อเป็นของดี (เพราะสต็อกขายเปลี่ยน)
+      if (updatedCreditPoints !== null && payload.customerUid && payload.customerUid !== 'Walk-in' && payload.customerUid !== 'WALK-IN') {
+        syncCustomerToDirectoryChunk({
+          uid: payload.customerUid,
+          id: payload.customerUid,
+          name: payload.customerName || '',
+          creditPoints: updatedCreditPoints,
+          points: updatedCreditPoints
+        }, 'upsert').catch(e => console.warn('[ReturnSync] Background credit directory sync warning:', e));
+      }
       if (productData && payload.itemCondition === 'good') {
         gasStockService.queueUpdate({
             ...productData,
