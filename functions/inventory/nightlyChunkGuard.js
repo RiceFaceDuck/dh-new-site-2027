@@ -419,6 +419,7 @@ const rebuildAllChunksLogic = async (db) => {
 exports.nightlyChunkGuard = onSchedule({
   schedule: "0 3 * * *",
   timeZone: "Asia/Bangkok",
+  region: "asia-southeast1",
   memory: "512MiB",
   timeoutSeconds: 300,
   retryCount: 3
@@ -431,16 +432,23 @@ exports.nightlyChunkGuard = onSchedule({
  * ⚡ 2. HTTP On-Demand Trigger (For manual testing or admin on-demand trigger)
  */
 exports.rebuildAllChunksManual = onRequest({
+  region: "asia-southeast1",
   cors: true,
   memory: "512MiB",
   timeoutSeconds: 300
 }, async (req, res) => {
-  // 🛡️ Security Guard (HIGH-03): Check Authorization header or admin secret key
-  const authHeader = req.headers.authorization || '';
-  const adminSecret = process.env.CHUNK_REBUILD_SECRET || 'dh_internal_rebuild_guard_2026';
-  const providedKey = req.query?.secret || req.headers['x-admin-key'];
+  // 🛡️ Security Guard (Fail-Closed): Require configured CHUNK_REBUILD_SECRET
+  const adminSecret = process.env.CHUNK_REBUILD_SECRET;
+  if (!adminSecret) {
+    console.error("🔥 [NightlyChunkGuard] CHUNK_REBUILD_SECRET is not configured.");
+    return res.status(500).json({ status: "error", message: "Server misconfiguration: Secret not set" });
+  }
 
-  if (!authHeader.startsWith('Bearer ') && providedKey !== adminSecret) {
+  const authHeader = req.headers.authorization || '';
+  const bearerToken = authHeader.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  const providedKey = bearerToken || req.headers['x-admin-key'] || req.query?.secret || '';
+
+  if (providedKey !== adminSecret) {
     return res.status(401).json({ status: "error", message: "Unauthorized: Missing or invalid secret key" });
   }
 
