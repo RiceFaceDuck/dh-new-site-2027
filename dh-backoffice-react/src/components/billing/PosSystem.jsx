@@ -166,6 +166,7 @@ export default function PosSystem({
         );
         if (emptyIdx !== -1) {
             setActiveTabId(safeCartTabs[emptyIdx].id);
+            toast('มีแท็บบิลว่างพร้อมใช้งานอยู่แล้วค่ะ', { id: 'pos-empty-tab', icon: 'ℹ️' });
             return safeCartTabs[emptyIdx];
         } else {
             const newTab = createNewTab();
@@ -181,8 +182,35 @@ export default function PosSystem({
         posState, products: activeProducts, customers, searchRef, submitLockRef, onSwitchView, convertToThaiBahtText
     });
 
+    const handleQuickCheckoutShortcut = () => {
+        if (isProcessing || showPreview || isPromoModalOpen || posState.isFreebieModalOpen || isGuideModalOpen) return;
+        actions.handleCheckout('Paid');
+    };
+
+    const handleFocusCashShortcut = () => {
+        if (isProcessing) return;
+        if (isPaymentPanelCollapsed) setIsPaymentPanelCollapsed(false);
+        if (String(activeTab?.paymentMethod || '').toLowerCase() !== 'cash') {
+            updateActiveTab({ paymentMethod: 'Cash' });
+        }
+        setTimeout(() => {
+            const cashInput = document.querySelector('[data-pos-cash-input="true"]');
+            if (cashInput) {
+                cashInput.focus();
+                cashInput.select?.();
+            }
+        }, 50);
+    };
+
     usePosShortcuts({
-        safeCartTabs, searchRef, activeTabId, handleFileUpload: actions.handleFileUpload, createNewTab: handleCreateNewTab
+        safeCartTabs,
+        searchRef,
+        custSearchRef,
+        activeTabId,
+        handleFileUpload: actions.handleFileUpload,
+        createNewTab: handleCreateNewTab,
+        onQuickCheckout: handleQuickCheckoutShortcut,
+        onFocusCashInput: handleFocusCashShortcut
     });
 
     const handleInteractWithOtherPanels = () => {

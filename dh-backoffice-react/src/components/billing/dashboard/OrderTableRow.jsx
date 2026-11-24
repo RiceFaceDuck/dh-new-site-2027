@@ -79,10 +79,10 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
         <>
             <td className="py-2.5 px-6 align-middle relative">
                 <div className="absolute left-0 top-0 bottom-0 w-1 bg-(--dh-accent) opacity-0 group-hover:opacity-100 transition-opacity duration-300 dh-glow"></div>
-                <div className="flex items-center gap-2 mb-1">
-                    <div className="flex items-center gap-1.5 text-[13px] font-black text-(--dh-text-main) group-hover:text-(--dh-accent) transition-colors">
-                        <Receipt size={14} className="text-(--dh-text-muted) group-hover:text-(--dh-accent) transition-colors" strokeWidth={2.5}/>
-                        <span className={isCancelled ? 'line-through opacity-70' : ''}>
+                <div className="flex items-center gap-2 mb-1 flex-nowrap">
+                    <div className="flex items-center gap-1.5 text-[13px] font-black text-(--dh-text-main) group-hover:text-(--dh-accent) transition-colors whitespace-nowrap shrink-0">
+                        <Receipt size={14} className="text-(--dh-text-muted) group-hover:text-(--dh-accent) transition-colors shrink-0" strokeWidth={2.5}/>
+                        <span className={`whitespace-nowrap ${isCancelled ? 'line-through opacity-70' : ''}`}>
                             {String(order.orderId || '').replace(/^DH-TEMP-\d{6}-\d{6}-(\d{4})$/, 'DH-TEMP-$1')}
                         </span>
                     </div>

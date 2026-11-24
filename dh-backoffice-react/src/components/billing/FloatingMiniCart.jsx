@@ -52,26 +52,29 @@ const calculateDraftTotals = (draft) => {
 
   const shippingFee = Number(draft.shippingFee || 0);
   const otherFeeAmount = Number(draft.otherFeeAmount || 0);
-  const baseTotal = Math.max(0, subTotal - totalDiscount) + otherFeeAmount;
+  const baseTotal = Math.max(0, subTotal - totalDiscount);
 
   const vatType = draft.vatType || 'exempt';
   const isVatOnShipping = Boolean(draft.vatOnShipping);
   const taxableAmount = baseTotal + (isVatOnShipping ? shippingFee : 0);
 
   let vatAmount = 0;
-  let netTotal = 0;
+  let preOtherFeeTotal = 0;
 
   if (vatType === 'included') {
     vatAmount = Math.round(((taxableAmount * 7) / 107) * 100) / 100;
-    netTotal = Math.round((baseTotal + shippingFee) * 100) / 100;
+    preOtherFeeTotal = Math.round((baseTotal + shippingFee) * 100) / 100;
   } else if (vatType === 'excluded') {
     vatAmount = Math.round(taxableAmount * 0.07 * 100) / 100;
-    netTotal = Math.round((baseTotal + shippingFee + vatAmount) * 100) / 100;
+    preOtherFeeTotal = Math.round((baseTotal + shippingFee + vatAmount) * 100) / 100;
   } else {
     vatAmount = 0;
-    netTotal = Math.round((baseTotal + shippingFee) * 100) / 100;
+    preOtherFeeTotal = Math.round((baseTotal + shippingFee) * 100) / 100;
   }
-  netTotal = Math.max(0, netTotal);
+  const netTotal = Math.max(
+    0,
+    Math.round((preOtherFeeTotal + otherFeeAmount) * 100) / 100
+  );
 
   const walletUsed = draft.useWallet ? Number(draft.walletUsed || 0) : 0;
   const remainingToPay = Math.max(

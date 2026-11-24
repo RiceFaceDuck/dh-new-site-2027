@@ -163,13 +163,14 @@ function processReceiptData(props) {
 
     const _walletUsed = Number(orderData ? (orderData.walletUsed || orderData.creditUsed || 0) : (walletUsed || 0));
 
-    // Bank account label
+    // Bank account label (only show for Transfer/QR payments, never for Cash/Credit)
     const paymentMethod = data.paymentMethod || data.paymentType || 'Transfer';
+    const isTransferPayment = ['transfer', 'โอนเงิน', 'qr', 'promptpay'].includes(String(paymentMethod).trim().toLowerCase());
     const bankAccount = data.bankAccount || data.paymentDetails?.bankAccount || 'BAY';
     const customBankAccount = data.customBankAccount || data.paymentDetails?.customBankAccount || '';
     let bankAccountDisplay = '';
 
-    if (paymentMethod === 'Transfer' || paymentMethod === 'โอนเงิน' || bankAccount) {
+    if (isTransferPayment && bankAccount) {
         if (bankAccount === 'CUSTOM' && customBankAccount) {
             bankAccountDisplay = customBankAccount;
         } else {

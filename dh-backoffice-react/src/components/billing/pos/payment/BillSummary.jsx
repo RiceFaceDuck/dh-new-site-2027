@@ -110,7 +110,7 @@ export default function BillSummary({
                     <div className="text-right group cursor-pointer relative" onClick={handleCopyAmount} title="คลิกเพื่อคัดลอกยอดเงิน">
                         <div className="inline-block border-b border-dashed border-slate-300 group-hover:border-slate-800 transition-colors">
                             <span className="text-3xl font-black text-slate-900 leading-none drop-shadow-2xs">
-                                ฿{(remainingToPay || 0).toLocaleString()}
+                                ฿{(remainingToPay || 0).toLocaleString('th-TH', { minimumFractionDigits: (remainingToPay || 0) % 1 !== 0 ? 2 : 0, maximumFractionDigits: 2 })}
                             </span>
                         </div>
                         {copied && (

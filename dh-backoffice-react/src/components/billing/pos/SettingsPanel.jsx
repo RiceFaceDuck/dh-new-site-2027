@@ -121,7 +121,7 @@ export default function SettingsPanel({
             </div>
 
             {/* CONTENT AREA */}
-            <div className={`p-3 flex flex-col gap-3 pb-8 overflow-y-auto custom-scrollbar transition-opacity duration-300 ${isProcessing ? 'opacity-70' : ''}`}>
+            <div className={`p-3 flex flex-col gap-3 pb-24 overflow-y-auto custom-scrollbar transition-opacity duration-300 ${isProcessing ? 'opacity-70' : ''}`}>
 
                 {/* 1. CUSTOMER IDENTITY & SEARCH */}
                 <CustomerSection

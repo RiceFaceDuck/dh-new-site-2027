@@ -76,11 +76,12 @@ const loadSavedState = (targetUid) => {
 
 export default function usePosState(products, customers, initialDraft, onDraftHandled) {
     const { profile } = useAuth();
-    const [cartTabs, setCartTabs] = useState(() => loadSavedState());
-    const [activeTabId, setActiveTabId] = useState(() => {
-        const state = loadSavedState();
-        return state[0]?.id || Date.now().toString();
-    });
+    const initialTabsRef = useRef(null);
+    if (initialTabsRef.current === null) {
+        initialTabsRef.current = loadSavedState();
+    }
+    const [cartTabs, setCartTabs] = useState(initialTabsRef.current);
+    const [activeTabId, setActiveTabId] = useState(() => initialTabsRef.current[0]?.id || Date.now().toString());
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
@@ -486,25 +487,32 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
     }, [activeTabId]);
 
     const closeTab = (tabId) => {
+        let nextActiveId = null;
+        let snapshotForPersist = null;
+
         setCartTabs(prev => {
             const newTabs = (Array.isArray(prev) ? prev.filter(t => t && typeof t === 'object' && t.id) : []).filter(t => t.id !== tabId);
             const resolvedTabs = newTabs.length === 0 ? [createNewTab()] : newTabs;
-            
-            if (newTabs.length === 0) {
-                setActiveTabId(resolvedTabs[0].id);
-            } else if (activeTabId === tabId) {
-                setActiveTabId(resolvedTabs[0].id);
-            }
 
-            // ⚡ Immediate persistence to prevent race condition on page refresh or view switch
-            const uid = auth?.currentUser?.uid || 'guest';
-            localStorage.setItem(`dh_pos_autosave_${uid}`, JSON.stringify(resolvedTabs));
-            window.dispatchEvent(new CustomEvent('dh_cart_updated'));
-            if (uid !== 'guest') {
-                staffPosDraftService.saveStaffCloudDraftsImmediately(uid, resolvedTabs);
+            if (newTabs.length === 0 || activeTabId === tabId) {
+                nextActiveId = resolvedTabs[0].id;
             }
-
+            snapshotForPersist = resolvedTabs;
             return resolvedTabs;
+        });
+
+        queueMicrotask(() => {
+            if (nextActiveId) {
+                setActiveTabId(nextActiveId);
+            }
+            if (snapshotForPersist) {
+                const uid = auth?.currentUser?.uid || 'guest';
+                localStorage.setItem(`dh_pos_autosave_${uid}`, JSON.stringify(snapshotForPersist));
+                window.dispatchEvent(new CustomEvent('dh_cart_updated'));
+                if (uid !== 'guest') {
+                    staffPosDraftService.saveStaffCloudDraftsImmediately(uid, snapshotForPersist);
+                }
+            }
         });
     };
 

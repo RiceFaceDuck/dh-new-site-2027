@@ -6,8 +6,9 @@
 export function getStaffNickname(order, staffMap = {}) {
   if (!order) return 'N/A';
   
+  const isRawUid = (val) => typeof val === 'string' && /^[A-Za-z0-9]{20,}$/.test(val.trim());
   const rawNickname = order.staffNickname;
-  const isValidNickname = rawNickname && rawNickname !== 'POS' && rawNickname !== 'System';
+  const isValidNickname = rawNickname && rawNickname !== 'POS' && rawNickname !== 'System' && !isRawUid(rawNickname);
   if (isValidNickname) return rawNickname;
   
   const isWebOrder = Boolean(order.isWebOrder || order.channel === 'storefront' || order.source === 'storefront');
@@ -20,14 +21,14 @@ export function getStaffNickname(order, staffMap = {}) {
     return null;
   }
 
-  const staffId = order.staffId || order.createdBy || order.salespersonId;
+  const staffId = order.staffId || order.staffUid || order.sellerUid || order.createdBy || order.salespersonId;
   if (staffId && staffMap[staffId]) {
     const s = staffMap[staffId];
-    return s.nickname || s.displayName || s.name || s.email?.split('@')[0] || staffId;
+    return s.nickname || s.displayName || s.name || s.email?.split('@')[0] || 'พนักงาน';
   }
   
   const rawCreatedByName = order.createdByName || order.createdBy;
-  if (rawCreatedByName && rawCreatedByName !== 'POS' && rawCreatedByName !== 'System') {
+  if (rawCreatedByName && rawCreatedByName !== 'POS' && rawCreatedByName !== 'System' && !isRawUid(rawCreatedByName)) {
     return rawCreatedByName;
   }
   

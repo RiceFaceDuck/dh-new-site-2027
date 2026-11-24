@@ -53,12 +53,12 @@ export default function OrderSummaryTotals({
                         <span className="flex items-center gap-1" title="ค่าธรรมเนียมจากการรูดบัตร หรือบริการชำระเงินอื่นๆ">ค่าธรรมเนียมชำระเงิน</span>
                         <span>฿{formatCurrency(paymentFee)}</span>
                     </div>
-                    {otherFees > 0 && (
-                        <div className="flex justify-between text-[11px] text-(--dh-text-muted) font-bold">
-                            <span className="flex items-center gap-1" title={otherFeeName || "ยอดเรียกเก็บเพิ่มเติม (ถ้ามี)"}>
-                                {otherFeeName.includes('ประกัน') ? '🛡️ ' : ''}{otherFeeName || 'ค่าใช้จ่ายอื่นๆ'}
+                    {Number(otherFees || 0) !== 0 && (
+                        <div className={`flex justify-between text-[11px] font-bold ${Number(otherFees) < 0 ? 'text-rose-500' : 'text-(--dh-text-muted)'}`}>
+                            <span className="flex items-center gap-1" title={otherFeeName || (Number(otherFees) < 0 ? "หักยอดอื่นๆ" : "ยอดเรียกเก็บเพิ่มเติม (ถ้ามี)")}>
+                                {otherFeeName.includes('ประกัน') ? '🛡️ ' : ''}{otherFeeName || (Number(otherFees) < 0 ? 'หักยอดอื่นๆ' : 'ค่าใช้จ่ายอื่นๆ')}
                             </span>
-                            <span>฿{formatCurrency(otherFees)}</span>
+                            <span>{Number(otherFees) < 0 ? `-฿${formatCurrency(Math.abs(Number(otherFees)))}` : `+฿${formatCurrency(otherFees)}`}</span>
                         </div>
                     )}
                     <div className="flex justify-between text-[11px] text-(--dh-text-muted) font-bold">

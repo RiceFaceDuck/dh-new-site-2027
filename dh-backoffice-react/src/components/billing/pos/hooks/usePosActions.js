@@ -57,7 +57,8 @@ export const usePosActions = ({
     
     const clearCart = () => {
         if(window.confirm('คุณต้องการล้างบิลนี้ทิ้งใช่หรือไม่?')) { 
-            updateActiveTab(createNewTab()); 
+            const freshTab = createNewTab();
+            updateActiveTab({ ...freshTab, id: activeTab.id }); 
             setActionBoxItem(null); 
             setCustomerSearchText(''); 
             searchRef.current?.querySelector('input')?.focus(); 
@@ -65,9 +66,7 @@ export const usePosActions = ({
     };
 
     const handleSelectCustomer = (uidOrId) => {
-        console.log("handleSelectCustomer called with:", uidOrId);
         const cust = customers.find(c => c.uid === uidOrId || c.id === uidOrId);
-        console.log("Customer found:", JSON.stringify(cust));
         if (cust) {
             let mem = {};
             try {
@@ -86,11 +85,15 @@ export const usePosActions = ({
             const targetReceiptFormat = pref.receiptFormat || pref.defaultBillType || 'short';
             const updatedItems = activeTab.items.map(item => ({ ...item, price: targetMode === 'wholesale' ? item.baseWholesale : item.baseRetail }));
 
+            const prevFulfillment = activeTab.fulfillmentType;
             updateActiveTab({ 
                 customer: cust, priceMode: targetMode, vatType: targetVat,
                 fulfillmentType: targetFulfillment, courier: targetCourier,
                 receiptFormat: targetReceiptFormat, paymentMethod: 'Transfer', walkInName: '', walkInPhone: '', hidePhone: false, items: updatedItems, walletUsed: 0 
             });
+            if (prevFulfillment && prevFulfillment !== targetFulfillment) {
+                toast(`ปรับการรับสินค้าเป็น "${targetFulfillment === 'StorePickup' ? 'รับหน้าร้าน' : 'ส่งพัสดุ'}" ตามค่าของลูกค้า`, { id: 'pos-cust-fulfillment', icon: '📦', duration: 3000 });
+            }
             setCustomerSearchText(''); 
         } else {
             posState.handlePriceModeChange('wholesale');
@@ -181,8 +184,8 @@ export const usePosActions = ({
             let ocrData = null;
             try {
                 if (slipStorageService.verifySlipOcr) {
-                    const remainingToPay = sanitizeNum(activeTab?.summary?.finalTotal ?? activeTab?.finalTotal ?? 0);
-                    const ocrRes = await slipStorageService.verifySlipOcr(uploadedUrl, orderIdForSlip, remainingToPay, file);
+                    const expectedAmount = sanitizeNum(remainingToPay);
+                    const ocrRes = await slipStorageService.verifySlipOcr(uploadedUrl, orderIdForSlip, expectedAmount, file);
                     ocrData = ocrRes?.ocrData || null;
                 } else if (slipStorageService.runClientTesseractOcr) {
                     ocrData = await slipStorageService.runClientTesseractOcr(file);
@@ -287,7 +290,11 @@ export const usePosActions = ({
             
             let finalOrderId = activeTab.orderId || `DH-TEMP-${rand4}`;
 
-            const finalNote = activeTab.billNote ? `${activeTab.billNote}\n[บันทึกโดยระบบอัตโนมัติ]` : '[บันทึกโดยระบบอัตโนมัติ]';
+            const autoNoteTag = '[บันทึกโดยระบบอัตโนมัติ]';
+            const trimmedBillNote = String(activeTab.billNote || '').trim();
+            const finalNote = trimmedBillNote
+                ? (trimmedBillNote.includes(autoNoteTag) ? trimmedBillNote : `${trimmedBillNote}\n${autoNoteTag}`)
+                : autoNoteTag;
 
             const freebieItems = eligibleFreebies.map(f => {
                 let conditionText = [];

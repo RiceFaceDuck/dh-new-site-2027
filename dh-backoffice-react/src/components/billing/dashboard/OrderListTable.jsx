@@ -133,7 +133,7 @@ export default function OrderListTable({ orders, loading, isSearching, limitAmou
 
             {/* 📄 Pagination Bar (แถบเปลี่ยนหน้า 21 รายการ/หน้า) */}
             {!loading && totalItems > 0 && (
-                <div className="px-6 py-2.5 bg-(--dh-bg-base) border-t border-(--dh-border) flex flex-wrap items-center justify-between gap-3 shrink-0 text-sm shadow-xs relative z-10">
+                <div className="pl-6 pr-20 py-2.5 bg-(--dh-bg-base) border-t border-(--dh-border) flex flex-wrap items-center justify-between gap-3 shrink-0 text-sm shadow-xs relative z-10">
                     <div className="flex flex-wrap items-center gap-4 text-xs font-semibold text-(--dh-text-muted)">
                         <div>
                             แสดง <span className="text-(--dh-accent) font-bold">{totalItems === 0 ? 0 : startIndex + 1} - {endIndex}</span> จากทั้งหมด <span className="text-(--dh-text-main) font-bold">{totalItems.toLocaleString()}</span> รายการ

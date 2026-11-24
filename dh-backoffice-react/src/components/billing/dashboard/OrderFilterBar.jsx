@@ -208,12 +208,12 @@ export default function OrderFilterBar({
                         onChange={handleSelectDateRange}
                         className="h-full pl-8 pr-3 bg-black/25 hover:bg-black/35 text-white border border-white/20 rounded-lg text-xs font-bold outline-hidden cursor-pointer shadow-inner appearance-none"
                     >
-                        <option value="all" className="bg-slate-900 text-white">📅 วันที่ทั้งหมด</option>
-                        <option value="today" className="bg-slate-900 text-white">⚡ วันนี้</option>
-                        <option value="yesterday" className="bg-slate-900 text-white">⏪ เมื่อวาน</option>
-                        <option value="7" className="bg-slate-900 text-white">📊 7 วันที่ผ่านมา</option>
-                        <option value="30" className="bg-slate-900 text-white">📈 30 วันที่ผ่านมา</option>
-                        <option value="custom" className="bg-slate-900 text-white">⚙️ กำหนดช่วงวันที่...</option>
+                        <option value="all" className="bg-slate-900 text-white">วันที่ทั้งหมด</option>
+                        <option value="today" className="bg-slate-900 text-white">วันนี้</option>
+                        <option value="yesterday" className="bg-slate-900 text-white">เมื่อวาน</option>
+                        <option value="7" className="bg-slate-900 text-white">7 วันที่ผ่านมา</option>
+                        <option value="30" className="bg-slate-900 text-white">30 วันที่ผ่านมา</option>
+                        <option value="custom" className="bg-slate-900 text-white">กำหนดช่วงวันที่...</option>
                     </select>
                     <Calendar size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-white/60 pointer-events-none" />
                 </div>

@@ -3,9 +3,12 @@ import { useEffect } from 'react';
 export const usePosShortcuts = ({
     safeCartTabs,
     searchRef,
+    custSearchRef,
     activeTabId,
     handleFileUpload,
-    createNewTab
+    createNewTab,
+    onQuickCheckout,
+    onFocusCashInput
 }) => {
     useEffect(() => {
         const handleBeforeUnload = (e) => { 
@@ -20,19 +23,32 @@ export const usePosShortcuts = ({
 
     useEffect(() => {
         const handleKeyDown = (e) => { 
-            if (e.key === 'F3') { 
+            if (e.key === 'F2') {
+                e.preventDefault();
+                custSearchRef?.current?.querySelector('input')?.focus();
+            } else if (e.key === 'F3') { 
                 e.preventDefault(); 
                 searchRef.current?.querySelector('input')?.focus(); 
+            } else if (e.key === 'F4') {
+                e.preventDefault();
+                if (typeof onFocusCashInput === 'function') {
+                    onFocusCashInput();
+                }
             } else if (e.altKey && (e.key === 'n' || e.key === 'N')) {
                 e.preventDefault();
                 if (typeof createNewTab === 'function') {
                     createNewTab();
                 }
+            } else if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                if (typeof onQuickCheckout === 'function') {
+                    onQuickCheckout();
+                }
             }
         };
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [searchRef, createNewTab]);
+    }, [searchRef, custSearchRef, createNewTab, onQuickCheckout, onFocusCashInput]);
 
     useEffect(() => {
         const handleGlobalPaste = (e) => {

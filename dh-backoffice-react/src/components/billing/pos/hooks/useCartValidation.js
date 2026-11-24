@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { sanitizeNum } from './usePosActions';
 
 /**
@@ -29,7 +30,9 @@ export const useCartValidation = (activeTabId, activeTab, products, updateActive
             });
 
             if (alertMessages.length > 0) {
-                const timer = setTimeout(() => alert(`⚠️ สต็อกสินค้าไม่เพียงพอ:\n\n${alertMessages.join('\n')}`), 500);
+                const timer = setTimeout(() => {
+                    toast(`สต็อกสินค้าไม่เพียงพอ:\n${alertMessages.join('\n')}`, { id: 'pos-cart-validation-stock', icon: '⚠️', duration: 4500 });
+                }, 400);
                 return () => clearTimeout(timer);
             }
             return;
@@ -79,7 +82,9 @@ export const useCartValidation = (activeTabId, activeTab, products, updateActive
         if (isCartUpdated) {
             updateActiveTab({ items: validatedItems });
             if (alertMessages.length > 0) {
-                const timer = setTimeout(() => alert(`⚠️ อัปเดตข้อมูลบิลร่างล่าสุด:\n\n${alertMessages.join('\n')}`), 500);
+                const timer = setTimeout(() => {
+                    toast(`อัปเดตข้อมูลบิลร่างล่าสุด:\n${alertMessages.join('\n')}`, { id: 'pos-cart-validation-update', icon: '⚠️', duration: 4500 });
+                }, 400);
                 return () => clearTimeout(timer);
             }
         }

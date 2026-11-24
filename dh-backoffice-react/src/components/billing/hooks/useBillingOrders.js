@@ -167,7 +167,7 @@ export default function useBillingOrders() {
                               String(o.trackingNumber || o.trackingNo || o.shippingTracking || '').toLowerCase().includes(searchTarget) ||
                               String(o.taxInvoiceInfo?.taxId || o.taxId || o.companyTaxId || '').toLowerCase().includes(searchTarget) ||
                               String(o.taxInvoiceInfo?.companyName || '').toLowerCase().includes(searchTarget) ||
-                              String(o.notes || o.remark || o.memo || '').toLowerCase().includes(searchTarget) ||
+                              String(o.billNote || o.notes || o.remark || o.memo || '').toLowerCase().includes(searchTarget) ||
                               String(o.paymentMethod || o.paymentType || '').toLowerCase().includes(searchTarget) ||
                               (Array.isArray(o.items) && o.items.some(item => 
                                   String(item.sku || item.productCode || item.code || '').toLowerCase().includes(searchTarget) ||

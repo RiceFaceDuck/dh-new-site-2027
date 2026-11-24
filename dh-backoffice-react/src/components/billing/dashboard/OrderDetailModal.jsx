@@ -27,10 +27,9 @@ export default function OrderDetailModal(props) {
     const [courierInput, setCourierInput] = useState(selectedOrder?.shippingMethod || selectedOrder?.courier || '');
     const [isUpdatingShipping, setIsUpdatingShipping] = useState(false);
     
-    if (!selectedOrder) return null;
-
     // 👤 First-Touch: เมื่อเปิดดูบิลหน้าเว็บ คนแรกที่เปิดจะเป็นผู้รับผิดชอบทันที
     useEffect(() => {
+        if (!selectedOrder) return;
         const isWebOrder = Boolean(selectedOrder.isWebOrder || selectedOrder.channel === 'storefront' || selectedOrder.source === 'storefront');
         if (isWebOrder && !selectedOrder.staffNickname && !selectedOrder.openedBy) {
             const currentStaffUid = auth?.currentUser?.uid || profile?.uid;
@@ -45,7 +44,9 @@ export default function OrderDetailModal(props) {
                     .catch(err => console.warn("Failed to assign staff in modal:", err));
             }
         }
-    }, [selectedOrder.id, selectedOrder.orderId, profile]);
+    }, [selectedOrder?.id, selectedOrder?.orderId, profile]);
+
+    if (!selectedOrder) return null;
     
 
 

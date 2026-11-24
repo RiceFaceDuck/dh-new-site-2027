@@ -25,7 +25,13 @@ export default function ReceiptFooter({
         : convertToThaiBahtText(_netTotal);
 
     const isVatIncluded = vatBreakdown?.vatType === 'included' || vatBreakdown?.vatType === 'รวม VAT';
+    const isVatExcluded = vatBreakdown?.vatType === 'excluded' || vatBreakdown?.vatType === 'แยก VAT';
     const vatRate = vatBreakdown?.vatRate || 7;
+    const vatLabel = isVatIncluded
+        ? `ภาษี VAT ${vatRate}% (รวมใน)`
+        : isVatExcluded
+            ? `ภาษี VAT ${vatRate}% (แยกนอก)`
+            : `ภาษี VAT ${vatRate}% (ไม่มี VAT)`;
     const vatMultiplier = 1 + vatRate / 100;
     const round2 = (val) => Math.round(Number(val || 0) * 100) / 100;
 
@@ -119,7 +125,7 @@ export default function ReceiptFooter({
                                 </tr>
                                 <tr className="h-5.5 text-slate-900 bg-blue-50/80 border-y border-blue-200/60">
                                     <td className="font-black text-blue-950 pl-1">
-                                        ภาษี VAT {vatRate}% รวม
+                                        {vatLabel}
                                     </td>
                                     <td className="text-right font-black text-blue-950 pr-1 text-[11.5px]">
                                         {vatAmount > 0 ? `+ ${vatAmount.toLocaleString('th-TH', { minimumFractionDigits: 2 })}` : '0.00'}

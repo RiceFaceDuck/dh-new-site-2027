@@ -39,6 +39,7 @@ export default function PaymentMethods({
                 </button>
                 <button 
                     disabled 
+                    title="หากต้องการเปิดบิลเครดิต ให้กดปุ่ม 'เครดิต (On Acc)' ด้านล่าง"
                     className="flex-1 py-2 text-xs font-extrabold rounded-md text-slate-400 flex items-center justify-center gap-1.5 opacity-40 cursor-not-allowed"
                 >
                     <CreditCard size={14}/> เครดิต
@@ -54,7 +55,7 @@ export default function PaymentMethods({
                             <div className="relative flex-1">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 font-bold text-gray-400">฿</span>
                                 <input 
-                                    type="number" placeholder={`ยอด ${(remainingToPay || 0).toLocaleString()}`} 
+                                    type="number" data-pos-cash-input="true" placeholder={`ยอด ${(remainingToPay || 0).toLocaleString()}`} 
                                     value={localCash} onFocus={(e) => e.target.select()} 
                                     onChange={(e) => setLocalCash(e.target.value)} 
                                     onBlur={() => updateActiveTab({ cashReceived: localCash })}
