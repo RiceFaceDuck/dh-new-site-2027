@@ -13,11 +13,49 @@ const { onRequest } = require("firebase-functions/v2/https");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 
 /**
- * 🛰️ ดึงสถิติรวมของโฆษณาและร้านค้าจาก GA4 Data API v1beta
- * ใช้วิธี Single-Batch Aggregated Query เพื่อประหยัด Token และจำนวนคำขอ (<0.5% ของ Daily Quota)
- * 
+ * 🧮 แปลงผลลัพธ์ Multi-DateRange จาก GA4 runReport (1 Request 4 ช่วงเวลา) เป็นออบเจกต์สถิติหน้าเว็บ
+ * @param {object|null} report - GA4 runReport response
+ * @returns {{yesterday: number, last7Days: number, last30Days: number, allTime: number}|null}
+ */
+function parseWebTrafficReport(report) {
+  if (!report || !Array.isArray(report.rows) || report.rows.length === 0) {
+    return null;
+  }
+
+  const fallbackIndexMap = {
+    date_range_0: "yesterday",
+    date_range_1: "last7Days",
+    date_range_2: "last30Days",
+    date_range_3: "allTime"
+  };
+
+  const traffic = {
+    yesterday: 0,
+    last7Days: 0,
+    last30Days: 0,
+    allTime: 0
+  };
+
+  for (const row of report.rows) {
+    const rawKey = row.dimensionValues?.[0]?.value || "";
+    const targetKey = Object.prototype.hasOwnProperty.call(traffic, rawKey)
+      ? rawKey
+      : fallbackIndexMap[rawKey];
+    if (!targetKey) continue;
+
+    const val = parseInt(row.metricValues?.[0]?.value || "0", 10);
+    traffic[targetKey] = Number.isFinite(val) ? val : 0;
+  }
+
+  return traffic;
+}
+
+/**
+ * 🛰️ ดึงสถิติรวมของโฆษณา ร้านค้า และยอดเข้าชมหน้าเว็บจาก GA4 Data API v1beta
+ * ยิงขนานใน Client เดียว (Promise.allSettled) และรวบยอดเข้าชมเว็บ 4 ช่วงเวลาเป็น 1 Request เดียว
+ *
  * @param {string} propertyId - GA4 Property ID
- * @returns {Promise<{adStats: object, storeStats: object, propertyQuota: object}|null>}
+ * @returns {Promise<{adStats: object, storeStats: object, webTraffic: object|null, propertyQuota: object}|null>}
  */
 async function fetchGA4AggregatedStats(propertyId) {
   if (!propertyId) {
@@ -28,25 +66,70 @@ async function fetchGA4AggregatedStats(propertyId) {
   try {
     const { BetaAnalyticsDataClient } = require("@google-analytics/data");
     const analyticsDataClient = new BetaAnalyticsDataClient();
+    const property = `properties/${propertyId}`;
 
-    // 1. ดึงสถิติยอดวิวและคลิกแยกตาม ad_id (ad_impression และ ad_click) รวบก้อนเดียวทั้งระบบ
-    const [adReport] = await analyticsDataClient.runReport({
-      property: `properties/${propertyId}`,
-      dateRanges: [{ startDate: "2025-01-01", endDate: "today" }],
-      dimensions: [
-        { name: "customEvent:ad_id" },
-        { name: "eventName" }
-      ],
-      metrics: [{ name: "eventCount" }],
-      dimensionFilter: {
-        filter: {
-          fieldName: "eventName",
-          inListFilter: {
-            values: ["ad_impression", "ad_click"]
+    // ยิงขนาน 3 รายงานพร้อมกันใน Client เดียว (แยก Fault Tolerance อิสระ)
+    const [adRes, storeRes, webTrafficRes] = await Promise.allSettled([
+      // 1. ยอดวิวและคลิกโฆษณาแยกตาม ad_id
+      analyticsDataClient.runReport({
+        property,
+        dateRanges: [{ startDate: "2025-01-01", endDate: "today" }],
+        dimensions: [
+          { name: "customEvent:ad_id" },
+          { name: "eventName" }
+        ],
+        metrics: [{ name: "eventCount" }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "eventName",
+            inListFilter: {
+              values: ["ad_impression", "ad_click"]
+            }
           }
         }
-      }
-    });
+      }),
+      // 2. ยอดเข้าชมหน้าร้านค้าแยกตาม store_id
+      analyticsDataClient.runReport({
+        property,
+        dateRanges: [{ startDate: "2025-01-01", endDate: "today" }],
+        dimensions: [{ name: "customEvent:store_id" }],
+        metrics: [{ name: "eventCount" }],
+        dimensionFilter: {
+          filter: {
+            fieldName: "eventName",
+            stringFilter: {
+              value: "store_profile_view"
+            }
+          }
+        }
+      }),
+      // 3. ยอดเข้าชมหน้าเว็บ 4 ช่วงเวลาใน Request เดียว (แทนสคริปต์ Local)
+      analyticsDataClient.runReport({
+        property,
+        dateRanges: [
+          { startDate: "yesterday", endDate: "yesterday", name: "yesterday" },
+          { startDate: "7daysAgo", endDate: "today", name: "last7Days" },
+          { startDate: "30daysAgo", endDate: "today", name: "last30Days" },
+          { startDate: "2020-01-01", endDate: "today", name: "allTime" }
+        ],
+        metrics: [{ name: "screenPageViews" }]
+      })
+    ]);
+
+    const adReport = adRes.status === "fulfilled" ? adRes.value?.[0] : null;
+    if (adRes.status === "rejected") {
+      console.warn("⚠️ [GA4AdSyncCron] Ad report fetch failed:", adRes.reason?.message || adRes.reason);
+    }
+
+    const storeReport = storeRes.status === "fulfilled" ? storeRes.value?.[0] : null;
+    if (storeRes.status === "rejected") {
+      console.warn("⚠️ [GA4AdSyncCron] Store report fetch failed:", storeRes.reason?.message || storeRes.reason);
+    }
+
+    const webTrafficReport = webTrafficRes.status === "fulfilled" ? webTrafficRes.value?.[0] : null;
+    if (webTrafficRes.status === "rejected") {
+      console.warn("⚠️ [GA4AdSyncCron] Web traffic report fetch failed:", webTrafficRes.reason?.message || webTrafficRes.reason);
+    }
 
     const adStats = {};
     if (adReport && adReport.rows) {
@@ -66,22 +149,6 @@ async function fetchGA4AggregatedStats(propertyId) {
       }
     }
 
-    // 2. ดึงสถิติยอดเข้าชมหน้าร้านค้าแยกตาม store_id (store_profile_view)
-    const [storeReport] = await analyticsDataClient.runReport({
-      property: `properties/${propertyId}`,
-      dateRanges: [{ startDate: "2025-01-01", endDate: "today" }],
-      dimensions: [{ name: "customEvent:store_id" }],
-      metrics: [{ name: "eventCount" }],
-      dimensionFilter: {
-        filter: {
-          fieldName: "eventName",
-          stringFilter: {
-            value: "store_profile_view"
-          }
-        }
-      }
-    });
-
     const storeStats = {};
     if (storeReport && storeReport.rows) {
       for (const row of storeReport.rows) {
@@ -93,13 +160,15 @@ async function fetchGA4AggregatedStats(propertyId) {
       }
     }
 
+    const webTraffic = parseWebTrafficReport(webTrafficReport);
+
     // ตรวจสอบโควต้าคงเหลือ (Circuit Breaker)
-    const quota = adReport?.propertyQuota;
+    const quota = adReport?.propertyQuota || webTrafficReport?.propertyQuota;
     if (quota?.tokensPerDay) {
       console.log(`📊 [GA4AdSyncCron] GA4 Quota Tokens Remaining: ${quota.tokensPerDay.remaining || "N/A"}`);
     }
 
-    return { adStats, storeStats, propertyQuota: quota };
+    return { adStats, storeStats, webTraffic, propertyQuota: quota };
   } catch (err) {
     console.warn("⚠️ [GA4AdSyncCron] GA4 Data API fetch error (fallback gracefully):", err.message);
     return null;
@@ -121,6 +190,7 @@ const syncGA4AdStatsLogic = async (db, options = {}) => {
     totalDeductions: 0,
     adsPaused: 0,
     storesReconciled: 0,
+    webTrafficSynced: false,
     errors: [],
     durationMs: 0
   };
@@ -355,8 +425,33 @@ const syncGA4AdStatsLogic = async (db, options = {}) => {
       }
     }
 
+    // 6. 🌐 ซิงค์สถิติเข้าชมหน้าเว็บ (settings/web_traffic) ในรอบเดียวกัน (0 Read / 1 Write + Zero-Wipe Guard)
+    const webTraffic = remoteData?.webTraffic || options.incomingWebTraffic || null;
+    if (
+      webTraffic &&
+      (webTraffic.allTime > 0 || webTraffic.last30Days > 0 || webTraffic.last7Days > 0 || webTraffic.yesterday > 0)
+    ) {
+      try {
+        await db.collection("settings").doc("web_traffic").set({
+          yesterday: Number(webTraffic.yesterday || 0),
+          last7Days: Number(webTraffic.last7Days || 0),
+          last30Days: Number(webTraffic.last30Days || 0),
+          allTime: Number(webTraffic.allTime || 0),
+          lastUpdatedAt: FieldValue.serverTimestamp(),
+          updatedAtIso: new Date().toISOString(),
+          source: "GA4_CRON"
+        }, { merge: true });
+        results.webTrafficSynced = true;
+        console.log(
+          `🌐 [GA4AdSyncCron] Synced settings/web_traffic: yesterday=${webTraffic.yesterday}, 7d=${webTraffic.last7Days}, 30d=${webTraffic.last30Days}, allTime=${webTraffic.allTime}`
+        );
+      } catch (wtErr) {
+        console.warn("⚠️ [GA4AdSyncCron] Failed to sync settings/web_traffic:", wtErr.message);
+      }
+    }
+
     results.durationMs = Date.now() - startTime;
-    console.log(`✅ [GA4AdSyncCron] Completed sync: Processed=${results.totalAdsProcessed}, Deducted=${results.totalDeductions} Pts, Paused=${results.adsPaused}, StoresReconciled=${results.storesReconciled}`);
+    console.log(`✅ [GA4AdSyncCron] Completed sync: Processed=${results.totalAdsProcessed}, Deducted=${results.totalDeductions} Pts, Paused=${results.adsPaused}, StoresReconciled=${results.storesReconciled}, WebTrafficSynced=${results.webTrafficSynced}`);
     return results;
   } catch (error) {
     console.error("🔥 [GA4AdSyncCron] Error during ad sync:", error);
