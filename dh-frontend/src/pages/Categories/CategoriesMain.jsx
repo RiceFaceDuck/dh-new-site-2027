@@ -1,114 +1,141 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { Link } from 'react-router-dom';
 import { useCategories } from './hooks/useCategories';
 import CategoryGrid from './components/CategoryGrid';
 import CategoryModal from './components/CategoryModal';
-import { LayoutGrid, ChevronRight, Search } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
 import LazyFeaturedSection from './components/LazyFeaturedSection';
+import { CATEGORY_GROUPS, getCategoryMeta } from './utils/categoryIcons';
+
+const MOBILE_INITIAL_LIMIT = 6;
 
 const CategoriesMain = () => {
   const { categories, loading, error } = useCategories();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [quickSearch, setQuickSearch] = useState('');
-  const navigate = useNavigate();
+  const [activeGroup, setActiveGroup] = useState('all');
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (quickSearch.trim()) {
-      navigate(`/search?q=${encodeURIComponent(quickSearch.trim())}`);
-    } else {
-      navigate('/search');
-    }
-  };
+  // Client-side group filter (0 extra Firestore reads)
+  const filteredCategories = useMemo(() => {
+    if (!Array.isArray(categories)) return [];
+    if (activeGroup === 'all') return categories;
+    return categories.filter((cat) => getCategoryMeta(cat).group === activeGroup);
+  }, [categories, activeGroup]);
+
+  const shouldTruncateMobile =
+    activeGroup === 'all' && filteredCategories.length > MOBILE_INITIAL_LIMIT;
+  const mobileVisibleCategories = shouldTruncateMobile
+    ? filteredCategories.slice(0, MOBILE_INITIAL_LIMIT)
+    : filteredCategories;
+  const hiddenMobileCount = Math.max(0, filteredCategories.length - MOBILE_INITIAL_LIMIT);
 
   return (
-    <div className="w-full min-h-screen pb-36 md:pb-20 animate-fade-in">
-      {/* Formal Header Banner - Modern Glass & Elevation */}
-      <div className="bg-white/70 backdrop-blur-md border-b border-slate-200/50 shadow-[0_1px_2px_rgba(15,23,42,0.03)]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 md:py-8">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div>
-              <nav className="flex items-center text-xs md:text-sm text-slate-500 mb-1.5 md:mb-2">
-                <Link to="/" className="hover:text-brand font-medium transition-colors">หน้าหลัก</Link>
-                <span className="mx-2 text-slate-300">/</span>
-                <span className="text-slate-800 font-semibold">หมวดหมู่อะไหล่</span>
-              </nav>
-              <h1 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight flex items-center gap-2">
-                หมวดหมู่อะไหล่ทั้งหมด
-              </h1>
-              <p className="text-slate-600 mt-2 text-xs md:text-sm leading-relaxed max-w-3xl">
-                คุณสามารถใช้ <span className="font-bold text-slate-800 bg-slate-100 px-1.5 py-0.5 rounded-[2px] border border-slate-200/60">Part Number (PN)</span> หรือชื่อรุ่น เพื่อค้นหาอะไหล่ได้ทันที
-              </p>
-            </div>
+    <div className="w-full min-h-screen pb-24 md:pb-16 animate-fade-in">
+      {/* Page Header: Matte White + Hairline Bottom Border + 4-Group Filter Pills */}
+      <section className="bg-white border-b border-slate-200 -mt-4 md:-mt-6 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 md:py-5 mb-5 md:mb-6">
+        <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-end justify-between gap-4">
+          <div>
+            <nav className="flex items-center gap-1.5 text-xs text-slate-500 mb-1.5">
+              <Link to="/" className="hover:text-brand transition-colors">
+                หน้าหลัก
+              </Link>
+              <span className="text-slate-300">/</span>
+              <span className="text-brand font-medium">หมวดหมู่อะไหล่</span>
+            </nav>
 
-            {/* 🔍 Search Input ในหน้าหมวดหมู่ (ทั้งมือถือและจอคอม) */}
-            <div className="w-full md:w-80 shrink-0">
-              <form onSubmit={handleSearchSubmit} className="relative w-full group">
-                <input 
-                  type="text" 
-                  value={quickSearch}
-                  onChange={(e) => setQuickSearch(e.target.value)}
-                  placeholder="ค้นหาอะไหล่, รหัส PN, หรือรุ่น..." 
-                  className="w-full bg-white border border-slate-200/80 text-slate-800 pl-4 pr-11 py-2.5 rounded-[2px] focus:outline-hidden focus:ring-2 focus:ring-brand/20 focus:border-brand transition-all text-xs sm:text-sm placeholder-slate-400 group-hover:border-slate-300 shadow-[0_1px_2px_rgba(15,23,42,0.04)]"
-                />
-                <button 
-                  type="submit" 
-                  aria-label="ค้นหาสินค้า" 
-                  className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-brand text-white p-1.5 rounded-[2px] hover:bg-brand-dark transition-all active:scale-95 shadow-2xs"
+            <h1 className="font-heading text-xl sm:text-2xl font-bold text-slate-900 leading-tight">
+              หมวดหมู่อะไหล่ทั้งหมด
+            </h1>
+
+            <p className="text-slate-500 font-light mt-1.5 text-xs md:text-[13.5px] leading-relaxed flex items-center flex-wrap gap-1.5">
+              <span>เลือกตามประเภทชิ้นส่วน หรือค้นหาด้วย</span>
+              <span className="font-heading text-[11.5px] font-semibold bg-[#EDF4FB] text-[#054D80] border border-[#C9E0F5] px-1.5 py-0.5 rounded-sm">
+                Part Number (PN)
+              </span>
+              <span>หรือรุ่นเครื่องได้ที่แถบด้านบนทันที</span>
+            </p>
+          </div>
+
+          {/* 4-Group Filter Pills (Client-Side, Zero Extra Reads) */}
+          <div className="flex items-center gap-2 overflow-x-auto hide-scrollbar pb-0.5 lg:pb-0 shrink-0">
+            {CATEGORY_GROUPS.map((group) => {
+              const isActive = activeGroup === group.id;
+              const label =
+                group.id === 'all' && categories.length > 0
+                  ? `${group.label} (${categories.length})`
+                  : group.label;
+
+              return (
+                <button
+                  key={group.id}
+                  type="button"
+                  onClick={() => setActiveGroup(group.id)}
+                  className={`text-[12.5px] md:text-[13px] px-3 py-1.5 rounded-md border whitespace-nowrap transition-colors cursor-pointer ${
+                    isActive
+                      ? 'bg-[#132642] text-white border-[#132642] font-medium'
+                      : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900'
+                  }`}
                 >
-                  <Search size={15} strokeWidth={2.5} />
+                  {label}
                 </button>
-              </form>
-            </div>
+              );
+            })}
           </div>
         </div>
-      </div>
-
+      </section>
 
       {/* Main Content Area */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 md:py-8">
-        {/* Mobile View: ปุ่มกดเลือกหมวดหมู่แบบกะทัดรัด (กดแล้วเปิด Popup กลางจอ) */}
-        <div className="block md:hidden mb-6">
-          <button
-            type="button"
-            onClick={() => setIsModalOpen(true)}
-            className="w-full flex items-center justify-between p-3.5 bg-white rounded-[0.2rem] border border-slate-200/80 shadow-[0_4px_16px_-2px_rgba(15,23,42,0.12),0_2px_4px_-1px_rgba(15,23,42,0.06)] hover:border-brand/40 active:scale-[0.99] transition-all group"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-[0.2rem] bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 border border-blue-100 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                <LayoutGrid className="w-5 h-5" />
-              </div>
-              <div className="text-left">
-                <div className="text-sm font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
-                  เลือกหมวดหมู่อะไหล่
-                </div>
-                <p className="text-xs text-slate-500">
-                  {categories?.length ? `มี ${categories.length} หมวดหมู่พร้อมใช้งาน` : 'แตะเพื่อเลือกหมวดหมู่'}
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-1 text-xs font-semibold text-blue-600 bg-blue-50/80 px-2.5 py-1.5 rounded-[0.2rem] border border-blue-100/80">
-              <span>เลือกหมวด</span>
-              <ChevronRight className="w-3.5 h-3.5" />
-            </div>
-          </button>
+      <div className="max-w-7xl mx-auto">
+        {/* Mobile Header Row + 2-Column Compact Grid (Shows 6 Categories Immediately) */}
+        <div className="block md:hidden">
+          <div className="flex items-center justify-between mb-2.5">
+            <strong className="font-heading text-[15px] text-slate-900">
+              เลือกตามหมวดหมู่
+            </strong>
+            {categories.length > 0 && (
+              <button
+                type="button"
+                onClick={() => setIsModalOpen(true)}
+                className="font-heading text-xs font-medium text-brand bg-[#EDF4FB] px-2.5 py-1.5 rounded-md active:scale-95 transition-transform"
+              >
+                ดูครบ {categories.length} หมวด
+              </button>
+            )}
+          </div>
+
+          <CategoryGrid
+            categories={mobileVisibleCategories}
+            loading={loading}
+            error={error}
+            compact
+          />
+
+          {shouldTruncateMobile && (
+            <button
+              type="button"
+              onClick={() => setIsModalOpen(true)}
+              className="mt-2.5 w-full h-11 bg-white border border-dashed border-slate-400 rounded-md flex items-center justify-center gap-1.5 font-heading text-[13px] font-medium text-[#132642] active:scale-[0.99] transition-transform"
+            >
+              <span>+ ดูอีก {hiddenMobileCount} หมวดหมู่ทั้งหมด</span>
+            </button>
+          )}
         </div>
 
-        {/* Desktop View: Grid 4 คอลัมน์เดิม 100% สเกล PC คงไว้เหมือนเดิม */}
+        {/* Tablet & Desktop Grid (3 Cols Tablet / 4 Cols PC) */}
         <div className="hidden md:block">
-          <CategoryGrid categories={categories} loading={loading} error={error} />
+          <CategoryGrid
+            categories={filteredCategories}
+            loading={loading}
+            error={error}
+          />
         </div>
 
-        {/* Modal Popup สำหรับเลือกหมวดหมู่บนมือถือ */}
+        {/* Modal Popup สำหรับเลือกหมวดหมู่ทั้งหมดบนมือถือ */}
         <CategoryModal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
           categories={categories || []}
         />
-        
-        {/* ========================================================
-            Section: Lazy Featured Products (โหลดเมื่อเลื่อนจอถึงเท่านั้น เพื่อประหยัดโควต้า 100%)
-            ======================================================== */}
+
+        {/* Lazy Featured Products (โหลดเมื่อเลื่อนจอถึงเท่านั้น เพื่อประหยัดโควต้า 100%) */}
         <LazyFeaturedSection />
       </div>
     </div>

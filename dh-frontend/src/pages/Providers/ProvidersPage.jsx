@@ -45,8 +45,8 @@ const ProvidersPage = () => {
 
   return (
     <div className="w-full min-h-screen pb-24 md:pb-16 animate-fade-in">
-      {/* Page Header (Precision Parts Cabinet — Matched with /categories) */}
-      <section className="bg-white border-b border-slate-200 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 md:py-5 mb-5 md:mb-6">
+      {/* Page Header (Precision Parts Cabinet — Matched with /categories & Flush under Navbar) */}
+      <section className="bg-white border-b border-slate-200 -mt-4 md:-mt-6 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-4 md:py-5 mb-5 md:mb-6">
         <div className="max-w-7xl mx-auto flex flex-col lg:flex-row lg:items-end justify-between gap-3.5 md:gap-4">
           <div>
             <nav aria-label="เส้นทางหน้าเว็บ" className="flex items-center gap-1.5 text-xs text-slate-500 mb-1.5">
