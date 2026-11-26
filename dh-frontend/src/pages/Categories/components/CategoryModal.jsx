@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { X, LayoutGrid, Package, Search } from 'lucide-react';
-import LazyImage from '../../../components/common/LazyImage';
+import { X, LayoutGrid, Search } from 'lucide-react';
+import { CategorySvgIcon } from '../utils/categoryIcons';
 
 const CategoryModal = ({ isOpen, onClose, categories = [] }) => {
   const navigate = useNavigate();
@@ -30,7 +30,11 @@ const CategoryModal = ({ isOpen, onClose, categories = [] }) => {
 
   const filteredCategories = categories.filter((cat) => {
     if (!searchTerm.trim()) return true;
-    return cat.name?.toLowerCase().includes(searchTerm.toLowerCase().trim());
+    const q = searchTerm.toLowerCase().trim();
+    return (
+      cat.name?.toLowerCase().includes(q) ||
+      cat.type?.toLowerCase().includes(q)
+    );
   });
 
   const handleSelect = (categoryType) => {
@@ -39,46 +43,47 @@ const CategoryModal = ({ isOpen, onClose, categories = [] }) => {
   };
 
   return (
-    <div 
+    <div
       className="fixed inset-0 z-50 flex items-center justify-center p-3.5 sm:p-4 animate-in fade-in duration-200"
       role="dialog"
       aria-modal="true"
     >
       {/* Backdrop */}
-      <div 
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+      <div
+        className="fixed inset-0 bg-slate-900/55 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
 
       {/* Modal Dialog Card */}
-      <div className="relative z-10 w-full max-w-md bg-white rounded-[2px] shadow-2xl border border-slate-200/60 overflow-hidden flex flex-col max-h-[85vh] animate-in zoom-in-95 duration-200">
+      <div className="relative z-10 w-full max-w-md bg-white rounded-lg shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[84vh] animate-in zoom-in-95 duration-200">
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100 bg-slate-50/70">
+        <div className="flex items-center justify-between px-4 py-3.5 border-b border-slate-200 bg-white">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-[2px] bg-blue-100/80 text-blue-600 flex items-center justify-center shrink-0">
+            <div className="w-9 h-9 rounded-md bg-[#EDF4FB] text-brand flex items-center justify-center shrink-0">
               <LayoutGrid className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-slate-900">
-                เลือกหมวดหมู่อะไหล่
+              <h3 className="font-heading text-[15px] font-bold text-slate-900 leading-tight">
+                หมวดหมู่อะไหล่ทั้งหมด ({categories.length})
               </h3>
               <p className="text-xs text-slate-500">
-                ทั้งหมด {categories.length} หมวดหมู่
+                เลือกหมวดหมู่ที่ต้องการดูรายการอะไหล่
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-200/70 hover:bg-slate-300 text-slate-600 flex items-center justify-center transition-colors active:scale-95"
+            className="w-8 h-8 rounded-md bg-slate-50 hover:bg-slate-100 border border-slate-200 text-slate-500 flex items-center justify-center transition-colors active:scale-95"
             aria-label="ปิดหน้าต่าง"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Search Bar inside Modal (helps when category count is high) */}
+        {/* Search Bar inside Modal */}
         {categories.length > 6 && (
-          <div className="px-4 pt-3 pb-1 border-b border-slate-100/80 bg-white">
+          <div className="px-3.5 py-2.5 border-b border-slate-100 bg-white">
             <div className="relative flex items-center">
               <Search className="w-4 h-4 text-slate-400 absolute left-3 pointer-events-none" />
               <input
@@ -86,11 +91,12 @@ const CategoryModal = ({ isOpen, onClose, categories = [] }) => {
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="ค้นหาชื่อหมวดหมู่..."
-                className="w-full pl-9 pr-8 py-2 text-xs sm:text-sm bg-slate-50 border border-slate-200/80 rounded-[2px] focus:outline-none focus:border-blue-500 focus:bg-white transition-all text-slate-800 placeholder-slate-400"
+                placeholder="พิมพ์ชื่อหมวดหมู่ เช่น จอ, พัดลม, สายแพ..."
+                className="w-full h-10 pl-9 pr-8 text-sm bg-slate-50 border border-slate-200 rounded-md focus:outline-hidden focus:border-brand focus:bg-white transition-all text-slate-800 placeholder-slate-400"
               />
               {searchTerm && (
                 <button
+                  type="button"
                   onClick={() => setSearchTerm('')}
                   className="absolute right-2.5 text-slate-400 hover:text-slate-600 p-0.5"
                 >
@@ -101,10 +107,10 @@ const CategoryModal = ({ isOpen, onClose, categories = [] }) => {
           </div>
         )}
 
-        {/* Category Items Grid */}
-        <div className="overflow-y-auto p-3.5 sm:p-4 overscroll-contain">
+        {/* Category Items Grid (2 Columns with New Technical SVG Icons) */}
+        <div className="overflow-y-auto p-3.5 overscroll-contain">
           {filteredCategories.length === 0 ? (
-            <div className="py-10 text-center text-slate-400 text-xs sm:text-sm">
+            <div className="py-10 text-center text-slate-400 text-sm">
               ไม่พบหมวดหมู่ที่ตรงกับ &quot;{searchTerm}&quot;
             </div>
           ) : (
@@ -114,25 +120,13 @@ const CategoryModal = ({ isOpen, onClose, categories = [] }) => {
                   key={cat.id || cat.type}
                   type="button"
                   onClick={() => handleSelect(cat.type)}
-                  className="flex flex-col items-center justify-center p-3 rounded-[0.2rem] border border-slate-200/60 bg-white hover:border-brand/40 hover:bg-blue-50/20 active:scale-95 transition-all text-center shadow-[0_1px_3px_rgba(15,23,42,0.04)] group"
+                  className="flex items-center gap-2.5 p-2.5 min-h-[56px] rounded-md border border-slate-200 bg-white hover:border-[#93C5FD] hover:bg-[#F8FBFF] active:scale-[0.98] transition-all text-left shadow-[0_1px_2px_rgba(15,23,42,0.04)] group"
                 >
-                  {/* Image / Icon: Clean, borderless, no shape box */}
-                  <div className="w-16 h-16 flex items-center justify-center overflow-hidden group-hover:scale-105 transition-transform duration-200 mb-2">
-                    {cat.imageUrl ? (
-                      <LazyImage
-                        src={cat.imageUrl}
-                        alt={cat.name}
-                        className="w-full h-full object-contain"
-                      />
-                    ) : (
-                      <Package className="w-9 h-9 text-blue-500" strokeWidth={1.75} />
-                    )}
+                  <div className="w-9 h-9 rounded-md bg-[#EDF4FB] text-brand group-hover:bg-brand group-hover:text-white flex items-center justify-center shrink-0 transition-colors">
+                    <CategorySvgIcon category={cat} />
                   </div>
-                  <span className="text-xs font-bold text-slate-800 group-hover:text-blue-600 line-clamp-1">
+                  <span className="font-heading text-xs font-semibold text-slate-900 group-hover:text-brand leading-snug line-clamp-2 break-words">
                     {cat.name}
-                  </span>
-                  <span className="text-[10px] text-slate-400 mt-0.5">
-                    แตะเพื่อดูอะไหล่
                   </span>
                 </button>
               ))}

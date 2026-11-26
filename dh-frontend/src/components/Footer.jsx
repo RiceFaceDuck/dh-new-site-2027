@@ -23,63 +23,63 @@ const Footer = () => {
   if (!config) return null;
 
   const bgMap = {
-    'slate-900': '#0f172a',
+    'slate-900': '#0F1D33',
     'zinc-900': '#18181b',
     'blue-950': '#082f49',
     'slate-950': '#020617'
   };
-  const resolvedBg = bgMap[config.colors?.bgDark] || (config.colors?.bgDark?.startsWith('#') ? config.colors.bgDark : '#0f172a');
-  const borderClass = 'border-slate-800';
-  const textMutedClass = 'text-slate-400';
+  const resolvedBg =
+    bgMap[config.colors?.bgDark] ||
+    (config.colors?.bgDark?.startsWith('#') ? config.colors.bgDark : '#0F1D33');
 
   return (
-    <footer 
-      className={`relative border-t pt-16 pb-24 md:pb-12 mt-12 md:mt-24 overflow-hidden transition-colors duration-500 ${borderClass}`}
+    <footer
+      className="relative border-t border-[#1E3250] pt-10 pb-20 md:pb-8 mt-10 md:mt-16 overflow-hidden text-slate-300 transition-colors duration-300"
       style={{ backgroundColor: resolvedBg }}
     >
-      {/* Tech Background Layer */}
-      <div className="absolute inset-0 bg-tech-grid-dark opacity-20 pointer-events-none z-0"></div>
-      
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 md:gap-12 mb-12">
-          
-          <FooterBrand 
-            companyConfig={config.company} 
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[1.35fr_0.85fr_0.9fr_1.25fr] gap-7 lg:gap-8 mb-8">
+          <FooterBrand
+            companyConfig={config.company}
             trustBadgesConfig={config.trustBadges}
             socialHubConfig={config.socialHub}
           />
 
-          <FooterLinkZone 
-            title="หมวดหมู่สินค้า" 
-            links={config.quickLinks} 
-            markerColor="bg-cyber-blue shadow-[0_0_8px_rgba(14,165,233,0.5)]" 
+          <FooterLinkZone
+            title="สินค้าและบริการ"
+            links={config.quickLinks}
+            markerColor="bg-sky-400"
           />
 
-          <FooterLinkZone 
-            title="ศูนย์ช่วยเหลือ" 
-            links={config.supportLinks} 
-            markerColor="bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]" 
+          <FooterLinkZone
+            title="ช่วยเหลือ & นโยบาย"
+            links={config.supportLinks}
+            markerColor="bg-amber-400"
           />
 
-          <FooterContact 
-            companyConfig={config.company} 
+          <FooterContact
+            companyConfig={config.company}
             businessHoursConfig={config.businessHours}
           />
-
         </div>
-        
+
         {/* Bottom Bar */}
-        <div className={`border-t pt-6 md:pt-8 flex flex-col md:flex-row justify-between items-center text-[10px] md:text-xs space-y-4 md:space-y-0 ${borderClass} ${textMutedClass}`}>
-          <p className="font-tech tracking-widest uppercase">
-            © {new Date().getFullYear()} DH NOTEBOOK SYSTEM. ALL RIGHTS RESERVED.
+        <div className="border-t border-white/10 pt-4 flex flex-col md:flex-row justify-between items-center text-[11.5px] text-slate-500 gap-2.5">
+          <p>
+            © {new Date().getFullYear()} DH Notebook &amp; DH-Servicehub. สงวนลิขสิทธิ์ทั้งหมด
           </p>
-          <div className="flex flex-wrap items-center gap-4 sm:gap-6 font-medium">
-            <span className="hover:text-slate-200 cursor-pointer transition-colors">นโยบายความเป็นส่วนตัว (Privacy Policy)</span>
-            <span className="hover:text-slate-200 cursor-pointer transition-colors">เงื่อนไขการใช้งาน (Terms of Service)</span>
-            <span className="hover:text-slate-200 cursor-pointer transition-colors">นโยบายคุกกี้ (Cookie Policy)</span>
+          <div className="flex flex-wrap items-center gap-4 sm:gap-5 text-slate-400">
+            <span className="hover:text-slate-200 cursor-pointer transition-colors">
+              นโยบายความเป็นส่วนตัว (Privacy Policy)
+            </span>
+            <span className="hover:text-slate-200 cursor-pointer transition-colors">
+              เงื่อนไขการใช้งาน (Terms of Service)
+            </span>
+            <span className="hover:text-slate-200 cursor-pointer transition-colors">
+              นโยบายคุกกี้ (Cookie Policy)
+            </span>
           </div>
         </div>
-
       </div>
     </footer>
   );

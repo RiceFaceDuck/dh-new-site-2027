@@ -214,6 +214,15 @@
     --color-brand-accent: #F59E0B;/* Amber */
   }
 
+  :root {
+    --bg-canvas: #F6F8FB;
+    --bg-surface: #FFFFFF;
+    --nav-navy: #132642;
+    --brand-soft: #EDF4FB;
+    --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.05);
+    --shadow-card-hover: 0 8px 20px -6px rgba(8, 112, 184, 0.16);
+  }
+
   /* Heading & Strong Typography: Prompt (Font Pairing) */
   h1, h2, h3, h4, h5, h6, .font-heading {
     font-family: var(--font-heading);

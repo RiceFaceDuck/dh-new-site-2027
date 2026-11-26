@@ -1,16 +1,20 @@
 import CategoryCard from './CategoryCard';
 
-const CategoryGrid = ({ categories, loading, error }) => {
+const CategoryGrid = ({ categories, loading, error, compact = false }) => {
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
-        {[...Array(8)].map((_, i) => (
-          <div key={i} className="animate-pulse flex flex-row items-center px-3.5 py-2 md:px-4 md:py-2 bg-white rounded-[0.2rem] border border-slate-200 shadow-xs">
-            <div className="w-16 h-16 md:w-20 md:h-20 bg-slate-200/80 rounded-[0.2rem] shrink-0"></div>
-            <div className="ml-2 md:ml-3 grow flex items-center justify-center px-2">
-              <div className="h-5 bg-slate-200/80 rounded-md w-2/3"></div>
+      <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 md:gap-3.5">
+        {[...Array(compact ? 6 : 8)].map((_, i) => (
+          <div
+            key={i}
+            className="animate-pulse flex items-center gap-3 p-3 bg-white rounded-md border border-slate-200 shadow-xs"
+          >
+            <div className="w-10 h-10 md:w-[46px] md:h-[46px] bg-slate-200/80 rounded-md shrink-0"></div>
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <div className="h-4 bg-slate-200/80 rounded-sm w-3/4"></div>
+              <div className="h-3 bg-slate-100 rounded-sm w-1/2"></div>
             </div>
-            <div className="w-8 h-8 rounded-full bg-slate-100 shrink-0 ml-2"></div>
+            <div className="hidden lg:block w-7 h-7 rounded-full bg-slate-100 shrink-0"></div>
           </div>
         ))}
       </div>
@@ -27,16 +31,16 @@ const CategoryGrid = ({ categories, loading, error }) => {
 
   if (!categories || categories.length === 0) {
     return (
-      <div className="p-8 md:p-12 text-center text-slate-500 bg-white rounded-md border border-slate-200 text-sm shadow-xs">
-        ไม่มีหมวดหมู่เปิดใช้งานในขณะนี้
+      <div className="p-8 md:p-10 text-center text-slate-500 bg-white rounded-md border border-dashed border-slate-300 text-sm">
+        ไม่มีหมวดหมู่ในกลุ่มนี้
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4">
+    <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 md:gap-3.5">
       {categories.map((cat) => (
-        <CategoryCard key={cat.id} category={cat} />
+        <CategoryCard key={cat.id || cat.type} category={cat} compact={compact} />
       ))}
     </div>
   );

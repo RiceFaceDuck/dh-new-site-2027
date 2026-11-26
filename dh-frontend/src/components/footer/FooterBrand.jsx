@@ -55,149 +55,160 @@ const InstagramIcon = ({ className = 'w-4 h-4' }) => (
 const FooterBrand = ({ companyConfig, trustBadgesConfig, socialHubConfig }) => {
   const { formattedCount, loading: trafficLoading } = useWebTrafficAllTime();
   const isTrustBadgesEnabled = trustBadgesConfig?.enabled !== false;
-  const activeBadges = (trustBadgesConfig?.badges || []).filter(b => b.active !== false);
-  const isSocialEnabled = socialHubConfig?.enabled !== false && !!(
-    socialHubConfig?.facebook || 
-    socialHubConfig?.tiktok || 
-    socialHubConfig?.line || 
-    socialHubConfig?.youtube || 
-    socialHubConfig?.instagram
-  );
+  const activeBadges = (trustBadgesConfig?.badges || []).filter((b) => b.active !== false);
+  const isSocialEnabled =
+    socialHubConfig?.enabled !== false &&
+    !!(
+      socialHubConfig?.facebook ||
+      socialHubConfig?.tiktok ||
+      socialHubConfig?.line ||
+      socialHubConfig?.youtube ||
+      socialHubConfig?.instagram
+    );
 
   return (
-    <div className="col-span-1 space-y-5">
-      <div className="flex flex-col items-start leading-none">
-        <Link to="/" className="inline-block group">
-          <img 
-            src={companyConfig?.logoUrl || "/logo.jpg"} 
-            alt="Brand Logo" 
-            className="h-10 md:h-12 w-auto object-contain rounded-[2px] group-hover:scale-105 transition-transform duration-300 drop-shadow-sm" 
-            loading="lazy" 
-            onError={(e) => { e.target.src = '/logo.png'; }}
-          />
-        </Link>
-      </div>
+    <div className="col-span-1 space-y-3.5">
+      <Link to="/" className="inline-flex items-center gap-2.5 group">
+        <img
+          src={companyConfig?.logoUrl || '/logo.jpg'}
+          alt="Brand Logo"
+          className="h-10 w-auto object-contain rounded-md bg-white p-0.5 group-hover:scale-105 transition-transform duration-200"
+          loading="lazy"
+          onError={(e) => {
+            e.target.src = '/logo.png';
+          }}
+        />
+        <div className="leading-tight">
+          <strong className="block font-heading text-[15.5px] text-white">
+            DH-Servicehub
+          </strong>
+          <span className="block text-[11px] text-slate-400">
+            DH Notebook Co., Ltd.
+          </span>
+        </div>
+      </Link>
 
-      <p className="text-sm text-slate-400 pr-2 leading-relaxed font-normal">
-        {companyConfig?.description || "ผู้นำเข้าและจัดจำหน่ายอะไหล่โน๊ตบุ๊คครบวงจร พร้อมเครือข่ายช่างพันธมิตรทั่วประเทศ"}
+      <p className="text-[12.5px] text-slate-400 pr-2 leading-relaxed font-light">
+        {companyConfig?.description ||
+          'ศูนย์รวมอะไหล่โน้ตบุ๊คคุณภาพสูงสำหรับช่างซ่อมและร้านค้าทั่วประเทศ พร้อมเครือข่ายร้านช่างพาร์ทเนอร์ที่เชื่อถือได้'}
       </p>
 
       {/* Dynamic Trust Badges Grid */}
       {isTrustBadgesEnabled && activeBadges.length > 0 && (
-        <div className="space-y-2 pt-1">
-          <div className="grid grid-cols-2 gap-2.5">
-            {activeBadges.map((badge) => {
-              const IconComponent = BADGE_ICONS[badge.id] || ShieldCheck;
-              const badgeImg = BADGE_IMAGES[badge.id];
-              const labelOverrides = {
-                genuineWarranty: 'สินค้ามีการรับประกัน',
-                expressDelivery: 'ส่งออกภายในวันทันที'
-              };
-              const displayLabel = badge.label || labelOverrides[badge.id] || '';
+        <div className="grid grid-cols-2 gap-2 pt-0.5">
+          {activeBadges.map((badge) => {
+            const IconComponent = BADGE_ICONS[badge.id] || ShieldCheck;
+            const badgeImg = BADGE_IMAGES[badge.id];
+            const labelOverrides = {
+              genuineWarranty: 'สินค้ามีการรับประกัน',
+              expressDelivery: 'ส่งออกภายในวันทันที'
+            };
+            const displayLabel = badge.label || labelOverrides[badge.id] || '';
 
-              if (badgeImg) {
-                return (
-                  <div 
-                    key={badge.id}
-                    className="overflow-hidden select-none cursor-default"
-                    title={badge.description || displayLabel}
-                  >
-                    <img 
-                      src={badgeImg} 
-                      alt={displayLabel} 
-                      className="w-full h-auto object-contain filter drop-shadow-[0_2px_6px_rgba(0,0,0,0.3)]" 
-                      loading="lazy" 
-                    />
-                  </div>
-                );
-              }
-
+            if (badgeImg) {
               return (
-                <div 
+                <div
                   key={badge.id}
-                  className="flex items-center gap-2 bg-white px-2.5 py-2 min-h-[46px] rounded-[0.1rem] border border-slate-200/90 shadow-md shadow-black/30 hover:bg-slate-50 hover:border-slate-300 transition-all group"
+                  className="overflow-hidden select-none cursor-default"
                   title={badge.description || displayLabel}
                 >
-                  <IconComponent size={16} className="text-sky-600 shrink-0 group-hover:scale-105 transition-transform" />
-                  <span className="text-[11px] font-bold leading-snug text-slate-800 tracking-tight break-words">{displayLabel}</span>
+                  <img
+                    src={badgeImg}
+                    alt={displayLabel}
+                    className="w-full h-auto max-h-[34px] object-contain object-left hover:scale-[1.04] transition-transform duration-200"
+                    loading="lazy"
+                  />
                 </div>
               );
-            })}
-          </div>
+            }
+
+            return (
+              <div
+                key={badge.id}
+                className="flex items-center gap-2 bg-white px-2.5 py-2 min-h-[42px] rounded-sm border border-slate-200 hover:bg-slate-50 transition-colors"
+                title={badge.description || displayLabel}
+              >
+                <IconComponent size={15} className="text-sky-600 shrink-0" />
+                <span className="text-[11px] font-bold leading-snug text-slate-800 break-words">
+                  {displayLabel}
+                </span>
+              </div>
+            );
+          })}
         </div>
       )}
 
       {/* 📊 All-Time Web Traffic Counter (Desktop Footer) */}
-      <div className="pt-1">
-        <VisitorCounterBadge 
-          variant="footer-dark" 
-          count={formattedCount} 
-          loading={trafficLoading} 
+      <div className="pt-0.5">
+        <VisitorCounterBadge
+          variant="footer-dark"
+          count={formattedCount}
+          loading={trafficLoading}
         />
       </div>
 
       {/* Social Media Hub */}
       {isSocialEnabled && (
-        <div className="pt-2">
-          <span className="text-[11px] font-bold text-slate-400 block mb-2 uppercase tracking-wider font-tech">
+        <div className="pt-1">
+          <span className="text-[11px] font-heading font-medium text-slate-400 block mb-2">
             ช่องทางติดตามเรา
           </span>
           <div className="flex items-center gap-2">
             {socialHubConfig.facebook && (
-              <a 
-                href={socialHubConfig.facebook} 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <a
+                href={socialHubConfig.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => trackFooterClick('social_hub', 'facebook', socialHubConfig.facebook)}
-                className="w-8 h-8 rounded-lg bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center hover:bg-blue-600/30 transition-colors" 
+                className="w-8 h-8 rounded-md bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center hover:bg-blue-600/30 transition-colors"
                 title="Facebook"
               >
                 <FacebookIcon className="w-4 h-4" />
               </a>
             )}
             {socialHubConfig.tiktok && (
-              <a 
-                href={socialHubConfig.tiktok} 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <a
+                href={socialHubConfig.tiktok}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => trackFooterClick('social_hub', 'tiktok', socialHubConfig.tiktok)}
-                className="w-8 h-8 rounded-lg bg-rose-600/20 text-rose-400 border border-rose-500/30 flex items-center justify-center hover:bg-rose-600/30 transition-colors" 
+                className="w-8 h-8 rounded-md bg-rose-600/20 text-rose-400 border border-rose-500/30 flex items-center justify-center hover:bg-rose-600/30 transition-colors"
                 title="TikTok"
               >
                 <TikTokIcon className="w-4 h-4" />
               </a>
             )}
             {socialHubConfig.line && (
-              <a 
-                href={socialHubConfig.line} 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <a
+                href={socialHubConfig.line}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => trackFooterClick('social_hub', 'line', socialHubConfig.line)}
-                className="w-8 h-8 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center hover:bg-emerald-600/30 transition-colors" 
+                className="w-8 h-8 rounded-md bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center hover:bg-emerald-600/30 transition-colors"
                 title="LINE OA"
               >
                 <LineIcon className="w-4 h-4" />
               </a>
             )}
             {socialHubConfig.youtube && (
-              <a 
-                href={socialHubConfig.youtube} 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <a
+                href={socialHubConfig.youtube}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => trackFooterClick('social_hub', 'youtube', socialHubConfig.youtube)}
-                className="w-8 h-8 rounded-lg bg-red-600/20 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-600/30 transition-colors" 
+                className="w-8 h-8 rounded-md bg-red-600/20 text-red-400 border border-red-500/30 flex items-center justify-center hover:bg-red-600/30 transition-colors"
                 title="YouTube"
               >
                 <YouTubeIcon className="w-4 h-4" />
               </a>
             )}
             {socialHubConfig.instagram && (
-              <a 
-                href={socialHubConfig.instagram} 
-                target="_blank" 
-                rel="noopener noreferrer" 
+              <a
+                href={socialHubConfig.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => trackFooterClick('social_hub', 'instagram', socialHubConfig.instagram)}
-                className="w-8 h-8 rounded-lg bg-pink-600/20 text-pink-400 border border-pink-500/30 flex items-center justify-center hover:bg-pink-600/30 transition-colors" 
+                className="w-8 h-8 rounded-md bg-pink-600/20 text-pink-400 border border-pink-500/30 flex items-center justify-center hover:bg-pink-600/30 transition-colors"
                 title="Instagram"
               >
                 <InstagramIcon className="w-4 h-4" />

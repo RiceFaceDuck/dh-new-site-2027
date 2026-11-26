@@ -88,9 +88,10 @@ const ProductList = ({ products, loading, error, title = "", showTitle = false, 
       
       const name = getVal(product, ['name', 'title', 'productname', 'ชื่อสินค้า']) || 'Unknown Product Data';
       const brand = getVal(product, ['brand', 'manufacturer', 'ยี่ห้อ', 'category']) || 'OEM';
+      const category = getVal(product, ['category', 'category_lower', 'หมวดหมู่']) || '';
       const sku = getVal(product, ['sku', 'code', 'productcode', 'รหัสสินค้า', 'barcode']) || product.id?.substring(0, 8);
       
-      return { ...product, id: product.id, name, price, stock, imageUrl, brand, sku };
+      return { ...product, id: product.id, name, price, stock, imageUrl, brand, category, sku };
     });
   }, [displayProducts]);
 

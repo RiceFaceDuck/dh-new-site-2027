@@ -13,56 +13,66 @@ const SquadHighlight = () => {
 
   return (
     <div className="w-full">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-4 md:mb-6 space-y-2 md:space-y-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-3.5 md:mb-4 gap-2.5">
         <div>
-          <h2 className="text-xl md:text-2xl font-bold text-gray-800 tracking-wider mb-1 uppercase">
+          <h2 className="font-heading text-lg md:text-xl font-bold text-slate-900 leading-tight">
             ผู้ให้บริการ บริเวณใกล้เคียง
           </h2>
+          <p className="text-xs md:text-[13px] text-slate-500 font-light mt-0.5">
+            ร้านซ่อมโน้ตบุ๊คและพาร์ทเนอร์ที่เปิดรับงานใกล้ตำแหน่งของคุณ
+          </p>
           {locationError && (
-            <p className="text-xs text-amber-600 flex items-center">
+            <p className="text-xs text-amber-600 flex items-center mt-1">
               <span>{locationError}</span>
-              <button 
-                onClick={() => requestLocation(false)} 
-                className="ml-2 underline text-brand hover:text-brand-dark"
+              <button
+                type="button"
+                onClick={() => requestLocation(false)}
+                className="ml-2 underline text-brand hover:text-brand-dark cursor-pointer"
               >
                 ลองค้นหาตำแหน่งอีกครั้ง
               </button>
             </p>
           )}
         </div>
-        <Link 
-          to="/providers" 
-          className="group flex items-center gap-2 px-5 py-2.5 bg-white hover:bg-slate-50 text-slate-800 hover:text-brand font-bold text-sm rounded-md shadow-xs hover:shadow-md border border-slate-300 hover:border-brand/40 transition-all duration-300 active:scale-95 whitespace-nowrap"
+        <Link
+          to="/providers"
+          className="group inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:border-brand text-slate-900 hover:text-brand font-heading font-medium text-[13px] rounded-md border border-slate-300 transition-colors active:scale-95 whitespace-nowrap"
         >
-          ดูช่างทั้งหมด
-          <ArrowRight size={16} className="text-brand group-hover:translate-x-1 transition-transform" />
+          <span>ดูช่างทั้งหมด</span>
+          <ArrowRight size={15} className="text-brand group-hover:translate-x-0.5 transition-transform" />
         </Link>
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 animate-pulse">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-3.5 animate-pulse">
           {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl shadow-md border border-slate-200 p-3 md:p-3.5 flex items-center space-x-3 md:space-x-4 h-full">
-              <div className="w-[105px] h-[105px] sm:w-[115px] sm:h-[115px] md:w-[125px] md:h-[125px] bg-slate-200 rounded-xl shrink-0"></div>
-              <div className="flex-1 min-w-0 flex flex-col justify-center py-1">
-                <div className="h-5 bg-slate-200 rounded-md w-3/4 mb-2"></div>
-                <div className="h-3 bg-slate-200 rounded-sm w-1/2 mb-3"></div>
-                <div className="h-6 bg-slate-200 rounded-full w-24 mb-3"></div>
-                <div className="h-8 bg-slate-200 rounded-xl w-28"></div>
+            <div
+              key={i}
+              className="bg-white rounded-md border border-slate-200 overflow-hidden flex h-[132px] shadow-xs"
+            >
+              <div className="w-[108px] md:w-[124px] h-full bg-slate-200 shrink-0"></div>
+              <div className="flex-1 min-w-0 p-3 flex flex-col justify-between">
+                <div className="space-y-2">
+                  <div className="h-4 bg-slate-200 rounded-sm w-3/4"></div>
+                  <div className="h-3 bg-slate-100 rounded-sm w-full"></div>
+                </div>
+                <div className="flex items-center justify-between">
+                  <div className="h-5 bg-slate-100 rounded-sm w-20"></div>
+                  <div className="h-7 bg-slate-200 rounded-sm w-20"></div>
+                </div>
               </div>
             </div>
           ))}
         </div>
       ) : partners.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-          {/* Display partners limited by config in the hook */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-3.5">
           {partners.map((partner) => (
             <PartnerCard key={partner.id || partner.userId} partner={partner} />
           ))}
         </div>
       ) : (
-        <div className="bg-slate-50 p-6 rounded-xl text-center border border-slate-200">
-          <p className="text-slate-500">ยังไม่มีผู้ให้บริการเปิดรับงานในขณะนี้</p>
+        <div className="bg-white p-6 rounded-md text-center border border-dashed border-slate-300">
+          <p className="text-sm text-slate-500">ยังไม่มีผู้ให้บริการเปิดรับงานในขณะนี้</p>
         </div>
       )}
     </div>

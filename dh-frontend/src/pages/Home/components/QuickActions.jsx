@@ -8,12 +8,12 @@ const QuickActions = () => {
     {
       id: 'shop-parts',
       title: 'ค้นหาอะไหล่ทั้งหมด',
-      subtitle: 'ค้นหาหมวดหมู่อะไหล่ทั้งหมด',
+      subtitle: 'เลือกดูตามหมวดหมู่อะไหล่ทั้งหมด',
       icon: (
         <img
           src={partsToolboxImg}
           alt="Parts Catalog"
-          className="w-9 h-9 md:w-11 md:h-11 object-contain shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)] filter transition-transform duration-300 group-hover:scale-105"
+          className="w-9 h-9 md:w-[42px] md:h-[42px] object-contain shrink-0 transition-transform duration-200 group-hover:scale-105"
         />
       ),
       link: '/categories',
@@ -22,13 +22,11 @@ const QuickActions = () => {
       id: 'book-service',
       title: 'Model No. Checker (AI)',
       subtitle: 'AI Intelligent Scan • สแกนและเทียบอะไหล่',
-      titleClass: 'text-[14.5px] md:text-[15.5px] lg:text-[16.5px]',
-      subtitleClass: 'text-[10px] md:text-[10.5px]',
       icon: (
         <img
           src={aiSparklesImg}
           alt="AI Sparkles"
-          className="w-9 h-9 md:w-11 md:h-11 object-contain shrink-0 drop-shadow-[0_3px_5px_rgba(160,100,0,0.3)] filter transition-transform duration-300 group-hover:scale-105"
+          className="w-9 h-9 md:w-[42px] md:h-[42px] object-contain shrink-0"
         />
       ),
       link: '#',
@@ -38,12 +36,12 @@ const QuickActions = () => {
     {
       id: 'service-providers',
       title: 'ค้นหาบริการ ทั้งหมด',
-      subtitle: 'ค้นหาช่าง ผู้ให้บริการ อื่นๆ ได้ที่นี่',
+      subtitle: 'ค้นหาช่างและผู้ให้บริการใกล้คุณ',
       icon: (
         <img
           src={serviceMapPinImg}
           alt="Service Providers"
-          className="w-9 h-9 md:w-11 md:h-11 object-contain shrink-0 drop-shadow-[0_2px_4px_rgba(0,0,0,0.15)] filter transition-transform duration-300 group-hover:scale-105"
+          className="w-9 h-9 md:w-[42px] md:h-[42px] object-contain shrink-0 transition-transform duration-200 group-hover:scale-105"
         />
       ),
       link: '/providers',
@@ -52,57 +50,37 @@ const QuickActions = () => {
 
   return (
     <div className="w-full">
-      {/* ซ่อนคำว่า Quick Actions ตามแบบ Reference */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 lg:gap-6 mt-4 md:mt-0 items-stretch">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 md:gap-3.5 items-stretch">
         {actions.map((action) => {
           const CardContent = (
             <>
-              {/* Texture ลายจุดเทคระดับความชัดพอดีตา (Sweet Spot) */}
-              <div 
-                className="absolute inset-0 pointer-events-none opacity-[0.10] group-hover:opacity-[0.15] transition-opacity duration-300"
-                style={{
-                  backgroundImage: 'radial-gradient(#064e3b 0.75px, transparent 0.75px)',
-                  backgroundSize: '10px 10px',
-                }}
-              />
-
-              {/* เลเยอร์แสงสะท้อนเหลือบแก้วมุมบนขวา (Glass Gleam Highlight) */}
-              <div className="absolute inset-0 pointer-events-none bg-gradient-to-tr from-transparent via-transparent to-white/45" />
-
-              <div className="relative z-10 mr-4 md:mr-5 shrink-0 opacity-95 group-hover:opacity-100 transition-opacity">
-                {action.icon}
-              </div>
-              <div className={`relative z-10 flex flex-col min-w-0 flex-1 ${action.badge ? 'pr-16 md:pr-20' : ''}`}>
-                <span className={`font-bold text-slate-900 tracking-wide [text-shadow:none] leading-tight mb-0.5 whitespace-nowrap ${action.titleClass || 'text-xl md:text-[21px] lg:text-[23px]'}`}>
+              <div className="shrink-0">{action.icon}</div>
+              <div className={`flex flex-col min-w-0 flex-1 ${action.badge ? 'pr-14' : ''}`}>
+                <span className="font-heading text-[14.5px] lg:text-[15.5px] font-bold text-slate-900 leading-snug group-hover:text-brand transition-colors truncate">
                   {action.title}
                 </span>
-                <span className={`text-slate-600 leading-snug whitespace-nowrap ${action.subtitleClass || 'text-xs'}`}>
+                <span className="text-xs text-slate-500 font-light leading-snug mt-0.5 truncate">
                   {action.subtitle}
                 </span>
               </div>
 
-              {/* ป้ายสถานะ กำลังพัฒนา ขนาดกะทัดรัดพอดีสายตาบน PC */}
               {action.badge && (
-                <div className="absolute top-1.5 right-2 md:top-2 md:right-2 z-20">
-                  <span className="inline-flex items-center px-1.5 py-0.5 rounded-[2px] text-[9px] md:text-[9.5px] font-bold bg-amber-500/15 text-amber-800 border border-amber-300/80 shadow-2xs whitespace-nowrap">
-                    {action.badge}
-                  </span>
-                </div>
+                <span className="absolute top-2 right-2.5 inline-flex items-center px-1.5 py-0.5 rounded-sm text-[10px] font-semibold bg-[#FEF3C7] text-[#92400E] border border-[#FDE68A] whitespace-nowrap">
+                  {action.badge}
+                </span>
               )}
             </>
           );
 
-          const cardBaseClasses = "relative flex flex-row items-center py-3.5 px-4 md:py-4 md:px-5 lg:py-4.5 lg:px-6 bg-gradient-to-br from-[#D8F6E0] via-[#C8EFD4] to-[#BDE9CB] rounded-xl border border-[#AEE2BE] shadow-[0_5px_18px_rgba(16,75,42,0.14),0_2px_4px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.85)] min-h-[72px] md:min-h-[80px] h-full overflow-hidden transition-all duration-300 group";
+          const baseClasses =
+            'relative flex items-center gap-3 md:gap-3.5 px-3.5 py-3 md:px-4 md:py-3.5 bg-white border border-slate-200 border-l-4 rounded-md text-left shadow-[0_1px_3px_rgba(15,23,42,0.05)] transition-all duration-150 h-full';
 
-          // ปิดเส้นทาง: เมื่อกดแล้วไม่มีอะไรเกิดขึ้น
           if (action.disabled) {
             return (
               <div
                 key={action.id}
-                className={`${cardBaseClasses} cursor-default`}
-                onClick={(e) => {
-                  e.preventDefault();
-                }}
+                className={`${baseClasses} border-l-amber-500 opacity-95 cursor-default`}
+                onClick={(e) => e.preventDefault()}
               >
                 {CardContent}
               </div>
@@ -113,7 +91,7 @@ const QuickActions = () => {
             <Link
               key={action.id}
               to={action.link}
-              className={`${cardBaseClasses} hover:shadow-[0_10px_26px_rgba(16,75,42,0.20),0_3px_8px_rgba(0,0,0,0.06),inset_0_1px_0_rgba(255,255,255,0.95)] hover:border-emerald-300 hover:-translate-y-0.5 active:scale-95`}
+              className={`${baseClasses} group border-l-brand hover:border-[#93C5FD] hover:border-l-brand hover:shadow-[0_8px_20px_-6px_rgba(8,112,184,0.16)] hover:-translate-y-0.5 active:scale-[0.99]`}
             >
               {CardContent}
             </Link>

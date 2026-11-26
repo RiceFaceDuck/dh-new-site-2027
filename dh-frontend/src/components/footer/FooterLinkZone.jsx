@@ -2,23 +2,25 @@ import { ChevronRight } from 'lucide-react';
 import { trackFooterClick } from '../../firebase/footerAnalyticsService';
 
 const FooterLinkZone = ({ title, links, markerColor }) => {
-  // markerColor: e.g. "bg-cyber-blue shadow-[0_0_8px_rgba(14,165,233,0.5)]"
   return (
     <div>
-      <h3 className="text-white font-bold mb-5 md:mb-6 flex items-center text-sm md:text-base tracking-wide group">
-        <span className={`w-1.5 h-4 rounded-xs mr-2.5 transition-transform group-hover:scale-y-125 duration-300 ${markerColor}`}></span>
-        <span className="group-hover:text-slate-200 transition-colors">{title}</span>
+      <h3 className="font-heading text-[14.5px] font-semibold text-white mb-3 flex items-center">
+        <span className={`w-1 h-3.5 rounded-xs mr-2 ${markerColor || 'bg-sky-400'}`}></span>
+        <span>{title}</span>
       </h3>
-      <ul className="space-y-3.5 text-sm">
+      <ul className="space-y-2 text-[13px]">
         {links?.map((item, index) => (
           <li key={index}>
-            <a 
-              href={item.url} 
+            <a
+              href={item.url}
               onClick={() => trackFooterClick(title, item.label, item.url)}
-              className="flex items-center text-slate-400 hover:text-white hover:translate-x-1.5 transition-all duration-300 group"
+              className="inline-flex items-center text-slate-400 hover:text-sky-400 font-light transition-colors duration-150 group"
             >
-              <ChevronRight size={14} className="mr-1.5 opacity-40 group-hover:opacity-100 group-hover:text-(--dh-accent) transition-all" />
-              {item.label}
+              <ChevronRight
+                size={13}
+                className="mr-1 opacity-40 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all"
+              />
+              <span>{item.label}</span>
             </a>
           </li>
         ))}
