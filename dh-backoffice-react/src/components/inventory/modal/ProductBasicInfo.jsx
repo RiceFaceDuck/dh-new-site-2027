@@ -32,7 +32,7 @@ export default function ProductBasicInfo({
 
   const getFrontendUrl = (sku) => {
     if (!sku) return '';
-    return `https://dh-notebook-frontend.web.app/product/${sku}`;
+    return `https://dh-servicehub.com/product/${sku}`;
   };
 
   const autoUrl = getFrontendUrl(form.sku);

@@ -1,15 +1,29 @@
-import React from 'react';
-import { Image } from 'lucide-react';
-import { getRenderableImageUrl, handleImageError } from 'dh-shared/src/utils/imageProcessingUtils.js';
+import React, { useState, useEffect } from 'react';
+import { Image, ImageOff } from 'lucide-react';
+import { getRenderableImageUrl } from 'dh-shared/src/utils/imageProcessingUtils.js';
 
-const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock = 2 }) => {
+const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock = 2, onStorageImageError }) => {
+  const imgCandidate = product
+    ? (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : (typeof product.images === 'string' && product.images.length > 5 ? product.images : null))
+      || product.imageUrl
+      || product.image
+      || null
+    : null;
+  const displayImage = getRenderableImageUrl(imgCandidate);
+  const [hasImageError, setHasImageError] = useState(false);
+
+  useEffect(() => {
+    setHasImageError(false);
+  }, [displayImage]);
+
   if (!product) return null;
 
-  const imgCandidate = (Array.isArray(product.images) && product.images.length > 0 ? product.images[0] : (typeof product.images === 'string' && product.images.length > 5 ? product.images : null))
-    || product.imageUrl 
-    || product.image 
-    || null;
-  const displayImage = getRenderableImageUrl(imgCandidate);
+  const handleThumbError = () => {
+    setHasImageError(true);
+    if (typeof imgCandidate === 'string' && imgCandidate.includes('firebasestorage.googleapis.com')) {
+      onStorageImageError?.(product.sku || displayImage);
+    }
+  };
 
   const getHistoryCount = (history, period, fallbackField) => {
     const val = history?.[period];
@@ -40,8 +54,15 @@ const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock = 2 }
     <>
       {/* 1. รูป (Image): Compact 32x32 thumbnail */}
       <td className="px-2 py-1.5 align-middle w-12 text-center">
-        <div className="w-8 h-8 bg-dh-base rounded-lg flex items-center justify-center text-dh-muted border border-dh-border overflow-hidden group-hover:border-dh-accent/50 group-hover:scale-105 transition-all shadow-xs mx-auto">
-          {displayImage ? (
+        <div
+          className={`w-8 h-8 rounded-lg flex items-center justify-center border overflow-hidden group-hover:scale-105 transition-all shadow-xs mx-auto ${
+            hasImageError
+              ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-500 border-rose-200 dark:border-rose-800/60'
+              : 'bg-dh-base text-dh-muted border-dh-border group-hover:border-dh-accent/50'
+          }`}
+          title={hasImageError ? 'โหลดรูปภาพไม่สำเร็จ (คลังภาพอาจมีปัญหา)' : undefined}
+        >
+          {displayImage && !hasImageError ? (
             <img 
               src={displayImage} 
               alt={product.sku} 
@@ -49,9 +70,11 @@ const ProductTableRow = ({ product, onEdit, salesPeriod, globalBufferStock = 2 }
               height={32} 
               className="w-full h-full object-cover" 
               referrerPolicy="no-referrer"
-              onError={(e) => handleImageError(e, imgCandidate)} 
+              onError={handleThumbError} 
               loading="lazy" 
             />
+          ) : hasImageError ? (
+            <ImageOff size={14} />
           ) : (
             <Image size={15} className="opacity-50" />
           )}

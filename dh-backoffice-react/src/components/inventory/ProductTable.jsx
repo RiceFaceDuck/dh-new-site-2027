@@ -1,9 +1,22 @@
-import React from 'react';
-import { AlertCircle } from 'lucide-react';
+import React, { useState, useRef, useCallback } from 'react';
+import { AlertCircle, AlertTriangle, X } from 'lucide-react';
 import { TableVirtuoso } from 'react-virtuoso';
 import ProductTableRow from './ProductTableRow';
 
+const STORAGE_ERROR_ALERT_THRESHOLD = 5;
+
 export default function ProductTable({ products, onEdit, salesPeriod, globalBufferStock = 2, sortConfig, onSort }) {
+  const failedStorageSkusRef = useRef(new Set());
+  const [storageErrorCount, setStorageErrorCount] = useState(0);
+  const [isStorageBannerDismissed, setIsStorageBannerDismissed] = useState(false);
+
+  const handleStorageImageError = useCallback((skuKey) => {
+    if (!skuKey) return;
+    if (!failedStorageSkusRef.current.has(skuKey)) {
+      failedStorageSkusRef.current.add(skuKey);
+      setStorageErrorCount(failedStorageSkusRef.current.size);
+    }
+  }, []);
   const getSortIcon = (key) => {
     if (sortConfig?.key !== key) return <span className="ml-1 opacity-20">↕</span>;
     return sortConfig.direction === 'asc' ? <span className="ml-1 text-dh-accent">↑</span> : <span className="ml-1 text-dh-accent">↓</span>;
@@ -71,6 +84,27 @@ export default function ProductTable({ products, onEdit, salesPeriod, globalBuff
 
   return (
     <div className="bg-dh-surface rounded-2xl shadow-dh-card border border-dh-border overflow-hidden flex flex-col flex-1 h-full min-h-[300px]">
+      {storageErrorCount >= STORAGE_ERROR_ALERT_THRESHOLD && !isStorageBannerDismissed && (
+        <div
+          role="alert"
+          className="px-4 py-2.5 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-300 dark:border-amber-800/70 flex items-center justify-between gap-3 text-amber-900 dark:text-amber-200 text-xs sm:text-sm shrink-0"
+        >
+          <div className="flex items-center gap-2 min-w-0">
+            <AlertTriangle size={16} className="text-amber-600 dark:text-amber-400 shrink-0" />
+            <span className="font-semibold truncate">
+              ตรวจพบปัญหาการโหลดภาพจากคลังภาพ (Firebase Storage) แล้ว {storageErrorCount} รายการ — โปรดตรวจสอบสถานะ Blaze Plan / Billing หรือสิทธิ์การเข้าถึง
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsStorageBannerDismissed(true)}
+            className="p-1 rounded-md hover:bg-amber-200/60 dark:hover:bg-amber-900/60 text-amber-800 dark:text-amber-200 transition-colors cursor-pointer shrink-0"
+            title="ปิดแถบแจ้งเตือน"
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
       <TableVirtuoso
         data={products}
         className="custom-scrollbar w-full h-full"
@@ -156,7 +190,8 @@ export default function ProductTable({ products, onEdit, salesPeriod, globalBuff
             product={product} 
             onEdit={onEdit} 
             salesPeriod={salesPeriod} 
-            globalBufferStock={globalBufferStock} 
+            globalBufferStock={globalBufferStock}
+            onStorageImageError={handleStorageImageError}
           />
         )}
       />

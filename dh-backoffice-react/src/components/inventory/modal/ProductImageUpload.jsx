@@ -1,5 +1,5 @@
-import React from 'react';
-import { UploadCloud, Loader2, Star, Trash2, Eye, EyeOff } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { UploadCloud, Loader2, Star, Trash2, Eye, EyeOff, ImageOff, RefreshCw } from 'lucide-react';
 import { getRenderableImageUrl } from 'dh-shared/src/utils/imageProcessingUtils.js';
 import useProductImageUpload from '../hooks/useProductImageUpload';
 
@@ -14,6 +14,21 @@ export default function ProductImageUpload({
   isUploading, setIsUploading,
   uploadProgress, setUploadProgress
 }) {
+  const [mainImageError, setMainImageError] = useState(false);
+  const [failedThumbUrls, setFailedThumbUrls] = useState({});
+  const [retryCounter, setRetryCounter] = useState(0);
+
+  useEffect(() => {
+    setMainImageError(false);
+  }, [activeImageUrl, retryCounter]);
+
+  const handleRetryImages = (e) => {
+    e.stopPropagation();
+    setMainImageError(false);
+    setFailedThumbUrls({});
+    setRetryCounter(c => c + 1);
+  };
+
   const {
     isDragOver,
     fileInputRef,
@@ -58,25 +73,45 @@ export default function ProductImageUpload({
           </div>
         ) : activeImageUrl ? (
           <div className="w-full h-full relative bg-white dark:bg-slate-900 flex items-center justify-center">
-            <img 
-              src={getRenderableImageUrl(activeImageUrl)} 
-              alt="Active" 
-              className="w-full h-full object-contain" 
-              referrerPolicy="no-referrer"
-              onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/400x300?text=Image+Error'; }}  
-              loading="lazy" 
-            />
+            {mainImageError ? (
+              <div className="flex flex-col items-center justify-center text-center p-4 text-rose-600 dark:text-rose-400">
+                <ImageOff size={32} className="mb-2 opacity-80" />
+                <span className="text-xs font-bold">โหลดภาพไม่สำเร็จ</span>
+                <span className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                  คลังภาพ (Storage) หรือลิงก์อาจมีปัญหา
+                </span>
+                <button
+                  type="button"
+                  onClick={handleRetryImages}
+                  className="mt-2.5 px-3 py-1 rounded-lg text-[11px] font-bold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 inline-flex items-center gap-1.5 cursor-pointer z-20"
+                >
+                  <RefreshCw size={12} /> ลองโหลดใหม่
+                </button>
+              </div>
+            ) : (
+              <img 
+                key={`${activeImageUrl}-${retryCounter}`}
+                src={getRenderableImageUrl(activeImageUrl)} 
+                alt="Active" 
+                className="w-full h-full object-contain" 
+                referrerPolicy="no-referrer"
+                onError={() => setMainImageError(true)}  
+                loading="lazy" 
+              />
+            )}
             
             {activeImageUrl === form.images[0] && (
               <div className="absolute top-2.5 left-2.5 bg-yellow-400 text-yellow-950 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-[2px] shadow-xs flex items-center gap-1 border border-yellow-500">
                 <Star size={11}/> ภาพปก
               </div>
             )}
-            <div className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-              <span className="text-white font-bold text-xs flex items-center gap-2 bg-black/60 px-3.5 py-2 rounded-xl backdrop-blur-xs border border-white/20">
-                <UploadCloud size={16}/> ลากภาพวางเพิ่ม
-              </span>
-            </div>
+            {!mainImageError && (
+              <div className="absolute inset-0 bg-slate-900/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                <span className="text-white font-bold text-xs flex items-center gap-2 bg-black/60 px-3.5 py-2 rounded-xl backdrop-blur-xs border border-white/20">
+                  <UploadCloud size={16}/> ลากภาพวางเพิ่ม
+                </span>
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center p-4">
@@ -100,14 +135,22 @@ export default function ProductImageUpload({
                    className={`aspect-square rounded-[2px] border-2 overflow-hidden relative group cursor-pointer transition-all bg-white dark:bg-slate-900 shadow-xs
                    ${activeImageUrl === imgUrl ? 'border-slate-900 dark:border-orange-500 ring-2 ring-slate-900/10' : 'border-slate-300 dark:border-slate-600 hover:border-slate-400'}`}>
                 
-                <img 
-                  src={getRenderableImageUrl(imgUrl)} 
-                  alt={`Thumb ${idx}`} 
-                  className={`w-full h-full object-cover ${isHidden ? 'opacity-40 grayscale' : ''}`} 
-                  referrerPolicy="no-referrer"
-                  onError={(e) => { e.target.onerror = null; e.target.src = 'https://placehold.co/100x100?text=Err'; }}  
-                  loading="lazy" 
-                />
+                {failedThumbUrls[imgUrl] ? (
+                  <div className="w-full h-full flex flex-col items-center justify-center bg-rose-50 dark:bg-rose-950/30 text-rose-500 gap-0.5">
+                    <ImageOff size={14} />
+                    <span className="text-[9px] font-bold">เสีย</span>
+                  </div>
+                ) : (
+                  <img 
+                    key={`${imgUrl}-${retryCounter}`}
+                    src={getRenderableImageUrl(imgUrl)} 
+                    alt={`Thumb ${idx}`} 
+                    className={`w-full h-full object-cover ${isHidden ? 'opacity-40 grayscale' : ''}`} 
+                    referrerPolicy="no-referrer"
+                    onError={() => setFailedThumbUrls(prev => ({ ...prev, [imgUrl]: true }))}  
+                    loading="lazy" 
+                  />
+                )}
                 
                 {idx === 0 && <div className="absolute top-0 left-0 bg-yellow-400 text-white p-0.5 rounded-br-lg z-10"><Star size={10}/></div>}
                 {isHidden && <div className="absolute top-0 right-0 bg-slate-500 text-white p-0.5 rounded-bl-lg z-10"><EyeOff size={10}/></div>}

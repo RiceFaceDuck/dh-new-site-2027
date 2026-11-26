@@ -1,0 +1,18 @@
+{
+  "summary": {
+    "scannedAt": "2026-11-26T06:12:03.061Z",
+    "totalUniqueCoverImages": 2230,
+    "okCount": 2230,
+    "brokenCount": 0,
+    "oversizedOver300KB": 0,
+    "oversizedOver500KB": 0,
+    "oversizedOver1MB": 0,
+    "nonWebpCount": 0,
+    "totalCoverSizeMB": 98.91,
+    "oversizedTotalMB": 0,
+    "estimatedSavingsMB": 0,
+    "top15Largest": [],
+    "brokenSamples": []
+  },
+  "oversizedList": []
+}

@@ -40,6 +40,56 @@ export const DEFAULT_CATEGORIES = [
   { name: 'หน้าจอ', type: 'หน้าจอ' }
 ];
 
+/**
+ * 🛡️ Case-Insensitive Category Resolution
+ * ป้องกันบั๊ก <select> เด้งไปตัวแรก (Cooling) เมื่อข้อมูลใน DB เป็นตัวพิมพ์เล็ก เช่น "adapter"
+ * โดยจับคู่กับตัวเลือกมาตรฐานใน catMap ก่อนเสมอ
+ */
+export function resolveCategoryOptionsAndValue(rawCategory, categoriesData = []) {
+  const catMap = new Map();
+
+  // 1. Add Default core categories
+  DEFAULT_CATEGORIES.forEach(c => {
+    catMap.set(c.type.toLowerCase(), { id: c.type, name: c.name, type: c.type });
+  });
+
+  // 2. Add categoriesData (from database)
+  if (Array.isArray(categoriesData) && categoriesData.length > 0) {
+    categoriesData.forEach(c => {
+      const val = typeof c === 'string' ? c : (c?.type || c?.name);
+      if (val && typeof val === 'string' && val.trim()) {
+        const cleanVal = val.trim();
+        const key = cleanVal.toLowerCase();
+        if (!catMap.has(key)) {
+          catMap.set(key, { id: c?.id || cleanVal, name: cleanVal, type: cleanVal });
+        }
+      }
+    });
+  }
+
+  // 3. Extract and normalize product's category (supports both string and legacy object)
+  const extractedRaw = typeof rawCategory === 'object' && rawCategory !== null
+    ? (rawCategory.type || rawCategory.name || '')
+    : (rawCategory ?? '');
+  const prodCat = String(extractedRaw).trim();
+
+  let resolvedCategory = INITIAL_FORM.category;
+  if (prodCat) {
+    const key = prodCat.toLowerCase();
+    if (catMap.has(key)) {
+      resolvedCategory = catMap.get(key).type;
+    } else {
+      catMap.set(key, { id: `prod_${prodCat}`, name: prodCat, type: prodCat });
+      resolvedCategory = prodCat;
+    }
+  }
+
+  return {
+    resolvedCategories: Array.from(catMap.values()),
+    resolvedCategory
+  };
+}
+
 export default function useProductForm(productData, isOpen, categoriesData = []) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [isUploading, setIsUploading] = useState(false);
@@ -83,6 +133,14 @@ export default function useProductForm(productData, isOpen, categoriesData = [])
       if (!initData.sellingModel) initData.sellingModel = '';
       if (!initData.landingPageUrl) initData.landingPageUrl = '';
       initData._initialStock = Number(initData.stockQuantity || 0);
+
+      // 🛡️ Aggregate ALL categories & normalize initData.category case-insensitively BEFORE setForm
+      const { resolvedCategories, resolvedCategory } = resolveCategoryOptionsAndValue(
+        initData.category,
+        categoriesData
+      );
+      initData.category = resolvedCategory;
+      setCategories(resolvedCategories);
 
       setForm(initData);
       setIsUploading(false);
@@ -128,39 +186,6 @@ export default function useProductForm(productData, isOpen, categoriesData = [])
         setIsImageHealing(false);
       }
 
-      // 🚀 Aggregate ALL categories from defaults, DB, and product
-      const catMap = new Map();
-      
-      // 1. Add Default core categories
-      DEFAULT_CATEGORIES.forEach(c => {
-        catMap.set(c.type.toLowerCase(), { id: c.type, name: c.name, type: c.type });
-      });
-
-      // 2. Add categoriesData (from database)
-      if (categoriesData && categoriesData.length > 0) {
-        categoriesData.forEach(c => {
-          const val = c.type || c.name;
-          if (val && typeof val === 'string' && val.trim()) {
-            const cleanVal = val.trim();
-            const key = cleanVal.toLowerCase();
-            if (!catMap.has(key)) {
-              catMap.set(key, { id: c.id || cleanVal, name: cleanVal, type: cleanVal });
-            }
-          }
-        });
-      }
-
-      // 3. Add product's own category if missing
-      if (initData.category && typeof initData.category === 'string' && initData.category.trim()) {
-        const prodCat = initData.category.trim();
-        const key = prodCat.toLowerCase();
-        if (!catMap.has(key)) {
-          catMap.set(key, { id: `prod_${prodCat}`, name: prodCat, type: prodCat });
-        }
-      }
-
-      setCategories(Array.from(catMap.values()));
-      
       checkUserRole();
       loadPricingConfig();
       loadPlatformRegex(); 
