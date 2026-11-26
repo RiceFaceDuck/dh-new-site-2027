@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { MapPin } from 'lucide-react';
 import { trackAdClick } from '../../../firebase/marketingAnalyticsService';
 import LazyImage from '../../../components/common/LazyImage';
 import { getCustomerDisplayName } from 'dh-shared/src/utils/customerUtils';
@@ -8,7 +9,16 @@ import useAdViewTracker from '../../../hooks/useAdViewTracker';
 
 const PartnerCard = ({ partner, placement = 'home_squad_highlight' }) => {
   // Use storeProfile data if available, fallback to partner root level data
-  const rawAvatar = partner.storeImage || partner.storeProfile?.logoUrl || partner.avatar || partner.photoURL || partner.profileImage || partner.profilePicture || partner.logo || partner.photo || null;
+  const rawAvatar =
+    partner.storeImage ||
+    partner.storeProfile?.logoUrl ||
+    partner.avatar ||
+    partner.photoURL ||
+    partner.profileImage ||
+    partner.profilePicture ||
+    partner.logo ||
+    partner.photo ||
+    null;
   const avatar = getRenderableImageUrl(rawAvatar, 400);
   const name = getCustomerDisplayName(partner, 'ช่างซ่อมอิสระ');
   const role = partner.services || partner.role || 'ช่างซ่อมคอมพิวเตอร์';
@@ -34,8 +44,8 @@ const PartnerCard = ({ partner, placement = 'home_squad_highlight' }) => {
   // 🛡️ Distance Sanitizer: ป้องกันตัวอักษรเพี้ยน (Mojibake) และบังคับคำนวณระยะทางมาตรฐานเสมอ
   const getDisplayDistance = () => {
     if (typeof partner.distanceKm === 'number' && !isNaN(partner.distanceKm)) {
-      return partner.distanceKm < 1 
-        ? `${Math.round(partner.distanceKm * 1000)} เมตร` 
+      return partner.distanceKm < 1
+        ? `${Math.round(partner.distanceKm * 1000)} เมตร`
         : `${Math.floor(partner.distanceKm)} กม.`;
     }
     if (!partner.formattedDistance) return null;
@@ -60,50 +70,55 @@ const PartnerCard = ({ partner, placement = 'home_squad_highlight' }) => {
         placement
       });
     } catch (e) {
-      console.error("Failed to track click", e);
+      console.error('Failed to track click', e);
     }
   };
 
   return (
-    <Link 
-      ref={cardRef} 
+    <Link
+      ref={cardRef}
       to={`/store/${partner.id || partner.userId}`}
       onClick={handleClick}
-      className="group relative bg-white p-3 md:p-3.5 rounded-[2px] flex items-center space-x-3 md:space-x-4 border border-slate-200/80 shadow-[0_4px_16px_-2px_rgba(15,23,42,0.12),0_2px_4px_-1px_rgba(15,23,42,0.06)] transition-all duration-300 hover:shadow-[0_16px_32px_-4px_rgba(15,23,42,0.16),0_6px_12px_-2px_rgba(15,23,42,0.08)] hover:-translate-y-1 hover:border-brand/40 cursor-pointer block"
+      className="group relative bg-white border border-slate-200 rounded-md flex overflow-hidden h-[132px] shadow-[0_1px_3px_rgba(15,23,42,0.05)] hover:border-[#93C5FD] hover:shadow-[0_8px_20px_-6px_rgba(8,112,184,0.16)] hover:-translate-y-0.5 transition-all duration-150 cursor-pointer"
     >
-      
-      {/* Avatar Container */}
-      <div className="relative shrink-0">
-        <div className="absolute inset-0 bg-linear-to-tr from-indigo-500/20 to-emerald-500/20 rounded-[2px] blur-md group-hover:blur-lg transition-all"></div>
-        <LazyImage src={avatar} alt={name} className="relative w-[105px] h-[105px] sm:w-[115px] sm:h-[115px] md:w-[125px] md:h-[125px] rounded-[2px] object-cover shadow-xs bg-slate-50 border border-slate-100/50" />
+      {/* Left Full-Height Store Photo */}
+      <div className="w-[108px] lg:w-[124px] h-full shrink-0 bg-slate-100 relative overflow-hidden">
+        <LazyImage
+          src={avatar}
+          alt={name}
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+        />
       </div>
 
-      <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
-        <h3 className="text-sm md:text-base font-black text-slate-800 leading-tight mb-0.5 group-hover:text-brand transition-colors truncate">{name}</h3>
-        <p className="text-xs text-slate-500 font-normal leading-snug line-clamp-2 min-h-[2.25rem] mb-2 break-words" title={role}>{role}</p>
-        
-        {/* Distance Display */}
-        {displayDistance ? (
-          <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-normal bg-linear-to-r from-indigo-50 to-emerald-50 text-indigo-700 px-2.5 py-1 rounded-[2px] w-fit max-w-full border border-slate-200/60 shadow-xs">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1.5 text-emerald-500 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-            </svg>
-            <span className="truncate">เดินทาง {displayDistance}</span>
-          </div>
-        ) : (
-          <div className="inline-flex items-center text-[11px] md:text-xs mb-2 font-normal bg-slate-50 text-slate-500 px-2.5 py-1 rounded-[2px] w-fit max-w-full border border-slate-200/60 shadow-xs">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 mr-1.5 text-slate-400 shrink-0" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
-            </svg>
-            <span className="truncate">ไม่ทราบระยะทาง</span>
-          </div>
-        )}
-        
-        <div className="px-3.5 py-1.5 md:px-4 md:py-2 bg-slate-800 text-white rounded-md font-normal text-xs md:text-sm group-hover:bg-indigo-600 active:scale-95 transition-all duration-300 w-fit max-w-full shadow-md group-hover:shadow-indigo-500/30 flex items-center justify-center gap-1.5 md:gap-2">
-          <span>ติดต่อช่าง</span>
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3 shrink-0 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-          </svg>
+      {/* Right Content */}
+      <div className="flex-1 min-w-0 p-2.5 md:p-3 flex flex-col text-left">
+        <h3 className="font-heading text-sm font-bold text-slate-900 leading-snug group-hover:text-brand transition-colors truncate">
+          {name}
+        </h3>
+        <p
+          className="text-[11.5px] text-slate-500 font-light leading-snug line-clamp-2 mt-1 break-words"
+          title={role}
+        >
+          {role}
+        </p>
+
+        {/* Bottom Row: Distance + Contact CTA */}
+        <div className="mt-auto flex items-center justify-between gap-2 pt-2">
+          {displayDistance ? (
+            <span className="inline-flex items-center gap-1 font-heading text-[11px] font-semibold text-[#1E1B4B] bg-[#EEF2FF] px-2 py-0.5 rounded-sm truncate max-w-[60%]">
+              <MapPin size={11} className="text-emerald-600 shrink-0" />
+              <span className="truncate">เดินทาง {displayDistance}</span>
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 font-heading text-[11px] font-medium text-slate-500 bg-slate-100 px-2 py-0.5 rounded-sm truncate max-w-[60%]">
+              <MapPin size={11} className="text-slate-400 shrink-0" />
+              <span className="truncate">ไม่ทราบระยะทาง</span>
+            </span>
+          )}
+
+          <span className="font-heading text-[11.5px] font-medium bg-[#132642] group-hover:bg-brand text-white px-2.5 py-1 rounded-sm shrink-0 transition-colors">
+            ติดต่อช่าง
+          </span>
         </div>
       </div>
     </Link>
