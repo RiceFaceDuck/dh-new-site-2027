@@ -20,5 +20,7 @@ module.exports = {
   ...ga4AdSync,
   ...partnerVisibilitySync,
   ...recordAdTelemetry,
-  ...userClaimsTrigger
+  auth: {
+    onUserWrittenForClaims: userClaimsTrigger.onUserWrittenForClaims
+  }
 };
