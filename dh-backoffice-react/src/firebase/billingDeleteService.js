@@ -17,11 +17,11 @@ export const billingDeleteService = {
       const orderData = docSnap.data();
       const stat = (orderData.orderStatus || orderData.status || '').toLowerCase();
 
-      if (stat === 'paid' || stat === 'approved' || stat === 'completed' || stat === 'cancelled' || stat === 'void') {
+      if (stat === 'paid' || stat === 'approved' || stat === 'completed' || stat === 'shipped' || stat === 'on_account' || stat === 'cancelled' || stat === 'void') {
          throw new Error("ไม่อนุญาตให้ลบทิ้งบิลที่มีประวัติทางบัญชีแล้ว (อนุญาตให้ลบได้เฉพาะฉบับร่าง Draft เท่านั้น)");
       }
 
-      const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
+      const walletUsed = Number(orderData.summary?.walletUsed ?? orderData.walletUsedAmount ?? orderData.walletUsed ?? orderData.calculationLog?.usedWallet ?? 0);
       const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid;
 
       // 🌟 ดึง Todos ที่เกี่ยวข้องกับบิลนี้ "ก่อน" เข้า Transaction หรือก่อนทำการลบ (ตรวจทั้ง referenceId และ payload.orderId)
@@ -52,8 +52,12 @@ export const billingDeleteService = {
           console.error("🔥 Error querying related todos:", e);
       }
 
-      // 🛡️ Wallet Refund Guard: Only refund wallet if it was actually deducted on the order
-      const shouldRefundWallet = Boolean(orderData.isWalletDeducted) && walletUsed > 0 && customerUid && customerUid !== 'WALK-IN';
+      // 🛡️ Wallet Refund Guard: Only refund wallet if it was actually deducted on the order (including legacy web orders)
+      const wasWalletDeducted = Boolean(
+          orderData.isWalletDeducted ||
+          (orderData.isWalletDeducted !== false && orderData.isWebOrder && Number(orderData.calculationLog?.usedWallet || 0) > 0)
+      );
+      const shouldRefundWallet = wasWalletDeducted && walletUsed > 0 && customerUid && customerUid !== 'WALK-IN';
       if (shouldRefundWallet) {
          await runTransaction(db, async (transaction) => {
              const userRef = doc(db, getCollectionPath('users'), customerUid);

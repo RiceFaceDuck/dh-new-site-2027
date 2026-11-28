@@ -204,15 +204,18 @@ export const usePosActions = ({
 
             // Run OCR extraction
             let ocrData = null;
+            let isOcrVerified = false;
             try {
                 if (slipStorageService.verifySlipOcr) {
                     const expectedAmount = sanitizeNum(remainingToPay);
                     const ocrRes = await slipStorageService.verifySlipOcr(uploadedUrl, orderIdForSlip, expectedAmount, file);
-                    ocrData = ocrRes?.ocrData || null;
-                } else if (slipStorageService.runClientTesseractOcr) {
-                    ocrData = await slipStorageService.runClientTesseractOcr(file);
+                    if (ocrRes?.success && !ocrRes?.requiresManualVerification && ocrRes?.ocrData) {
+                        ocrData = ocrRes.ocrData;
+                        isOcrVerified = true;
+                    }
                 } else if (slipStorageService.extractSlipData) {
                     ocrData = await slipStorageService.extractSlipData(file, uploadedUrl);
+                    isOcrVerified = Boolean(ocrData?.transactionRef || ocrData?.transferDateTime);
                 }
             } catch (ocrErr) {
                 console.warn("[POS OCR] Slip OCR extraction warning:", ocrErr);
@@ -223,11 +226,11 @@ export const usePosActions = ({
                 slipUrl: uploadedUrl,
                 slipStoragePath: storagePath || `slips/${orderIdForSlip}`,
                 ocrResult: ocrData || null,
-                slipVerificationStatus: ocrData ? 'verified' : 'unverified'
+                slipVerificationStatus: isOcrVerified ? 'verified' : 'unverified'
             };
 
-            // Auto-populate bank reference fields if found by OCR
-            if (ocrData) {
+            // Auto-populate bank reference fields strictly when OCR genuinely verified
+            if (isOcrVerified && ocrData) {
                 if (ocrData.transactionRef && ocrData.transactionRef !== 'n/a') {
                     patch.transactionRef = ocrData.transactionRef;
                 }

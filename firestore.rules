@@ -9,7 +9,7 @@ service cloud.firestore {
     
     function isStaff() {
       return isAuthenticated() && (
-        request.auth.token.role in ['staff', 'manager', 'admin', 'owner', 'vp', 'vp 1', 'VP 1', 'Staff', 'Manager', 'Admin', 'Owner', 'VP', 'packer', 'Packer', 'พนักงานทั่วไป', 'ช่าง', 'พนักงานแพ็ค', 'บัญชี', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ'] ||
+        request.auth.token.role in ['staff', 'manager', 'admin', 'owner', 'vp', 'vp 1', 'VP 1', 'Staff', 'Manager', 'Admin', 'Owner', 'VP', 'packer', 'Packer', 'finance', 'Finance', 'developer', 'Developer', 'พนักงานทั่วไป', 'ช่าง', 'พนักงานแพ็ค', 'จัดแพ็ค', 'บัญชี', 'การบัญชี', 'admin ฝ่ายขาย', 'อื่นๆ', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ'] ||
         request.auth.token.isStaff == true ||
         (request.auth.token.email in ['dh1notebook@gmail.com', 'dh2notebook@gmail.com', 'zhoulinjuan1@gmail.com', 'bentshan@gmail.com'] && request.auth.token.email_verified == true) ||
         request.auth.uid == '8rP6WhimrqOILBId86bkTsvNHFf1' || // System Admin UID fallback
@@ -19,7 +19,7 @@ service cloud.firestore {
           exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
           (
             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isStaff == true ||
-            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'manager', 'admin', 'owner', 'vp', 'vp 1', 'Staff', 'Manager', 'Admin', 'Owner', 'VP', 'VP 1', 'packer', 'Packer', 'พนักงานทั่วไป', 'ช่าง', 'พนักงานแพ็ค', 'บัญชี', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ']
+            get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'manager', 'admin', 'owner', 'vp', 'vp 1', 'Staff', 'Manager', 'Admin', 'Owner', 'VP', 'VP 1', 'packer', 'Packer', 'finance', 'Finance', 'developer', 'Developer', 'พนักงานทั่วไป', 'ช่าง', 'พนักงานแพ็ค', 'จัดแพ็ค', 'บัญชี', 'การบัญชี', 'admin ฝ่ายขาย', 'อื่นๆ', 'แอดมิน', 'ผู้จัดการ', 'เจ้าของ']
           )
         )
       );
@@ -85,9 +85,15 @@ service cloud.firestore {
         (
           !request.resource.data.diff(resource.data).affectedKeys().hasAny(['walletBalance', 'lastWalletTxId']) ||
           (
-            request.resource.data.get('walletBalance', 0) < resource.data.get('walletBalance', 0) &&
             request.resource.data.get('walletBalance', 0) >= 0 &&
-            existsAfter(/databases/$(database)/documents/users/$(userId)/wallet_transactions/$(request.resource.data.lastWalletTxId))
+            existsAfter(/databases/$(database)/documents/users/$(userId)/wallet_transactions/$(request.resource.data.lastWalletTxId)) &&
+            (
+              request.resource.data.get('walletBalance', 0) < resource.data.get('walletBalance', 0) ||
+              (
+                request.resource.data.get('walletBalance', 0) > resource.data.get('walletBalance', 0) &&
+                getAfter(/databases/$(database)/documents/users/$(userId)/wallet_transactions/$(request.resource.data.lastWalletTxId)).data.type == 'REFUND'
+              )
+            )
           )
         )
       ) || (

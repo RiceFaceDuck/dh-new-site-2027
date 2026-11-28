@@ -27,7 +27,7 @@ function mapRoleToClaims(rawRole) {
   }
 
   // 2. Manager tier
-  if (['ผู้จัดการ', 'manager', 'vp'].includes(normalized)) {
+  if (['ผู้จัดการ', 'manager', 'vp', 'vp 1'].includes(normalized)) {
     return {
       role: 'manager',
       isAdmin: false,
@@ -37,7 +37,7 @@ function mapRoleToClaims(rawRole) {
   }
 
   // 3. Packer tier
-  if (['พนักงานแพ็ค', 'packer'].includes(normalized)) {
+  if (['พนักงานแพ็ค', 'จัดแพ็ค', 'packer'].includes(normalized)) {
     return {
       role: 'packer',
       isAdmin: false,
@@ -47,7 +47,7 @@ function mapRoleToClaims(rawRole) {
   }
 
   // 4. Staff tier
-  if (['บัญชี', 'accountant', 'ช่าง', 'technician', 'พนักงานทั่วไป', 'staff'].includes(normalized)) {
+  if (['บัญชี', 'การบัญชี', 'finance', 'accountant', 'ช่าง', 'technician', 'developer', 'admin ฝ่ายขาย', 'พนักงานทั่วไป', 'staff', 'อื่นๆ'].includes(normalized)) {
     return {
       role: 'staff',
       isAdmin: false,

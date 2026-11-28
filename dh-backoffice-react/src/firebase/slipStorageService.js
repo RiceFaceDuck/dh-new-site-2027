@@ -4,7 +4,7 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { compressImageWithCanvas, readFileAsBase64 } from 'dh-shared/src/utils/imageProcessingUtils.js';
 import { resilientFetch } from 'dh-shared/src/utils/httpResilienceClient.js';
 
-const functions = typeof window !== 'undefined' ? getFunctions(app) : null;
+const functions = typeof window !== 'undefined' ? getFunctions(app, 'asia-southeast1') : null;
 
 const AppLogger = {
   info: (tag, msg, ...args) => console.log(`[${tag}] ${msg}`, ...args),
@@ -180,24 +180,7 @@ export const slipStorageService = {
    * @returns {Promise<object>}
    */
   verifySlipOcr: async (slipUrl, orderId = 'UNASSIGNED', expectedAmount = 0, file = null) => {
-    // 1. รัน In-Browser AI OCR (Tesseract.js) เพื่อดึงข้อความจริง 100%
-    if (file) {
-      try {
-        const ocrData = await slipStorageService.runClientTesseractOcr(file);
-        if (ocrData && (ocrData.transactionRef || ocrData.transferDateTime)) {
-          return {
-            success: true,
-            ocrData,
-            isDuplicate: false,
-            source: 'CLIENT_TESSERACT_OCR'
-          };
-        }
-      } catch (ocrErr) {
-        console.warn("Client Tesseract error:", ocrErr);
-      }
-    }
-
-    // 2. หากไม่สำเร็จ ให้เรียก Cloud Function Vision OCR
+    // 1. เรียก Cloud Function Vision OCR (region asia-southeast1) โดยตรงเพื่อความแม่นยำและตรวจสลิปซ้ำ
     try {
       if (!functions) throw new Error("Firebase Functions not initialized");
       let res;
@@ -209,23 +192,17 @@ export const slipStorageService = {
         res = await fallbackFn({ slipUrl, orderId, expectedAmount });
       }
       if (res.data?.success && res.data?.ocrData) {
-        return res.data;
+        return { ...res.data, requiresManualVerification: false };
       }
     } catch (error) {
-      AppLogger.warn('slipStorageService', 'Cloud Functions verifySlipOcr error, using fallback', error);
+      AppLogger.warn('slipStorageService', 'Cloud Functions verifySlipOcr error, using manual verification fallback', error);
     }
 
-    // 3. Fallback: หากเชื่อมต่อล้มเหลว ให้บังคับเป็นสถานะไม่ผ่าน (success: false) เพื่อให้พนักงานตรวจสอบด้วยตนเอง
+    // 2. Fallback: หากเชื่อมต่อล้มเหลว ให้บังคับเป็นสถานะไม่ผ่าน (success: false) และไม่ทับบัญชีธนาคารของพนักงาน
     return {
       success: false,
-      message: 'ไม่สามารถตรวจสอบสลิปอัตโนมัติได้เนื่องจากปัญหาการเชื่อมต่อ กรุณาตรวจสอบด้วยตนเอง',
-      ocrData: {
-        bankAccount: 'BAY',
-        transactionRef: '',
-        transferDateTime: '',
-        transferNote: 'รอพนักงานตรวจสอบสลิป',
-        amount: expectedAmount || 0
-      },
+      message: 'ไม่สามารถตรวจสอบสลิปอัตโนมัติได้ กรุณาตรวจสอบยอดและเลขที่รายการด้วยตนเอง',
+      ocrData: null,
       isDuplicate: false,
       requiresManualVerification: true,
       source: 'FALLBACK_UNVERIFIED'

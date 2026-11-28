@@ -22,7 +22,7 @@ export const handleWalletRefundAndClawback = async (
     try {
         // ✅ [SECURITY FIX] คืนเงินเข้า Wallet เฉพาะยอดที่จ่ายด้วย Wallet จริงๆ เท่านั้น (ไม่เอาส่วนที่โอนเงินสดมาทบเข้า Wallet)
         // หากมีการจ่ายผ่านธนาคารด้วย แอดมินต้องโอนเงินสดคืนลูกค้าเอง
-        let refundAmount = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
+        let refundAmount = Number(orderData.summary?.walletUsed ?? orderData.walletUsedAmount ?? orderData.walletUsed ?? orderData.calculationLog?.usedWallet ?? 0);
         
         // ✅ [SECURITY FIX] Ensure refundAmount is valid and non-negative
         refundAmount = isNaN(refundAmount) ? 0 : Math.max(0, refundAmount);
@@ -39,8 +39,11 @@ export const handleWalletRefundAndClawback = async (
             updates.pendingCredits = 0;
         }
 
-        // 🛡️ Security Invariant Guard: Only refund wallet if it was ACTUALLY deducted on the order
-        const wasWalletDeducted = Boolean(orderData.isWalletDeducted);
+        // 🛡️ Security Invariant Guard: Only refund wallet if it was ACTUALLY deducted on the order (including legacy web orders before isWalletDeducted flag)
+        const wasWalletDeducted = Boolean(
+            orderData.isWalletDeducted ||
+            (orderData.isWalletDeducted !== false && orderData.isWebOrder && Number(orderData.calculationLog?.usedWallet || 0) > 0)
+        );
 
         if (wasWalletDeducted && refundAmount > 0) {
             // ✅ [SECURITY FIX] Refund to walletBalance (Cash) instead of creditPoints (Points)
@@ -106,7 +109,7 @@ export const handlePointsEarned = async (
         // 🛡️ Idempotency Guard: ป้องกันการแจกแต้มซ้ำโดยไม่ทำให้ Transaction พัง
         if (orderData.pointsAwarded) return null;
 
-        const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
+        const walletUsed = Number(orderData.summary?.walletUsed ?? orderData.walletUsedAmount ?? orderData.walletUsed ?? orderData.calculationLog?.usedWallet ?? 0);
         const amountForPoints = Math.max(0, totalSaleAmount - walletUsed);
 
         // 1. ดึงแต้มจากระบบตะกร้าออนไลน์ก่อน ถ้ามีการคำนวณไว้ (และต้องไม่เกินยอดเงินสดที่จ่าย เพื่อกันบั๊กเสกแต้ม)
@@ -174,9 +177,12 @@ export const handleWalletDeduction = (
     updates
 ) => {
     try {
-        let walletToUse = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
+        let walletToUse = Number(orderData.summary?.walletUsed ?? orderData.walletUsedAmount ?? orderData.walletUsed ?? orderData.calculationLog?.usedWallet ?? 0);
         walletToUse = isNaN(walletToUse) ? 0 : Math.max(0, walletToUse);
-        const wasAlreadyDeducted = Boolean(orderData.isWalletDeducted);
+        const wasAlreadyDeducted = Boolean(
+            orderData.isWalletDeducted ||
+            (orderData.isWalletDeducted !== false && orderData.isWebOrder && Number(orderData.calculationLog?.usedWallet || 0) > 0)
+        );
 
         if (walletToUse > 0 && !wasAlreadyDeducted) {
             const currentWallet = Number(userSnap.data()?.walletBalance || 0);

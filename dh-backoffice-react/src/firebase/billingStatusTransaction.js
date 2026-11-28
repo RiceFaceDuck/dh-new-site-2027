@@ -46,21 +46,27 @@ export const billingStatusTransaction = {
           });
         });
       } else if (['paid', 'approved', 'completed'].includes(normalizedNewStatus)) {
-        const q0 = query(todosRef, where('orderId', '==', orderId), where('status', 'in', ['pending', 'todo', 'in_progress']));
-        const q1 = query(todosRef, where('referenceId', '==', orderId), where('status', 'in', ['pending', 'todo', 'in_progress']));
-        const [snap0, snap1] = await Promise.all([getDocs(q0), getDocs(q1)]);
-        const seenTodoIds = new Set();
-        [snap0, snap1].forEach(snap => {
-          snap.forEach(docSnap => {
-            if (!seenTodoIds.has(docSnap.id)) {
-              seenTodoIds.add(docSnap.id);
-              const tData = docSnap.data();
-              if (tData.type !== 'issue_tax_invoice') {
-                paymentTodoRefs.push(docSnap.ref);
+        // Single-field queries + client status filter to avoid composite index dependency on Print/Approve
+        try {
+          const q0 = query(todosRef, where('orderId', '==', orderId));
+          const q1 = query(todosRef, where('referenceId', '==', orderId));
+          const [snap0, snap1] = await Promise.all([getDocs(q0), getDocs(q1)]);
+          const seenTodoIds = new Set();
+          [snap0, snap1].forEach(snap => {
+            snap.forEach(docSnap => {
+              if (!seenTodoIds.has(docSnap.id)) {
+                seenTodoIds.add(docSnap.id);
+                const tData = docSnap.data() || {};
+                const tStat = String(tData.status || '').toLowerCase();
+                if (['pending', 'todo', 'in_progress', 'pending_manager'].includes(tStat) && tData.type !== 'issue_tax_invoice') {
+                  paymentTodoRefs.push(docSnap.ref);
+                }
               }
-            }
+            });
           });
-        });
+        } catch (todoQueryErr) {
+          console.warn('[billingStatusTransaction] Non-blocking todos lookup warning:', todoQueryErr);
+        }
       }
 
       const result = await runTransaction(db, async (transaction) => {
