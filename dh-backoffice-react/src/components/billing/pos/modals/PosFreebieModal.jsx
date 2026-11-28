@@ -39,8 +39,60 @@ export default function PosFreebieModal({
         return manualFreebieIds.includes(freebieId);
     };
 
+    const evaluateFreebieEligibility = (freebie) => {
+        const now = new Date();
+        if (freebie.startDate && new Date(freebie.startDate) > now) {
+            return { eligible: false, reason: 'ยังไม่เริ่มโปร' };
+        }
+        if (freebie.endDate && new Date(freebie.endDate) < now) {
+            return { eligible: false, reason: 'หมดอายุแล้ว', hardBlock: true };
+        }
+        if (freebie.quotaLimit && freebie.quotaLimit > 0 && (freebie.quotaUsed || 0) >= freebie.quotaLimit) {
+            return { eligible: false, reason: 'สิทธิ์เต็มแล้ว', hardBlock: true };
+        }
+
+        const cartItems = activeTab?.items || [];
+        const hasSkus = Array.isArray(freebie.applicableSkus) && freebie.applicableSkus.length > 0;
+        const hasTypes = Array.isArray(freebie.applicableTypes) && freebie.applicableTypes.length > 0;
+
+        let targetSubtotal = itemSubTotal;
+        let targetQty = cartItems.reduce((s, i) => s + Math.max(1, Number(i.qty) || 1), 0);
+        if (hasSkus || hasTypes) {
+            targetSubtotal = 0;
+            targetQty = 0;
+            cartItems.forEach((item) => {
+                const sku = String(item.sku || '').toUpperCase();
+                const type = String(item.type || item.category || '').toUpperCase();
+                const matchSku = hasSkus && freebie.applicableSkus.some((s) => String(s).toUpperCase() === sku);
+                const matchType = hasTypes && freebie.applicableTypes.some((t) => String(t).toUpperCase() === type);
+                if (matchSku || matchType) {
+                    const unit = Math.max(0, (Number(item.price) || 0) - Math.max(0, Number(item.discount) || 0));
+                    const qty = Math.max(1, Number(item.qty) || 1);
+                    targetSubtotal += unit * qty;
+                    targetQty += qty;
+                }
+            });
+            if (targetQty <= 0) {
+                return { eligible: false, reason: 'ไม่มีสินค้าที่ร่วมรายการ' };
+            }
+        }
+        if (freebie.minSpend > 0 && targetSubtotal < freebie.minSpend) {
+            return { eligible: false, reason: 'ยอดไม่ถึง' };
+        }
+        if (freebie.minQty > 0 && targetQty < freebie.minQty) {
+            return { eligible: false, reason: 'จำนวนไม่ถึง' };
+        }
+        return { eligible: true, reason: '' };
+    };
+
     const handleToggleFreebie = (freebie) => {
         const currentlyActive = isFreebieActive(freebie.id);
+        const status = evaluateFreebieEligibility(freebie);
+
+        if (!currentlyActive && status.hardBlock) {
+            toast.error(`ไม่สามารถเลือกของแถมนี้ได้ (${status.reason})`);
+            return;
+        }
 
         if (currentlyActive) {
             // Deactivate
@@ -55,47 +107,42 @@ export default function PosFreebieModal({
             }
             toast.success(`ยกเลิกของแถม ${freebie.productName || freebie.itemName || freebie.title}`);
         } else {
-            // Activate
-            if (autoFreebieEnabled) {
+            // Activate (Single Source of Truth: manage strictly via eligibleFreebies without pushing duplicate rows into items)
+            if (autoFreebieEnabled && status.eligible) {
                 const currentDisabled = activeTab?.disabledFreebieIds || [];
                 updateActiveTab({ disabledFreebieIds: currentDisabled.filter(id => id !== freebie.id) });
             } else {
+                // Switch to manual mode while preserving existing eligible freebies + adding selected one
+                const existingEligibleIds = (eligibleFreebies || []).map(f => f.id).filter(Boolean);
                 const currentManual = activeTab?.manualFreebieIds || [];
-                if (!currentManual.includes(freebie.id)) {
-                    updateActiveTab({ manualFreebieIds: [...currentManual, freebie.id] });
-                }
+                const nextManual = Array.from(new Set([...existingEligibleIds, ...currentManual, freebie.id]));
+                updateActiveTab({
+                    autoFreebieEnabled: false,
+                    manualFreebieIds: nextManual
+                });
             }
             toast.success(`เลือกของแถม ${freebie.productName || freebie.itemName || freebie.title}`);
         }
     };
 
     const handleAddDirectItemToCart = (freebie) => {
-        const freebieItem = {
-            sku: freebie.itemName || `FREE-${freebie.id.slice(0, 6)}`,
-            name: `[แถมฟรี] ${freebie.productName || freebie.itemName || freebie.title}`,
-            type: 'Freebie',
-            category: 'Freebie',
-            baseWholesale: 0,
-            baseRetail: 0,
-            price: 0,
-            qty: Number(freebie.qty) || 1,
-            discount: 0,
-            stock: 999,
-            note: freebie.title || 'ของแถมพิเศษ',
-            noteColor: 'rose',
-            isFreebie: true
-        };
+        const status = evaluateFreebieEligibility(freebie);
+        if (status.hardBlock) {
+            toast.error(`ไม่สามารถเพิ่มของแถมนี้ได้ (${status.reason})`);
+            return;
+        }
 
-        // If not already in manualFreebieIds, add it too
+        // Single Source of Truth: never push into activeTab.items (prevents 2x duplicate row & 2x stock deduction)
+        const existingEligibleIds = (eligibleFreebies || []).map(f => f.id).filter(Boolean);
         const currentManual = activeTab?.manualFreebieIds || [];
-        const nextManual = currentManual.includes(freebie.id) ? currentManual : [...currentManual, freebie.id];
-        
+        const nextManual = Array.from(new Set([...existingEligibleIds, ...currentManual, freebie.id]));
+
         updateActiveTab({
-            items: [freebieItem, ...(activeTab?.items || [])],
+            autoFreebieEnabled: false,
             manualFreebieIds: nextManual
         });
 
-        toast.success(`เพิ่มของแถมลงในรายการสินค้า: ${freebieItem.name}`);
+        toast.success(`เพิ่มของแถมลงในบิลแล้ว: ${freebie.productName || freebie.itemName || freebie.title}`);
         handleClose();
     };
 
@@ -134,8 +181,9 @@ export default function PosFreebieModal({
                         </div>
                     ) : (
                         activeFreebies.map(freebie => {
-                            const isEligible = (!freebie.minSpend || itemSubTotal >= freebie.minSpend);
-                            const isActive = isFreebieActive(freebie.id);
+                            const eligStatus = evaluateFreebieEligibility(freebie);
+                            const isEligible = eligStatus.eligible;
+                            const isActive = isFreebieActive(freebie.id) && (autoFreebieEnabled ? isEligible : true);
 
                             return (
                                 <div 
@@ -161,7 +209,7 @@ export default function PosFreebieModal({
                                                 )}
                                                 {!isEligible && (
                                                     <span className="flex items-center gap-1 text-[10px] font-semibold bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full">
-                                                        <AlertCircle size={11} /> ยอดไม่ถึง
+                                                        <AlertCircle size={11} /> {eligStatus.reason || 'ไม่เข้าเกณฑ์'}
                                                     </span>
                                                 )}
                                             </div>

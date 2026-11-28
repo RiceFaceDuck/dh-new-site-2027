@@ -47,7 +47,20 @@ export const usePosActions = ({
     };
 
     const updateItemAction = useCallback((sku, field, value) => {
-        updateActiveTab(tab => ({ items: tab.items.map(i => i.sku === sku ? { ...i, [field]: value } : i) }));
+        updateActiveTab(tab => ({
+            items: tab.items.map(i => {
+                if (i.sku !== sku) return i;
+                let cleanVal = value;
+                if (field === 'qty') cleanVal = Math.max(1, parseInt(value, 10) || 1);
+                else if (field === 'price') cleanVal = Math.max(0, sanitizeNum(value));
+                else if (field === 'discount') cleanVal = Math.min(Math.max(0, sanitizeNum(i.price)), Math.max(0, sanitizeNum(value)));
+                const next = { ...i, [field]: cleanVal };
+                if (field === 'price' && sanitizeNum(next.discount) > cleanVal) {
+                    next.discount = cleanVal;
+                }
+                return next;
+            })
+        }));
     }, [updateActiveTab]);
     
     const removeItem = useCallback((sku) => { 
@@ -83,7 +96,14 @@ export const usePosActions = ({
             const targetFulfillment = pref.fulfillmentType || (cust.logisticProvider ? 'Delivery' : 'StorePickup');
             const targetCourier = pref.courier || pref.defaultCourier || (cust.logisticProvider || 'KEX');
             const targetReceiptFormat = pref.receiptFormat || pref.defaultBillType || 'short';
-            const updatedItems = activeTab.items.map(item => ({ ...item, price: targetMode === 'wholesale' ? item.baseWholesale : item.baseRetail }));
+            const updatedItems = activeTab.items.map(item => {
+                const matchedProd = Array.isArray(products) ? products.find(p => p.sku === item.sku || p.id === item.sku) : null;
+                const resolvedWholesale = item.baseWholesale ?? matchedProd?.Price ?? matchedProd?.retailPrice ?? item.price ?? 0;
+                const resolvedRetail = item.baseRetail ?? matchedProd?.retailPrice ?? matchedProd?.Price ?? item.price ?? 0;
+                const candidate = targetMode === 'wholesale' ? resolvedWholesale : resolvedRetail;
+                const safePrice = (candidate !== undefined && candidate !== null && Number(candidate) > 0) ? Number(candidate) : Math.max(0, sanitizeNum(item.price));
+                return { ...item, baseWholesale: Number(resolvedWholesale || 0), baseRetail: Number(resolvedRetail || 0), price: safePrice };
+            });
 
             const prevFulfillment = activeTab.fulfillmentType;
             updateActiveTab({ 
@@ -120,7 +140,9 @@ export const usePosActions = ({
                 if (hasTypes && promo.applicableTypes.some(t => String(t).toUpperCase() === itemType)) isEligible = true;
 
                 if (isEligible) {
-                    return acc + ((sanitizeNum(item.price) - sanitizeNum(item.discount)) * Math.max(1, sanitizeNum(item.qty)));
+                    const cleanPrice = Math.max(0, sanitizeNum(item.price));
+                    const cleanDiscount = Math.min(cleanPrice, Math.max(0, sanitizeNum(item.discount)));
+                    return acc + ((cleanPrice - cleanDiscount) * Math.max(1, sanitizeNum(item.qty)));
                 }
                 return acc;
             }, 0);
@@ -242,30 +264,35 @@ export const usePosActions = ({
         const activePhone = activeTab.customer ? (activeTab.customer.phone || activeTab.customer.phoneNumber || '') : (activeTab.walkInPhone || '');
         const isPhoneMissing = (!activeTab.hidePhone) && (!activePhone || activePhone.trim() === '');
 
-        // Check both individual line stock and aggregated stock across split lines (Caveat 3.2)
-        const lineOutOfStock = (activeTab.items || []).find(item => sanitizeNum(item.stock) < sanitizeNum(item.qty));
+        // Check aggregated stock across split lines, crediting already-deducted storefront quantities
+        const prevDeductedMap = new Map();
+        if (activeTab.isStockDeducted && Array.isArray(activeTab.originalDeductedItems)) {
+            activeTab.originalDeductedItems.forEach(oi => {
+                const k = oi.sku || oi.id;
+                if (k) prevDeductedMap.set(k, (prevDeductedMap.get(k) || 0) + Math.max(1, sanitizeNum(oi.qty)));
+            });
+        }
         const aggregatedStockDemand = (activeTab.items || []).reduce((acc, item) => {
             const key = item.sku || item.id || item.name || 'unknown';
-            const qty = sanitizeNum(item.qty);
-            const stock = sanitizeNum(item.stock);
+            const qty = Math.max(1, sanitizeNum(item.qty));
+            const baseStock = sanitizeNum(item.stock);
             if (!acc[key]) {
                 acc[key] = {
                     key,
                     name: item.name || item.itemName || key,
                     totalQty: 0,
-                    stock: stock
+                    stock: baseStock + (prevDeductedMap.get(key) || 0)
                 };
             } else {
-                acc[key].stock = Math.min(acc[key].stock, stock);
+                acc[key].stock = Math.min(acc[key].stock, baseStock + (prevDeductedMap.get(key) || 0));
             }
             acc[key].totalQty += qty;
             return acc;
         }, {});
 
-        const aggregatedOutOfStock = Object.values(aggregatedStockDemand).find(
+        const outOfStockItem = Object.values(aggregatedStockDemand).find(
             item => item.stock < item.totalQty
         );
-        const outOfStockItem = aggregatedOutOfStock || lineOutOfStock;
 
         if (activeTab.items.length === 0) { toast.error('กรุณาเลือกสินค้าอย่างน้อย 1 รายการ'); return; }
         if (outOfStockItem && status === 'Paid') {
@@ -316,13 +343,17 @@ export const usePosActions = ({
 
             const finalOrderItems = [
                 ...activeTab.items.map(i => {
-                    const cleanPrice = sanitizeNum(i.price); const cleanDiscount = sanitizeNum(i.discount); const cleanQty = Math.max(1, sanitizeNum(i.qty));
+                    const cleanPrice = Math.max(0, sanitizeNum(i.price));
+                    const cleanDiscount = Math.min(cleanPrice, Math.max(0, sanitizeNum(i.discount)));
+                    const cleanQty = Math.max(1, sanitizeNum(i.qty));
                     return { 
                         sku: i.sku || '', 
                         name: i.name || '', 
                         qty: cleanQty, 
                         price: cleanPrice, 
                         discount: cleanDiscount, 
+                        baseWholesale: sanitizeNum(i.baseWholesale ?? cleanPrice),
+                        baseRetail: sanitizeNum(i.baseRetail ?? cleanPrice),
                         total: Math.max(0, (cleanPrice - cleanDiscount) * cleanQty), 
                         note: i.note || '', 
                         noteColor: i.noteColor || 'fuchsia', 
@@ -345,6 +376,11 @@ export const usePosActions = ({
                 userId: validCustUid,
                 customerId: validCustUid,
                 isWebOrder: Boolean(activeTab.isWebOrder),
+                canBypassBuffer: true,
+                isStockDeducted: Boolean(activeTab.isStockDeducted),
+                isWalletDeducted: Boolean(activeTab.isWalletDeducted),
+                isPromoQuotaDeducted: Boolean(activeTab.isPromoQuotaDeducted),
+                originalDeductedItems: activeTab.originalDeductedItems || null,
                 channel: activeTab.channel || (activeTab.isWebOrder ? 'storefront' : 'pos'),
                 source: activeTab.source || (activeTab.isWebOrder ? 'storefront' : 'pos'),
                 orderStatus: status === 'Draft' ? 'Draft' : (status === 'OnAccount' ? 'Pending' : (status === 'Paid' ? 'Paid' : 'Pending')),

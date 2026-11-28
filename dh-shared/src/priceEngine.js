@@ -12,9 +12,12 @@ const safeNum = (val, defaultVal = 0) => {
 export const calculateItemTotal = (item) => {
     if (!item || typeof item !== 'object') return 0;
     if (item.isFreebie) return 0;
-    const price = safeNum(item.retailPrice || item.Price || item.price || 0);
-    const qty = safeNum(item.qty || item.quantity, 1);
-    return price * Math.max(0, qty); // Prevent negative quantity from messing up totals unless strictly intended
+    const rawPrice = item.price ?? item.priceAtPurchase ?? item.retailPrice ?? item.Price ?? 0;
+    const price = Math.max(0, safeNum(rawPrice));
+    const discount = Math.max(0, safeNum(item.discount || 0));
+    const effectiveUnitPrice = Math.max(0, price - discount);
+    const qty = Math.max(0, safeNum(item.qty ?? item.quantity, 1));
+    return effectiveUnitPrice * qty;
 };
 
 export const calculateSubtotal = (items) => {
@@ -130,14 +133,19 @@ export const calculateCanonicalTotals = (order) => {
     if (items.length > 0) {
         subTotal = items.reduce((sum, item) => {
             if (item.isFreebie) return sum;
-            const price = Number(item.price ?? item.priceAtPurchase ?? item.pricePerUnit ?? item.unitPrice ?? item.retailPrice ?? 0);
-            const qty = Number(item.qty ?? item.quantity ?? item.count ?? 1);
-            return sum + (price * qty);
+            const price = Math.max(0, Number(item.price ?? item.priceAtPurchase ?? item.pricePerUnit ?? item.unitPrice ?? item.retailPrice ?? 0));
+            const itemDiscount = Math.max(0, Number(item.discount || 0));
+            const effectiveUnitPrice = Math.max(0, price - itemDiscount);
+            const qty = Math.max(0, Number(item.qty ?? item.quantity ?? item.count ?? 1));
+            return sum + (effectiveUnitPrice * qty);
         }, 0);
     }
 
-    const manualDiscount = Number(order.summary?.manualDiscount || order.overallDiscount || order.discountAmount || order.totals?.discount || 0);
-    const promoDiscount = Number(order.summary?.promoDiscount || order.promoDiscount || 0);
+    const promoDiscount = Number(order.summary?.promoDiscount ?? order.promoDiscount ?? 0);
+    const rawManualDiscount = order.summary?.manualDiscount ?? order.overallDiscount;
+    const manualDiscount = (rawManualDiscount !== undefined && rawManualDiscount !== null)
+        ? Number(rawManualDiscount)
+        : Number(order.discountAmount ?? Math.max(0, Number(order.totals?.discount || 0) - promoDiscount));
     const shippingFee = Number(order.shippingFee || order.shippingCost || order.summary?.shippingFee || order.totals?.shipping || 0);
     const otherFees = Number(order.otherFeeAmount || order.otherFees || order.summary?.otherFeeAmount || 0);
     const vatType = order.vatType || order.summary?.vatType || 'exempt';

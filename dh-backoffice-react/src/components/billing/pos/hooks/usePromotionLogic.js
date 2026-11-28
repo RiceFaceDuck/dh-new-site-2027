@@ -14,18 +14,44 @@ export const usePromotionLogic = (
     useEffect(() => {
         if (!activeTab) return;
 
+        const now = new Date();
+        const getEligible = (promo) => {
+            const hasSkus = Array.isArray(promo.applicableSkus) && promo.applicableSkus.length > 0;
+            const hasTypes = Array.isArray(promo.applicableTypes) && promo.applicableTypes.length > 0;
+            const items = activeTab.items || [];
+            if (!hasSkus && !hasTypes) {
+                const totalQty = items.reduce((acc, item) => acc + Math.max(1, sanitizeNum(item.qty)), 0);
+                return { subtotal: itemSubTotal, qty: totalQty, matched: items.length > 0 };
+            }
+            let subtotal = 0;
+            let qty = 0;
+            items.forEach((item) => {
+                const itemSku = String(item.sku || '').toUpperCase();
+                const itemType = String(item.type || item.category || '').toUpperCase();
+                const okSku = hasSkus && promo.applicableSkus.some(s => String(s).toUpperCase() === itemSku);
+                const okType = hasTypes && promo.applicableTypes.some(t => String(t).toUpperCase() === itemType);
+                if (okSku || okType) {
+                    const cleanPrice = Math.max(0, sanitizeNum(item.price));
+                    const cleanDiscount = Math.min(cleanPrice, Math.max(0, sanitizeNum(item.discount)));
+                    const cleanQty = Math.max(1, sanitizeNum(item.qty));
+                    subtotal += (cleanPrice - cleanDiscount) * cleanQty;
+                    qty += cleanQty;
+                }
+            });
+            return { subtotal, qty, matched: qty > 0 };
+        };
+
         // กรณีปิด Auto Promo
         if (!activeTab.autoPromoEnabled) {
             // หากมีโปรโมชันที่เลือกแบบ Manual ให้ตรวจสอบว่ายังคงเข้าเกณฑ์หรือไม่
             if (activeTab.appliedPromoDetails) {
                 const promo = activeTab.appliedPromoDetails;
-                let isStillEligible = true;
-                if (promo.minSpend > 0 && itemSubTotal < promo.minSpend) isStillEligible = false;
-                
-                if (promo.minQty > 0) {
-                    const totalQty = activeTab.items?.reduce((acc, item) => acc + sanitizeNum(item.qty), 0) || 0;
-                    if (totalQty < promo.minQty) isStillEligible = false;
-                }
+                const elig = getEligible(promo);
+                let isStillEligible = elig.matched;
+                if (promo.startDate && new Date(promo.startDate) > now) isStillEligible = false;
+                if (promo.endDate && new Date(promo.endDate) < now) isStillEligible = false;
+                if (promo.minSpend > 0 && elig.subtotal < promo.minSpend) isStillEligible = false;
+                if (promo.minQty > 0 && elig.qty < promo.minQty) isStillEligible = false;
 
                 if (!isStillEligible) {
                     updateActiveTab({
@@ -67,24 +93,15 @@ export const usePromotionLogic = (
                 }
             }
 
-            // 2. Check minSpend
-            if (promo.minSpend > 0 && itemSubTotal < promo.minSpend) return;
+            // 1.5 Check start/end date
+            if (promo.startDate && new Date(promo.startDate) > now) return;
+            if (promo.endDate && new Date(promo.endDate) < now) return;
 
-            // 3. Check minQty
-            if (promo.minQty > 0) {
-                const totalQty = activeTab.items?.reduce((acc, item) => acc + sanitizeNum(item.qty), 0) || 0;
-                if (totalQty < promo.minQty) return;
-            }
-
-            // 4. Check applicable SKUs & Types
-            if (promo.applicableSkus && promo.applicableSkus.length > 0) {
-                const hasSku = activeTab.items?.some(item => promo.applicableSkus.includes(item.sku));
-                if (!hasSku) return;
-            }
-            if (promo.applicableTypes && promo.applicableTypes.length > 0) {
-                const hasType = activeTab.items?.some(item => promo.applicableTypes.includes(item.type || item.category));
-                if (!hasType) return;
-            }
+            // 2-4. Check applicable SKUs & Types (case-insensitive) + eligible minSpend & minQty
+            const elig = getEligible(promo);
+            if (!elig.matched) return;
+            if (promo.minSpend > 0 && elig.subtotal < promo.minSpend) return;
+            if (promo.minQty > 0 && elig.qty < promo.minQty) return;
 
             // 5. Check Quota Limit
             if (promo.quotaLimit && promo.quotaLimit > 0) {

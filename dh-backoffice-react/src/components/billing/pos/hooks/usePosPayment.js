@@ -81,7 +81,12 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
         return () => { isMounted = false; };
     }, []);
 
-    const itemSubTotal = activeTab?.items?.reduce((sum, item) => sum + ((sanitizeNum(item.price) - sanitizeNum(item.discount)) * Math.max(1, sanitizeNum(item.qty))), 0) || 0;
+    const itemSubTotal = activeTab?.items?.reduce((sum, item) => {
+        const cleanPrice = Math.max(0, sanitizeNum(item.price));
+        const cleanDiscount = Math.min(cleanPrice, Math.max(0, sanitizeNum(item.discount)));
+        const cleanQty = Math.max(1, sanitizeNum(item.qty));
+        return sum + ((cleanPrice - cleanDiscount) * cleanQty);
+    }, 0) || 0;
     const itemTotalQty = activeTab?.items?.reduce((sum, item) => sum + Math.max(1, sanitizeNum(item.qty)), 0) || 0;
     
     const discountType = activeTab?.overallDiscountType || 'BAHT';
@@ -110,8 +115,11 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
             if (hasTypes && types.some(t => String(t).toUpperCase() === itemType)) isEligible = true;
 
             if (isEligible) {
-                eligibleSubtotal += ((sanitizeNum(item.price) - sanitizeNum(item.discount)) * Math.max(1, sanitizeNum(item.qty)));
-                eligibleQty += Math.max(1, sanitizeNum(item.qty));
+                const cleanPrice = Math.max(0, sanitizeNum(item.price));
+                const cleanDiscount = Math.min(cleanPrice, Math.max(0, sanitizeNum(item.discount)));
+                const cleanQty = Math.max(1, sanitizeNum(item.qty));
+                eligibleSubtotal += ((cleanPrice - cleanDiscount) * cleanQty);
+                eligibleQty += cleanQty;
             }
         });
         return { subtotal: eligibleSubtotal, qty: eligibleQty };
@@ -182,7 +190,9 @@ export function usePosPayment({ activeTab, activePromotions, activeFreebies, cur
         let bestPromo = null;
         validPromotions.forEach(promo => {
             const { subtotal } = getEligibleTotals(promo.applicableSkus, promo.applicableTypes);
-            let calculated = promo.type === 'PERCENTAGE' ? subtotal * (promo.value / 100) : promo.value;
+            let calculated = promo.type === 'PERCENTAGE'
+                ? subtotal * (promo.value / 100)
+                : Math.min(sanitizeNum(promo.value), subtotal);
             if (promo.type === 'PERCENTAGE' && promo.maxDiscount > 0) {
                 calculated = Math.min(calculated, promo.maxDiscount);
             }

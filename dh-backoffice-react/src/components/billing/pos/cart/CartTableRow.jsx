@@ -119,15 +119,15 @@ export default function CartTableRow({
                         <div className="flex flex-wrap gap-4 items-start animate-in slide-in-from-top-1 fade-in duration-200">
                             <div className="w-16">
                                 <label className="text-[10px] text-amber-900 font-bold mb-1 block uppercase tracking-wider">จำนวน</label>
-                                <input type="number" min="1" value={item.qty} onFocus={e => e.target.select()} onChange={e => updateItemAction(item.sku, 'qty', parseInt(e.target.value) || 1)} disabled={isProcessing} className="w-full h-8 px-2 rounded-md border-amber-200/60 bg-white/90 text-center font-bold text-sm outline-hidden focus:ring-2 focus:ring-[#ffbb00]/40 focus:border-[#ffbb00] transition-all shadow-xs" />
+                                <input type="number" min="1" value={item.qty} onFocus={e => e.target.select()} onChange={e => updateItemAction(item.sku, 'qty', Math.max(1, parseInt(e.target.value, 10) || 1))} disabled={isProcessing} className="w-full h-8 px-2 rounded-md border-amber-200/60 bg-white/90 text-center font-bold text-sm outline-hidden focus:ring-2 focus:ring-[#ffbb00]/40 focus:border-[#ffbb00] transition-all shadow-xs" />
                             </div>
                             <div className="w-24">
                                 <label className="text-[10px] text-amber-900 font-bold mb-1 block uppercase tracking-wider">ราคา/หน่วย</label>
-                                <input type="number" min="0" value={item.price} onFocus={e => e.target.select()} onChange={e => updateItemAction(item.sku, 'price', parseFloat(e.target.value) || 0)} disabled={isProcessing} className="w-full h-8 px-2 rounded-md border-amber-200/60 bg-white/90 text-right font-bold text-sm outline-hidden focus:ring-2 focus:ring-[#ffbb00]/40 focus:border-[#ffbb00] transition-all shadow-xs" />
+                                <input type="number" min="0" value={item.price} onFocus={e => e.target.select()} onChange={e => updateItemAction(item.sku, 'price', Math.max(0, parseFloat(e.target.value) || 0))} disabled={isProcessing} className="w-full h-8 px-2 rounded-md border-amber-200/60 bg-white/90 text-right font-bold text-sm outline-hidden focus:ring-2 focus:ring-[#ffbb00]/40 focus:border-[#ffbb00] transition-all shadow-xs" />
                             </div>
                             <div className="w-24">
                                 <label className="text-[10px] text-red-600 font-bold mb-1 block uppercase tracking-wider">ลด/หน่วย</label>
-                                <input type="number" min="0" value={item.discount} onFocus={e => e.target.select()} onChange={e => updateItemAction(item.sku, 'discount', parseFloat(e.target.value) || 0)} disabled={isProcessing} className="w-full h-8 px-2 rounded-md border-red-200 text-red-600 bg-red-50/90 text-right font-bold text-sm outline-hidden focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-all shadow-xs" />
+                                <input type="number" min="0" max={Math.max(0, Number(item.price) || 0)} value={item.discount} onFocus={e => e.target.select()} onChange={e => updateItemAction(item.sku, 'discount', Math.min(Math.max(0, Number(item.price) || 0), Math.max(0, parseFloat(e.target.value) || 0)))} disabled={isProcessing} className="w-full h-8 px-2 rounded-md border-red-200 text-red-600 bg-red-50/90 text-right font-bold text-sm outline-hidden focus:ring-2 focus:ring-red-500/30 focus:border-red-400 transition-all shadow-xs" />
                             </div>
                             <div className="flex-1 min-w-[200px]">
                                 <div className="flex items-center justify-between mb-1">

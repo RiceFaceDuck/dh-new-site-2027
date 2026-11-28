@@ -151,7 +151,9 @@ export const submitOrder = async (user, cartItems, checkoutState, totals, slipUr
             : varBasePrice;
         }
       }
-      return { ...item, retailPrice: resolvedPrice, price: resolvedPrice };
+      const baseWholesale = Number(dbProduct.Price || dbProduct.retailPrice || resolvedPrice);
+      const baseRetail = Number(dbProduct.retailPrice || dbProduct.Price || resolvedPrice);
+      return { ...item, retailPrice: resolvedPrice, price: resolvedPrice, baseWholesale, baseRetail };
     });
 
     const calculatedPrices = calculateNetTotal({

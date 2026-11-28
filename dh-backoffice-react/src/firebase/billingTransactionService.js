@@ -20,8 +20,28 @@ const POINTS_RATE = 100;
 // ==========================================
 async function fetchDependencies(transaction, orderData, statusLower) {
   const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid || orderData.customer?.id || null;
+  const oldDraftDocId = orderData.docId || orderData.id || null;
+  let oldDraftSnap = null;
+  if (oldDraftDocId) {
+    oldDraftSnap = await transaction.get(doc(db, COLLECTION_NAME, oldDraftDocId));
+  }
+  const oldDraftData = oldDraftSnap?.exists() ? oldDraftSnap.data() : null;
+  const alreadyStockDeducted = Boolean(oldDraftData?.isStockDeducted || orderData.isStockDeducted);
+
+  const prevQtyMap = new Map();
+  if (alreadyStockDeducted) {
+    const prevItems = Array.isArray(oldDraftData?.items) && oldDraftData.items.length > 0
+      ? oldDraftData.items
+      : (Array.isArray(orderData.originalDeductedItems) ? orderData.originalDeductedItems : []);
+    for (const prevItem of prevItems) {
+      const prevId = prevItem.id || prevItem.sku;
+      if (!prevId) continue;
+      const pQty = Math.max(1, Number(prevItem.qty || prevItem.quantity || 1));
+      prevQtyMap.set(prevId, (prevQtyMap.get(prevId) || 0) + pQty);
+    }
+  }
+
   const aggregatedProductMap = new Map();
-  
   for (const item of (orderData.items || [])) {
     const itemIdentifier = item.id || item.sku; 
     if (itemIdentifier) {
@@ -34,6 +54,18 @@ async function fetchDependencies(transaction, orderData, statusLower) {
           itemIdentifier,
           totalQty: qty,
           item
+        });
+      }
+    }
+  }
+  if (alreadyStockDeducted) {
+    for (const [prevId] of prevQtyMap.entries()) {
+      if (!aggregatedProductMap.has(prevId)) {
+        aggregatedProductMap.set(prevId, {
+          ref: doc(db, getCollectionPath('products'), prevId),
+          itemIdentifier: prevId,
+          totalQty: 0,
+          item: { sku: prevId, qty: 0 }
         });
       }
     }
@@ -71,7 +103,7 @@ async function fetchDependencies(transaction, orderData, statusLower) {
     }
   }
 
-  return { productSnaps, productRefs, settingsSnap, userSnap, counterSnap, terminalId, yearStr, customerUid, promoFreebieSnaps };
+  return { productSnaps, productRefs, settingsSnap, userSnap, counterSnap, terminalId, yearStr, customerUid, promoFreebieSnaps, oldDraftData, alreadyStockDeducted, prevQtyMap };
 }
 
 async function fetchCreditPreloads(transaction, customerUid, finalOrderId, statusLower, existingUserSnap = null) {
@@ -92,24 +124,28 @@ async function fetchCreditPreloads(transaction, customerUid, finalOrderId, statu
 // ==========================================
 // 🛡️ Helper: Validations & Calculations
 // ==========================================
-function validateStock(productSnaps, productRefs, defaultBuffer, actorName, statusLower, canBypass = false) {
+function validateStock(productSnaps, productRefs, defaultBuffer, actorName, statusLower, canBypass = false, alreadyStockDeducted = false, prevQtyMap = null) {
   const updates = [];
   productSnaps.forEach((snap, index) => {
     if (snap.exists()) {
       const currentStock = snap.data().stockQuantity || 0;
-      const requiredQty = productRefs[index].totalQty || productRefs[index].item?.qty || 1;
+      const requiredQty = Number(productRefs[index].totalQty ?? productRefs[index].item?.qty ?? 0);
+      const prevQty = alreadyStockDeducted && prevQtyMap ? (prevQtyMap.get(productRefs[index].itemIdentifier) || 0) : 0;
+      const deltaQty = requiredQty - prevQty;
+      if (deltaQty === 0) return;
+
       const isPosOrder = (actorName === 'POS' || actorName === 'POS_OFFLINE_SYNC');
       const bypassAllowed = isPosOrder || Boolean(canBypass);
       const itemBuffer = resolveEffectiveBuffer(snap.data().bufferStock, defaultBuffer);
       const checkLimit = bypassAllowed ? 0 : itemBuffer;
 
-      if ((currentStock - requiredQty) < checkLimit && statusLower === 'paid') {
+      if (deltaQty > 0 && (currentStock - deltaQty) < checkLimit && statusLower === 'paid') {
         const skuLabel = snap.data().sku || productRefs[index].itemIdentifier;
         throw new Error(bypassAllowed 
-          ? `สินค้า ${skuLabel} สต็อกคงเหลือไม่เพียงพอ (คงเหลือ ${currentStock} ชิ้น, ต้องการ ${requiredQty} ชิ้น)`
-          : `สินค้า ${skuLabel} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${itemBuffer} ชิ้น, คงเหลือ ${currentStock} ชิ้น, ต้องการ ${requiredQty} ชิ้น)`);
+          ? `สินค้า ${skuLabel} สต็อกคงเหลือไม่เพียงพอ (คงเหลือ ${currentStock} ชิ้น, ต้องการเพิ่ม ${deltaQty} ชิ้น)`
+          : `สินค้า ${skuLabel} สต็อกคงเหลือไม่เพียงพอ (ติด Buffer ${itemBuffer} ชิ้น, คงเหลือ ${currentStock} ชิ้น, ต้องการเพิ่ม ${deltaQty} ชิ้น)`);
       }
-      updates.push({ ref: productRefs[index].ref, newQty: currentStock - requiredQty, soldInc: requiredQty, originalSnap: snap });
+      updates.push({ ref: productRefs[index].ref, newQty: currentStock - deltaQty, soldInc: deltaQty, originalSnap: snap });
     }
   });
   return updates;
@@ -121,15 +157,31 @@ async function calculateSecureTotal(orderData, productSnaps, statusLower) {
   const verifiedItems = (orderData.items || []).map((item) => {
     const dbProduct = productSnaps.find(snap => snap.id === (item.id || item.sku))?.data();
     const isWholesale = orderData.priceMode === 'wholesale';
-    const securePrice = dbProduct 
+    const dbSecurePrice = dbProduct 
       ? (isWholesale 
           ? (dbProduct.Price || dbProduct.retailPrice || item.price || 0) 
           : (dbProduct.retailPrice || dbProduct.Price || item.price || 0))
       : (item.price || 0);
     const secureName = dbProduct ? dbProduct.name : (item.name || item.itemName || 'Unknown Item');
     
-    if (item.isFreebie) return { ...item, nameAtPurchase: item.itemName || secureName, priceAtPurchase: 0 };
-    return { ...item, retailPrice: securePrice, priceAtPurchase: securePrice, nameAtPurchase: secureName };
+    if (item.isFreebie) return { ...item, nameAtPurchase: item.itemName || secureName, priceAtPurchase: 0, price: 0, discount: 0 };
+    // Respect cashier-edited unit price in Backoffice POS while retaining dbReferencePrice for audit
+    const hasValidItemPrice = item.price !== undefined && item.price !== null && Number.isFinite(Number(item.price)) && Number(item.price) >= 0;
+    const effectivePrice = hasValidItemPrice ? Math.max(0, Number(item.price)) : Math.max(0, Number(dbSecurePrice || 0));
+    const cleanDiscount = Math.min(effectivePrice, Math.max(0, Number(item.discount || 0)));
+    const baseWholesale = Number(item.baseWholesale ?? dbProduct?.Price ?? dbProduct?.retailPrice ?? effectivePrice);
+    const baseRetail = Number(item.baseRetail ?? dbProduct?.retailPrice ?? dbProduct?.Price ?? effectivePrice);
+    return {
+      ...item,
+      price: effectivePrice,
+      discount: cleanDiscount,
+      retailPrice: effectivePrice,
+      priceAtPurchase: effectivePrice,
+      dbReferencePrice: dbSecurePrice,
+      baseWholesale,
+      baseRetail,
+      nameAtPurchase: secureName
+    };
   });
 
   const shippingCost = Number(orderData.summary?.shippingFee ?? orderData.shippingFee ?? 0);
@@ -141,16 +193,16 @@ async function calculateSecureTotal(orderData, productSnaps, statusLower) {
   // When vatOnShipping is false, shippingCost must NOT be part of the taxable base
   const taxableShippingCost = (!isVatOnShipping) ? 0 : shippingCost;
 
-  const itemDiscounts = (verifiedItems || []).reduce((sum, item) => sum + (Number(item.discount || 0) * Math.max(1, Number(item.qty || 1))), 0);
   const manualBillDiscount = Number(orderData.summary?.manualDiscount ?? orderData.overallDiscount ?? 0);
   const promoList = Array.isArray(orderData.appliedPromotions) ? orderData.appliedPromotions : (orderData.appliedPromotion ? [orderData.appliedPromotion] : []);
   const hasDynamicPromos = promoList.length > 0;
 
-  // 🛡️ Double-Discount Prevention: If dynamic promotions are passed, calculateNetTotal recalculates totalPromoDiscount.
-  // Therefore, discountAmount passed into calculateNetTotal must NOT include promotional discount.
+  // 🛡️ Double-Discount Prevention:
+  // 1) priceEngine.calculateItemTotal now deducts item.discount per line, so discountAmount MUST NOT re-include itemDiscounts.
+  // 2) If dynamic promotions are passed, calculateNetTotal recalculates totalPromoDiscount, so pass only manualBillDiscount.
   const discountToPass = hasDynamicPromos 
-    ? (itemDiscounts + manualBillDiscount)
-    : Number(orderData.summary?.manualDiscount ?? orderData.summary?.discount ?? orderData.discountTotal ?? (itemDiscounts + manualBillDiscount + Number(orderData.promoDiscount || 0)));
+    ? manualBillDiscount
+    : (manualBillDiscount + Number(orderData.promoDiscount || 0));
 
   const calculatedPrices = calculateNetTotal({
     items: verifiedItems,
@@ -186,8 +238,8 @@ async function calculateSecureTotal(orderData, productSnaps, statusLower) {
   };
 }
 
-function calculateWalletAndPoints(orderData, userSnap, finalSecureNetTotal, statusLower, creditPreloadSnaps = null) {
-  let walletToUse = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
+function calculateWalletAndPoints(orderData, userSnap, finalSecureNetTotal, statusLower, creditPreloadSnaps = null, alreadyWalletDeducted = false) {
+  let walletToUse = Number(orderData.summary?.walletUsed ?? orderData.walletUsedAmount ?? orderData.walletUsed ?? orderData.calculationLog?.usedWallet ?? 0);
   if (Number.isNaN(walletToUse) || walletToUse < 0) walletToUse = 0;
   
   // ✅ [SECURITY FIX] ป้องกันการใส่ตัวเลข walletUsed มาเกินยอดบิลจริงๆ (ป้องกันหัก Wallet ลูกค้าหมดกระเป๋า)
@@ -202,7 +254,7 @@ function calculateWalletAndPoints(orderData, userSnap, finalSecureNetTotal, stat
   
   if (userSnap && userSnap.exists()) {
     const currentWallet = Number(userSnap.data().walletBalance || 0);
-    if (walletToUse > 0 && currentWallet < walletToUse) {
+    if (walletToUse > 0 && !alreadyWalletDeducted && currentWallet < walletToUse) {
       throw new Error("ยอดเงินค้างในระบบ (Wallet) ไม่เพียงพอ");
     }
     
@@ -254,7 +306,7 @@ export const billingTransactionService = {
           
           // 1. Fetch Dependencies (READS)
           const deps = await fetchDependencies(transaction, orderData, statusLower);
-          const { productSnaps, productRefs, settingsSnap, userSnap, counterSnap, terminalId, yearStr, promoFreebieSnaps } = deps;
+          const { productSnaps, productRefs, settingsSnap, userSnap, counterSnap, terminalId, yearStr, promoFreebieSnaps, oldDraftData, alreadyStockDeducted, prevQtyMap } = deps;
           
           // 2. Generate Order ID
           if (statusLower === 'paid' || statusLower === 'approved') {
@@ -270,8 +322,38 @@ export const billingTransactionService = {
           
           // 3. Validate & Calculate Logic
           const defaultBuffer = settingsSnap.exists() ? (settingsSnap.data().defaultBufferStock ?? 2) : 2;
-          const canBypassBuffer = Boolean(orderData?.canBypassBuffer || orderData?.canBypassBufferStock);
-          const updates = validateStock(productSnaps, productRefs, defaultBuffer, actorName, statusLower, canBypassBuffer);
+          const canBypassBuffer = Boolean(
+            orderData?.canBypassBuffer ||
+            orderData?.canBypassBufferStock ||
+            orderData?.channel === 'pos' ||
+            orderData?.source === 'pos'
+          );
+          const alreadyWalletDeducted = Boolean(
+            oldDraftData?.isWalletDeducted ||
+            orderData.isWalletDeducted ||
+            (oldDraftData?.isWebOrder && Number(oldDraftData?.calculationLog?.usedWallet || oldDraftData?.walletUsed || 0) > 0)
+          );
+          const alreadyQuotaDeducted = Boolean(
+            oldDraftData?.isPromoQuotaDeducted ||
+            oldDraftData?.isWebOrder ||
+            orderData.isPromoQuotaDeducted
+          );
+          const prevPromoIds = new Set(
+            (Array.isArray(oldDraftData?.appliedPromotions) ? oldDraftData.appliedPromotions : [])
+              .map(p => p?.id)
+              .filter(Boolean)
+          );
+          const prevFreebieQtyMap = new Map();
+          const prevFreebieList = Array.isArray(oldDraftData?.appliedFreebies) && oldDraftData.appliedFreebies.length > 0
+            ? oldDraftData.appliedFreebies
+            : (Array.isArray(oldDraftData?.calculationLog?.freebies) ? oldDraftData.calculationLog.freebies : []);
+          prevFreebieList.forEach(f => {
+            if (f?.id) {
+              prevFreebieQtyMap.set(f.id, Number(f.calculatedQty || f.qty || 1));
+            }
+          });
+
+          const updates = validateStock(productSnaps, productRefs, defaultBuffer, actorName, statusLower, canBypassBuffer, alreadyStockDeducted, prevQtyMap);
           const { 
             finalSecureNetTotal, 
             verifiedItems,
@@ -280,7 +362,7 @@ export const billingTransactionService = {
             calculatedShipping,
             calculatedVat
           } = await calculateSecureTotal(orderData, productSnaps, statusLower);
-          const { walletToUse, earnedPoints } = calculateWalletAndPoints(orderData, userSnap, finalSecureNetTotal, statusLower, creditPreloadSnaps);
+          const { walletToUse, earnedPoints } = calculateWalletAndPoints(orderData, userSnap, finalSecureNetTotal, statusLower, creditPreloadSnaps, alreadyWalletDeducted);
 
           // 4. Perform Updates (WRITES)
           if (statusLower === 'paid') {
@@ -308,18 +390,29 @@ export const billingTransactionService = {
               });
             });
             
-            // 🎯 Deduct Promo/Freebie Quota Securely
+            // 🎯 Deduct Promo/Freebie Quota Securely (with web-order double-deduction guard)
             for (const item of promoFreebieSnaps) {
                 if (item.snap && item.snap.exists()) {
+                    if (item.type === 'promo' && alreadyQuotaDeducted && prevPromoIds.has(item.snap.id)) {
+                        continue;
+                    }
+                    const requestedQty = item.type === 'freebie'
+                        ? Number((orderData.appliedFreebies || []).find(f => f.id === item.snap.id)?.qty || 1)
+                        : 1;
+                    const prevDeductedQty = (item.type === 'freebie' && alreadyQuotaDeducted)
+                        ? (prevFreebieQtyMap.get(item.snap.id) || 0)
+                        : 0;
+                    const qtyToDeduct = requestedQty - prevDeductedQty;
+                    if (qtyToDeduct <= 0) continue;
+
                     const data = item.snap.data();
                     if (data.quotaLimit && data.quotaLimit > 0) {
                         const currentUsed = data.quotaUsed || 0;
-                        const qtyToDeduct = item.type === 'freebie' ? ((orderData.appliedFreebies || []).find(f => f.id === item.snap.id)?.qty || 1) : 1;
                         if (currentUsed + qtyToDeduct > data.quotaLimit) {
                             throw new Error(`สร้างบิลไม่สำเร็จ: สิทธิ์${item.type === 'promo' ? 'โปรโมชัน' : 'ของแถม'} "${data.title || data.name || item.snap.id}" เต็มแล้ว (เหลือ 0 สิทธิ์)`);
                         }
                     }
-                    transaction.update(item.ref, { quotaUsed: increment(item.type === 'freebie' ? ((orderData.appliedFreebies || []).find(f => f.id === item.snap.id)?.qty || 1) : 1) });
+                    transaction.update(item.ref, { quotaUsed: increment(qtyToDeduct) });
                 }
             }
           }
@@ -376,7 +469,8 @@ export const billingTransactionService = {
           ));
 
           const isPaidOrApproved = (statusLower === 'paid' || statusLower === 'approved');
-          const isWalletDeducted = isPaidOrApproved && walletToUse > 0;
+          const shouldDeductWalletNow = isPaidOrApproved && walletToUse > 0 && !alreadyWalletDeducted;
+          const isWalletDeducted = alreadyWalletDeducted || shouldDeductWalletNow;
           const validCustomerUid = (customerUid && customerUid !== 'WALK-IN') ? customerUid : null;
 
           const isWebOrder = Boolean(dataToSave.isWebOrder || orderData.isWebOrder || dataToSave.channel === 'storefront' || orderData.channel === 'storefront');
@@ -401,7 +495,8 @@ export const billingTransactionService = {
               : (dataToSave.fulfillmentStatus || 'pending_payment_verification'),
             earnedPoints, 
             walletUsedAmount: walletToUse, 
-            isStockDeducted: isPaidOrApproved, 
+            isStockDeducted: isPaidOrApproved || alreadyStockDeducted, 
+            isPromoQuotaDeducted: isPaidOrApproved || alreadyQuotaDeducted,
             isWalletDeducted: isWalletDeducted,
             updatedAt: serverTimestamp(), 
             createdBy: actorUid || dataToSave.createdBy, 
@@ -440,8 +535,8 @@ export const billingTransactionService = {
               updatedAt: serverTimestamp()
             };
 
-            // 🛡️ Deduct Wallet ONLY when order is Paid or Approved (Prevents premature & double deduction on drafts)
-            if (isWalletDeducted) {
+            // 🛡️ Deduct Wallet ONLY when order is Paid or Approved and not already deducted on Storefront
+            if (shouldDeductWalletNow) {
               const currentWallet = Number(userSnap.data()?.walletBalance || 0);
               const balanceAfter = Math.max(0, Math.round((currentWallet - walletToUse) * 100) / 100);
               const txId = `TXW_POS_${finalOrderId}`;

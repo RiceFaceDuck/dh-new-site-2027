@@ -223,7 +223,13 @@ export const billingStatusTransaction = {
 
 
           if (isConfirmingPayment) {
-             const canBypassBuffer = Boolean(orderData?.canBypassBuffer || orderData?.canBypassBufferStock || orderData?.actorName === 'POS');
+             const canBypassBuffer = Boolean(
+               orderData?.canBypassBuffer ||
+               orderData?.canBypassBufferStock ||
+               orderData?.actorName === 'POS' ||
+               orderData?.channel === 'pos' ||
+               orderData?.source === 'pos'
+             );
              handleStockDeduction(transaction, db, productRefs, productSnaps, inventorySettingsSnap, canBypassBuffer);
 
              // 🎯 Deduct Promo/Freebie Quota on Approved/Paid (with Edge Case Lock)

@@ -241,6 +241,50 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
             if (matchedCust) fullCustomer = matchedCust;
         }
 
+        const hydrateDraftItems = (rawItems) => {
+            return (rawItems || [])
+                .filter(i => !i.isFreebie)
+                .map(item => {
+                    const itemSku = item.sku || item.id || '';
+                    const matchedProd = (Array.isArray(products) ? products.find(p => p.sku === itemSku || p.id === itemSku) : null)
+                        || catalogHydrationService.findProductInCache(itemSku);
+                    const resolvedPrice = Math.max(0, Number(item.price ?? item.priceAtPurchase ?? item.retailPrice ?? 0));
+                    const baseWholesale = Number(item.baseWholesale ?? matchedProd?.Price ?? matchedProd?.retailPrice ?? resolvedPrice);
+                    const baseRetail = Number(item.baseRetail ?? matchedProd?.retailPrice ?? matchedProd?.Price ?? resolvedPrice);
+                    const resolvedStock = item.stock !== undefined && item.stock !== null
+                        ? Number(item.stock)
+                        : Number(matchedProd?.stockQuantity ?? 0);
+                    return {
+                        ...item,
+                        sku: itemSku,
+                        price: resolvedPrice,
+                        discount: Math.min(resolvedPrice, Math.max(0, Number(item.discount || 0))),
+                        qty: Math.max(1, Number(item.qty || item.quantity || 1)),
+                        baseWholesale,
+                        baseRetail,
+                        stock: resolvedStock
+                    };
+                });
+        };
+
+        const hydratedDraftItems = hydrateDraftItems(initialDraft.items);
+        const draftWalletUsed = Number(initialDraft.walletUsed ?? initialDraft.walletUsedAmount ?? initialDraft.calculationLog?.usedWallet ?? 0);
+        const draftIsStockDeducted = Boolean(initialDraft.isStockDeducted);
+        const draftIsWalletDeducted = Boolean(initialDraft.isWalletDeducted || (isWebOrder && draftWalletUsed > 0));
+        const draftIsPromoQuotaDeducted = Boolean(initialDraft.isPromoQuotaDeducted || isWebOrder);
+        const draftOriginalDeductedItems = draftIsStockDeducted
+            ? (initialDraft.items || []).map(i => ({
+                sku: i.sku || i.id || '',
+                id: i.id || i.sku || '',
+                qty: Math.max(1, Number(i.qty || i.quantity || 1)),
+                isFreebie: Boolean(i.isFreebie)
+            }))
+            : null;
+        const draftFreebieList = Array.isArray(initialDraft.appliedFreebies) && initialDraft.appliedFreebies.length > 0
+            ? initialDraft.appliedFreebies
+            : (Array.isArray(initialDraft.calculationLog?.freebies) ? initialDraft.calculationLog.freebies : []);
+        const draftManualFreebieIds = draftFreebieList.map(f => f?.id).filter(Boolean);
+
         let targetTabId = null;
 
         setCartTabs(prev => {
@@ -272,7 +316,12 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                     staffUid: effectiveStaffUid,
                     openedBy: initialDraft.openedBy || (isWebOrder ? currentStaffUid : null),
                     customer: fullCustomer,
-                    items: (initialDraft.items || []).filter(i => !i.isFreebie),
+                    items: hydratedDraftItems,
+                    isStockDeducted: draftIsStockDeducted,
+                    isWalletDeducted: draftIsWalletDeducted,
+                    isPromoQuotaDeducted: draftIsPromoQuotaDeducted,
+                    originalDeductedItems: draftOriginalDeductedItems,
+                    ...(draftManualFreebieIds.length > 0 ? { autoFreebieEnabled: false, manualFreebieIds: draftManualFreebieIds } : {}),
                     walkInName: initialDraft.customer?.uid === 'WALK-IN' ? initialDraft.customer.accountName : (existingTab.walkInName || ''),
                     walkInPhone: initialDraft.customer?.phone || (existingTab.walkInPhone || ''),
                     hidePhone: initialDraft.customer?.hidePhone || false,
@@ -288,8 +337,8 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                     vatOnShipping: initialDraft.vatOnShipping !== undefined ? initialDraft.vatOnShipping : existingTab.vatOnShipping,
                     overallDiscount: initialDraft.overallDiscount ?? existingTab.overallDiscount ?? 0,
                     overallDiscountType: initialDraft.overallDiscountType || existingTab.overallDiscountType || 'BAHT',
-                    useWallet: Boolean(initialDraft.walletUsed > 0),
-                    walletUsed: initialDraft.walletUsed ?? existingTab.walletUsed ?? 0,
+                    useWallet: Boolean(draftWalletUsed > 0),
+                    walletUsed: draftWalletUsed || existingTab.walletUsed || 0,
                     promoDiscount: promoDiscountFromDraft || existingTab.promoDiscount || 0,
                     appliedPromoId: promoFromDraft?.id || existingTab.appliedPromoId || null,
                     appliedPromoDetails: promoFromDraft || existingTab.appliedPromoDetails || null,
@@ -324,7 +373,14 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                 staffUid: effectiveStaffUid,
                 openedBy: initialDraft.openedBy || (isWebOrder ? currentStaffUid : null),
                 customer: fullCustomer,
-                items: (initialDraft.items || []).filter(i => !i.isFreebie),
+                items: hydratedDraftItems,
+                isStockDeducted: draftIsStockDeducted,
+                isWalletDeducted: draftIsWalletDeducted,
+                isPromoQuotaDeducted: draftIsPromoQuotaDeducted,
+                originalDeductedItems: draftOriginalDeductedItems,
+                autoFreebieEnabled: draftManualFreebieIds.length > 0 ? false : (isWebOrder ? false : true),
+                manualFreebieIds: draftManualFreebieIds,
+                disabledFreebieIds: [],
                 walkInName: initialDraft.customer?.uid === 'WALK-IN' ? initialDraft.customer.accountName : '',
                 walkInPhone: initialDraft.customer?.phone || '',
                 hidePhone: initialDraft.customer?.hidePhone || false,
@@ -340,8 +396,8 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                 vatOnShipping: initialDraft.vatOnShipping || false,
                 overallDiscount: initialDraft.overallDiscount || 0,
                 overallDiscountType: initialDraft.overallDiscountType || 'BAHT',
-                useWallet: Boolean(initialDraft.walletUsed > 0),
-                walletUsed: initialDraft.walletUsed || 0,
+                useWallet: Boolean(draftWalletUsed > 0),
+                walletUsed: draftWalletUsed || 0,
                 promoDiscount: promoDiscountFromDraft || 0,
                 appliedPromoId: promoFromDraft?.id || null,
                 appliedPromoDetails: promoFromDraft || null,
@@ -517,7 +573,15 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
     };
 
     const handlePriceModeChange = (mode) => {
-        const updatedItems = (activeTab?.items || []).map(item => { const newPrice = mode === 'wholesale' ? item.baseWholesale : item.baseRetail; return { ...item, price: newPrice }; });
+        const updatedItems = (activeTab?.items || []).map(item => {
+            const matchedProd = (Array.isArray(products) ? products.find(p => p.sku === item.sku || p.id === item.sku) : null)
+                || catalogHydrationService.findProductInCache(item.sku);
+            const resolvedWholesale = item.baseWholesale ?? matchedProd?.Price ?? matchedProd?.retailPrice ?? item.price ?? 0;
+            const resolvedRetail = item.baseRetail ?? matchedProd?.retailPrice ?? matchedProd?.Price ?? item.price ?? 0;
+            const candidate = mode === 'wholesale' ? resolvedWholesale : resolvedRetail;
+            const newPrice = (candidate !== undefined && candidate !== null && Number(candidate) > 0) ? Number(candidate) : Math.max(0, Number(item.price || 0));
+            return { ...item, baseWholesale: Number(resolvedWholesale || 0), baseRetail: Number(resolvedRetail || 0), price: newPrice };
+        });
         updateActiveTab({ priceMode: mode, items: updatedItems });
     };
 
