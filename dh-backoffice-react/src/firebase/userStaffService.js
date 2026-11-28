@@ -1,6 +1,17 @@
-import { db } from './config';
+import app, { db } from './config';
 import { limit, collection, doc, getDocs, getDoc, updateDoc, setDoc, serverTimestamp, query, where } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { getCollectionPath } from 'dh-shared/src/firebase/pathUtils';
+
+const syncStaffCustomClaims = (targetUid) => {
+    if (!targetUid || typeof window === 'undefined') return;
+    try {
+        const fn = httpsCallable(getFunctions(app, 'asia-southeast1'), 'syncUserClaims');
+        fn({ targetUid }).catch((err) => {
+            console.warn('[UserStaffService] Non-blocking syncUserClaims warning:', err?.message || err);
+        });
+    } catch (_) {}
+};
 
 
 
@@ -141,6 +152,9 @@ export const updateStaffDetails = async (adminId, targetUid, updates) => {
             'metadata.updatedAt': serverTimestamp(),
             'metadata.updatedBy': adminId
         });
+        if (updates && (updates.role !== undefined || updates.isStaff !== undefined || updates.isApproved !== undefined)) {
+            syncStaffCustomClaims(targetUid);
+        }
         console.log(`✅ [UserStaffService] Staff details updated for UID: ${targetUid}`);
         return { success: true };
     } catch (error) {
@@ -197,6 +211,7 @@ export const promoteUserToStaff = async (adminId, targetUid, newRole) => {
             'metadata.roleUpdatedAt': serverTimestamp(),
             'metadata.roleUpdatedBy': adminId
         });
+        syncStaffCustomClaims(targetUid);
         console.log(`✅ [UserStaffService] Promoted UID ${targetUid} to ${newRole}`);
         return { success: true };
     } catch (error) {

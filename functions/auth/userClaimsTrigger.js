@@ -1,13 +1,21 @@
 /**
- * 🛡️ Auth Custom Claims Trigger (Cloud Functions v1 — compatible with Firestore asia-southeast3)
- * Listens to `users/{uid}` onWrite. Maps database role strings (English & Thai)
- * into Firebase Auth Custom Claims (`role`, `isStaff`, `isManager`, `isAdmin`)
- * so client tokens carry authorization without database lookups.
+ * 🛡️ Auth Custom Claims Sync (Cloud Functions v2 Callable — asia-southeast1)
+ * Maps database role strings (English & Thai) from `users/{uid}` into Firebase Auth
+ * Custom Claims (`role`, `isStaff`, `isManager`, `isAdmin`) so client tokens carry
+ * authorization without database lookups. Uses `onCall` because Firestore in
+ * `asia-southeast3` does not support Eventarc/v1 Firestore document triggers.
  */
 
-const functions = require("firebase-functions/v1");
+const { onCall, HttpsError } = require("firebase-functions/v2/https");
 const { getAuth } = require("firebase-admin/auth");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+
+const SUPER_ADMIN_EMAILS = [
+  "dh1notebook@gmail.com",
+  "dh2notebook@gmail.com",
+  "zhoulinjuan1@gmail.com",
+  "bentshan@gmail.com"
+];
 
 /**
  * Maps raw role string (Thai or English) to standardized Auth Custom Claims.
@@ -66,53 +74,71 @@ function mapRoleToClaims(rawRole) {
 }
 
 /**
- * Cloud Function Trigger (v1): Sync Auth Custom Claims whenever users/{uid} is written.
- * Uses v1 because project Firestore lives in asia-southeast3 (not supported by v2 Eventarc).
+ * Cloud Function Callable (v2): Sync Auth Custom Claims for a user from their authoritative Firestore role.
+ * - Any signed-in user may sync their own claims (derived strictly from Firestore `users/{uid}.role`).
+ * - Managers/Admins/Owners may sync claims for any `targetUid`.
  */
-const onUserWrittenForClaims = functions
-  .region("asia-southeast1")
-  .firestore.document("users/{uid}")
-  .onWrite(async (change, context) => {
-    const uid = context.params.uid;
-    const afterData = change.after.exists ? change.after.data() : null;
-    const beforeData = change.before.exists ? change.before.data() : null;
+const syncUserClaims = onCall({ region: "asia-southeast1", cors: true, maxInstances: 10 }, async (request) => {
+  if (!request.auth) {
+    throw new HttpsError("unauthenticated", "จำเป็นต้องเข้าสู่ระบบก่อนดำเนินการซิงก์สิทธิ์");
+  }
 
-    // If document was deleted, nothing to sync
-    if (!afterData) {
-      return null;
+  const callerUid = request.auth.uid;
+  const callerEmail = String(request.auth.token?.email || "").toLowerCase();
+  const targetUid = String(request.data?.targetUid || callerUid).trim();
+
+  if (!targetUid) {
+    throw new HttpsError("invalid-argument", "ไม่พบรหัสผู้ใช้เป้าหมาย (targetUid)");
+  }
+
+  const db = getFirestore();
+
+  // Authorization check when syncing another user's claims
+  if (targetUid !== callerUid) {
+    let isCallerAuthorized = SUPER_ADMIN_EMAILS.includes(callerEmail) ||
+      Boolean(request.auth.token?.isManager || request.auth.token?.isAdmin);
+
+    if (!isCallerAuthorized) {
+      const callerSnap = await db.collection("users").doc(callerUid).get();
+      if (callerSnap.exists) {
+        const callerClaims = mapRoleToClaims(callerSnap.data()?.role);
+        isCallerAuthorized = Boolean(callerClaims.isManager || callerClaims.isAdmin);
+      }
     }
 
-    const newRole = afterData.role || 'customer';
-    const oldRole = beforeData ? beforeData.role : undefined;
-
-    // Only proceed if role changed or claims haven't been synchronized yet
-    if (beforeData && newRole === oldRole && afterData.claimsUpdatedAt) {
-      return null;
+    if (!isCallerAuthorized) {
+      throw new HttpsError("permission-denied", "เฉพาะผู้จัดการหรือผู้ดูแลระบบเท่านั้นที่สามารถซิงก์สิทธิ์ให้ผู้อื่นได้");
     }
+  }
 
-    const claims = mapRoleToClaims(newRole);
+  const targetRef = db.collection("users").doc(targetUid);
+  const targetSnap = await targetRef.get();
+  if (!targetSnap.exists) {
+    throw new HttpsError("not-found", `ไม่พบข้อมูลผู้ใช้ ${targetUid}`);
+  }
 
-    try {
-      const auth = getAuth();
-      await auth.setCustomUserClaims(uid, claims);
+  const userData = targetSnap.data() || {};
+  const roleStr = userData.role || "customer";
+  const claims = mapRoleToClaims(roleStr);
 
-      // Token Refresh Signal: Store claimsUpdatedAt timestamp on the user doc
-      const db = getFirestore();
-      await db.collection("users").doc(uid).update({
-        claimsUpdatedAt: FieldValue.serverTimestamp(),
-        customClaims: claims
-      });
+  try {
+    const auth = getAuth();
+    await auth.setCustomUserClaims(targetUid, claims);
 
-      console.log(`[userClaimsTrigger] Synced claims for user ${uid} with role '${newRole}':`, claims);
-      return { uid, claims };
-    } catch (error) {
-      console.error(`[userClaimsTrigger] Error updating claims for user ${uid}:`, error);
-      throw error;
-    }
-  });
+    await targetRef.update({
+      claimsUpdatedAt: FieldValue.serverTimestamp(),
+      customClaims: claims
+    });
+
+    console.log(`[userClaimsTrigger] Synced claims for user ${targetUid} with role '${roleStr}':`, claims);
+    return { success: true, uid: targetUid, role: roleStr, claims };
+  } catch (error) {
+    console.error(`[userClaimsTrigger] Error updating claims for user ${targetUid}:`, error);
+    throw new HttpsError("internal", "ไม่สามารถอัปเดตสิทธิ์ผู้ใช้ได้ในขณะนี้");
+  }
+});
 
 module.exports = {
   mapRoleToClaims,
-  onUserWrittenForClaims,
-  syncUserClaims: onUserWrittenForClaims
+  syncUserClaims
 };

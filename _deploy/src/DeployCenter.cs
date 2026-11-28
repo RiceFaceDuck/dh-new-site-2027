@@ -616,7 +616,7 @@ namespace DHNotebook.DeployCenter
             if (p.Contains("slips/purgeOldSlips")) return "purgeOldSlips";
             if (p.Contains("inventory/nightlyChunkGuard")) return "nightlyChunkGuard";
             if (p.Contains("inventory/walletFunctions")) return "processWalletPayment,requestWithdrawal,calculate30DStatsCron,calculate30DStatsHttp,rebuildAllChunksManual,migrateHistoricalStats,syncProductToGas,verifyADAC001";
-            if (p.Contains("auth/userClaimsTrigger")) return "auth-onUserWrittenForClaims";
+            if (p.Contains("auth/userClaimsTrigger")) return "syncUserClaims";
             return "";
         }
 
