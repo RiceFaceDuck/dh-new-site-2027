@@ -120,8 +120,9 @@ export default function OrderDetailModal(props) {
 
     const isWebOrder = Boolean(selectedOrder.isWebOrder || selectedOrder.channel === 'storefront' || selectedOrder.source === 'storefront');
     const hasSlip = Boolean(selectedOrder.paymentSlipUrl || selectedOrder.slipUrl || selectedOrder.slipImage);
-    const isAwaitingSlip = isWebOrder && !isPaid && !isCancelled && (hasSlip || paymentStat === 'pending_verification' || orderStat === 'pending_payment_verification');
-    const isDraft = !isCancelled && !isPaid && !isAwaitingSlip && (orderStat === 'draft' || paymentStat === 'draft' || selectedOrder.isDraft === true || (!isWebOrder && String(selectedOrder.orderId || '').startsWith('DH-TEMP-')));
+    const isOnAccount = !isCancelled && !isPaid && (orderStat === 'on_account' || paymentStat === 'on_account');
+    const isAwaitingSlip = isWebOrder && !isPaid && !isCancelled && !isOnAccount && (hasSlip || paymentStat === 'pending_verification' || orderStat === 'pending_payment_verification');
+    const isDraft = !isCancelled && !isPaid && !isOnAccount && !isAwaitingSlip && (orderStat === 'draft' || paymentStat === 'draft' || selectedOrder.isDraft === true || (!isWebOrder && String(selectedOrder.orderId || '').startsWith('DH-TEMP-')));
 
     return (
         <div 
@@ -173,6 +174,8 @@ export default function OrderDetailModal(props) {
                                             <span className="px-2 py-0.5 rounded-sm bg-rose-500/10 text-rose-600 border border-rose-500/20 text-[10px] font-black">ยกเลิกแล้ว</span>
                                         ) : isAwaitingSlip ? (
                                             <span className="px-2 py-0.5 rounded-sm bg-blue-500/10 text-blue-600 border border-blue-500/20 text-[10px] font-black flex items-center gap-1"><Clock size={10}/> รอตรวจสอบสลิป ⌛</span>
+                                        ) : isOnAccount ? (
+                                            <span className="px-2 py-0.5 rounded-sm bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20 text-[10px] font-black flex items-center gap-1"><Clock size={10}/> เครดิต (รอชำระ) • 📦✓</span>
                                         ) : isDraft ? (
                                             <span className="px-2 py-0.5 rounded-sm bg-orange-500/10 text-orange-500 dark:text-orange-400 border border-orange-500/20 text-[10px] font-black flex items-center gap-1"><Clock size={10}/> ฉบับร่าง (Draft)</span>
                                         ) : isShipped ? (

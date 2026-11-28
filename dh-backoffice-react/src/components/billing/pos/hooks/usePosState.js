@@ -9,7 +9,7 @@ import { usePosCustomer } from './usePosCustomer';
 import { usePosPayment } from './usePosPayment';
 import { auth } from '../../../../firebase/config';
 import { useAuth } from '../../../../contexts/AuthContext';
-import { staffPosDraftService, filterValidDraftTabs } from '../../../../firebase/staffPosDraftService';
+import { staffPosDraftService, filterValidDraftTabs, hasMeaningfulDraftContent } from '../../../../firebase/staffPosDraftService';
 import { readCachedOrders } from '../../../../firebase/orderCacheService';
 
 import { safeJsonParse } from 'dh-shared';
@@ -82,6 +82,10 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
     }
     const [cartTabs, setCartTabs] = useState(initialTabsRef.current);
     const [activeTabId, setActiveTabId] = useState(() => initialTabsRef.current[0]?.id || Date.now().toString());
+    const cartTabsRef = useRef(cartTabs);
+    useEffect(() => {
+        cartTabsRef.current = cartTabs;
+    }, [cartTabs]);
 
     const [isProcessing, setIsProcessing] = useState(false);
     const [showPreview, setShowPreview] = useState(false);
@@ -93,29 +97,41 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
     const [activeFreebies, setActiveFreebies] = useState([]);
 
     // 🔄 Switch Staff Account on Same PC & Cross-Device Cloud Hydration
-    const currentUidRef = useRef(auth?.currentUser?.uid || 'guest');
-    useEffect(() => {
-        const unsubAuth = auth?.onAuthStateChanged?.(async (user) => {
-            const newUid = user?.uid || 'guest';
-            if (newUid !== currentUidRef.current) {
-                currentUidRef.current = newUid;
+    const currentUidRef = useRef(null);
+    const hasHydratedCloudRef = useRef(false);
+    const isHydratingCloudRef = useRef(false);
 
-                // 1. Try local cache for this staff account first (Instant 0ms)
-                const localSaved = localStorage.getItem(`dh_pos_autosave_${newUid}`);
-                if (localSaved) {
-                    const parsed = safeJsonParse(localSaved);
-                    const finishedSet = getFinishedOrderIdsSet();
-                    const valid = filterValidDraftTabs(parsed, finishedSet);
-                    if (valid.length > 0) {
+    useEffect(() => {
+        let isActive = true;
+        const hydrateForUser = async (newUid) => {
+            if (newUid === currentUidRef.current && hasHydratedCloudRef.current) return;
+            const switchedUser = currentUidRef.current !== null && newUid !== currentUidRef.current;
+            currentUidRef.current = newUid;
+            hasHydratedCloudRef.current = false;
+
+            // 1. Check local cache for meaningful draft tabs first
+            const localSaved = localStorage.getItem(`dh_pos_autosave_${newUid}`);
+            if (localSaved) {
+                const parsed = safeJsonParse(localSaved);
+                const finishedSet = getFinishedOrderIdsSet();
+                const valid = filterValidDraftTabs(parsed, finishedSet);
+                if (valid.length > 0) {
+                    hasHydratedCloudRef.current = true;
+                    if (switchedUser && isActive) {
                         setCartTabs(valid);
                         setActiveTabId(valid[0].id);
-                        return;
                     }
+                    return;
                 }
+            }
 
-                // 2. Cross-Device Cloud Hydration: If opened on another PC, pull from Cloud
-                if (newUid !== 'guest') {
+            // 2. Cross-Device Cloud Hydration: Always pull from Cloud when local has no meaningful drafts
+            if (newUid !== 'guest') {
+                isHydratingCloudRef.current = true;
+                try {
                     const cloudTabs = await staffPosDraftService.getStaffCloudDrafts(newUid);
+                    if (!isActive) return;
+                    hasHydratedCloudRef.current = true;
                     if (cloudTabs.length > 0) {
                         localStorage.setItem(`dh_pos_autosave_${newUid}`, JSON.stringify(cloudTabs));
                         setCartTabs(cloudTabs);
@@ -123,27 +139,44 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                         window.dispatchEvent(new CustomEvent('dh_cart_updated'));
                         return;
                     }
+                } finally {
+                    isHydratingCloudRef.current = false;
                 }
+            } else {
+                hasHydratedCloudRef.current = true;
+            }
 
-                // 3. Fallback to clean state for new user
+            // 3. Fallback to clean state only when switching users
+            if (switchedUser && isActive) {
                 const fresh = [createNewTab()];
                 setCartTabs(fresh);
                 setActiveTabId(fresh[0].id);
             }
+        };
+
+        const unsubAuth = auth?.onAuthStateChanged?.((user) => {
+            hydrateForUser(user?.uid || 'guest');
         });
+        // Trigger immediately if already signed in on mount
+        if (auth?.currentUser?.uid) {
+            hydrateForUser(auth.currentUser.uid);
+        }
 
         return () => {
+            isActive = false;
             unsubAuth?.();
         };
     }, []);
 
-    // 💾 Save to local cache immediately + Debounced Cloud Sync to Firestore
+    // 💾 Save to local cache immediately + Debounced Cloud Sync to Firestore (guarded against overwriting Cloud with empty initial tab)
     useEffect(() => {
         const uid = auth?.currentUser?.uid || 'guest';
         const cleanTabs = Array.isArray(cartTabs) ? cartTabs.filter(t => t && typeof t === 'object' && t.id) : [];
         localStorage.setItem(`dh_pos_autosave_${uid}`, JSON.stringify(cleanTabs));
         window.dispatchEvent(new CustomEvent('dh_cart_updated'));
         if (uid !== 'guest') {
+            if (isHydratingCloudRef.current) return;
+            if (!hasHydratedCloudRef.current && !cleanTabs.some(hasMeaningfulDraftContent)) return;
             staffPosDraftService.saveStaffCloudDraftsDebounced(uid, cleanTabs);
         }
     }, [cartTabs]);
@@ -285,25 +318,36 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
             : (Array.isArray(initialDraft.calculationLog?.freebies) ? initialDraft.calculationLog.freebies : []);
         const draftManualFreebieIds = draftFreebieList.map(f => f?.id).filter(Boolean);
 
-        let targetTabId = null;
+        // 🚀 Compute nextTabs & targetTabId deterministically outside setState updater (React 18 batching-safe)
+        const prevSnapshot = Array.isArray(cartTabsRef.current)
+            ? cartTabsRef.current.filter(t => t && typeof t === 'object' && t.id)
+            : [];
+        const matchedExistingIndex = prevSnapshot.findIndex(tab => {
+            const normTabOrderId = normalizeId(tab.orderId);
+            const normTabDocId = normalizeId(tab.docId || tab.id);
+
+            if (draftOrderId && (tab.orderId === draftOrderId || normTabOrderId === normDraftOrderId)) return true;
+            if (draftDocId && (tab.docId === draftDocId || tab.id === draftDocId || normTabDocId === normDraftDocId)) return true;
+            if (draftOrderId && (tab.id === draftOrderId || normTabDocId === normDraftOrderId)) return true;
+            return false;
+        });
+
+        let targetTabId = matchedExistingIndex !== -1 ? prevSnapshot[matchedExistingIndex].id : Date.now().toString();
 
         setCartTabs(prev => {
             const validPrev = Array.isArray(prev) ? prev.filter(t => t && typeof t === 'object' && t.id) : [];
-
-            // 🔍 1. ค้นหาแท็บเดิมในระบบที่มีอยู่แล้ว (เช็คทั้ง orderId, docId, และ id รวมถึง normalized id)
-            const matchedExistingIndex = validPrev.findIndex(tab => {
+            const idx = validPrev.findIndex(tab => {
                 const normTabOrderId = normalizeId(tab.orderId);
                 const normTabDocId = normalizeId(tab.docId || tab.id);
-
                 if (draftOrderId && (tab.orderId === draftOrderId || normTabOrderId === normDraftOrderId)) return true;
                 if (draftDocId && (tab.docId === draftDocId || tab.id === draftDocId || normTabDocId === normDraftDocId)) return true;
                 if (draftOrderId && (tab.id === draftOrderId || normTabDocId === normDraftOrderId)) return true;
                 return false;
             });
 
-            if (matchedExistingIndex !== -1) {
-                const existingTab = validPrev[matchedExistingIndex];
-                targetTabId = existingTab.id; // 🔑 ใช้ tab.id ตัวจริงของแท็บนั้น
+            if (idx !== -1) {
+                const existingTab = validPrev[idx];
+                const matchedExistingIndex = idx;
 
                 const updatedTab = {
                     ...existingTab,
@@ -358,9 +402,8 @@ export default function usePosState(products, customers, initialDraft, onDraftHa
                 return newTabs;
             }
 
-            // 🌟 2. ถ้ายังไม่มีแท็บนี้ในระบบ -> สร้างแท็บใหม่พร้อมกำหนด ID ชัดเจน
-            const assignedId = Date.now().toString();
-            targetTabId = assignedId;
+            // 🌟 2. ถ้ายังไม่มีแท็บนี้ในระบบ -> สร้างแท็บใหม่พร้อมใช้ targetTabId ที่กำหนดไว้แล้ว
+            const assignedId = targetTabId;
 
             const newTab = {
                 id: assignedId,

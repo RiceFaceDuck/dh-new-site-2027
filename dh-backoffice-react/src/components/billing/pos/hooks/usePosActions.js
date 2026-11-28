@@ -294,12 +294,31 @@ export const usePosActions = ({
             item => item.stock < item.totalQty
         );
 
+        const preCustUid = activeTab.customer?.uid || activeTab.customer?.id || '';
+        const preResolvedAddress = activeTab.customer
+            ? (typeof activeTab.customer.address === 'object'
+                ? (activeTab.customer.address?.fullAddress || activeTab.customer.legacyAddress || '')
+                : (activeTab.customer.address || activeTab.customer.legacyAddress || ''))
+            : '';
+        const rawTaxIdVal = activeTab.customer?.taxId || activeTab.customer?.taxInvoice?.taxId || '';
+        const cleanTaxId = (typeof rawTaxIdVal === 'object' ? (rawTaxIdVal.taxId || rawTaxIdVal.number || '') : String(rawTaxIdVal || '')).replace(/\D/g, '');
+
         if (activeTab.items.length === 0) { toast.error('กรุณาเลือกสินค้าอย่างน้อย 1 รายการ'); return; }
-        if (outOfStockItem && status === 'Paid') {
-            toast.error(`สินค้า [${outOfStockItem.key || outOfStockItem.name}] สต็อกไม่เพียงพอ ไม่สามารถชำระเงินได้ (กรุณาบันทึกเป็นบิลร่าง Draft)`);
+        if (status === 'OnAccount' && (!activeTab.customer || !preCustUid || preCustUid === 'WALK-IN')) {
+            toast.error('การขายเครดิต (On Acc) ใช้ได้เฉพาะลูกค้าสมาชิกเท่านั้น กรุณาเลือกลูกค้าก่อน');
+            return;
+        }
+        if (outOfStockItem && (status === 'Paid' || status === 'OnAccount')) {
+            toast.error(`สินค้า [${outOfStockItem.key || outOfStockItem.name}] สต็อกไม่เพียงพอ ไม่สามารถ${status === 'OnAccount' ? 'เปิดบิลเครดิต' : 'ชำระเงิน'}ได้ (กรุณาบันทึกเป็นบิลร่าง Draft)`);
             return;
         }
         if (isPhoneMissing && status !== 'Draft') { toast.error('กรุณาระบุเบอร์โทรศัพท์ลูกค้า'); return; }
+        if (status !== 'Draft' && activeTab.receiptFormat === 'full' && activeTab.vatType !== 'exempt') {
+            if (cleanTaxId.length !== 13 || !String(preResolvedAddress || '').trim()) {
+                toast.error('ใบกำกับภาษีเต็มรูป กรุณาระบุเลขผู้เสียภาษี 13 หลักและที่อยู่ลูกค้าให้ครบถ้วน');
+                return;
+            }
+        }
         if (status === 'Paid' && activeTab.paymentMethod === 'Cash' && sanitizeNum(activeTab.cashReceived) < remainingToPay) { toast.error('รับเงินมาไม่ครบ'); return; }
         if (netTotal < 0) { toast.error('ยอดสุทธิติดลบ'); return; }
         
@@ -383,10 +402,11 @@ export const usePosActions = ({
                 originalDeductedItems: activeTab.originalDeductedItems || null,
                 channel: activeTab.channel || (activeTab.isWebOrder ? 'storefront' : 'pos'),
                 source: activeTab.source || (activeTab.isWebOrder ? 'storefront' : 'pos'),
-                orderStatus: status === 'Draft' ? 'Draft' : (status === 'OnAccount' ? 'Pending' : (status === 'Paid' ? 'Paid' : 'Pending')),
-                status: status === 'Draft' ? 'Draft' : (status === 'OnAccount' ? 'Pending' : (status === 'Paid' ? 'Paid' : 'Pending')),
+                orderStatus: status === 'Draft' ? 'Draft' : (status === 'OnAccount' ? 'on_account' : (status === 'Paid' ? 'Paid' : 'Pending')),
+                status: status === 'Draft' ? 'Draft' : (status === 'OnAccount' ? 'on_account' : (status === 'Paid' ? 'Paid' : 'Pending')),
                 isDraft: status === 'Draft',
-                paymentStatus: status === 'Draft' ? 'Unpaid' : status,
+                isCreditBill: status === 'OnAccount',
+                paymentStatus: status === 'Draft' ? 'Unpaid' : (status === 'OnAccount' ? 'on_account' : status),
                 paymentMethod: activeTab.paymentMethod || 'Transfer', bankAccount: activeTab.paymentMethod === 'Transfer' ? (activeTab.bankAccount || '') : null,
                 transactionRef: activeTab.paymentMethod === 'Transfer' ? (activeTab.transactionRef || '') : '',
                 transferDateTime: activeTab.paymentMethod === 'Transfer' ? (activeTab.transferDateTime || '') : '',
@@ -406,7 +426,7 @@ export const usePosActions = ({
                 appliedPromotions: activeTab.appliedPromoDetails ? [activeTab.appliedPromoDetails] : [],
                 appliedFreebies: eligibleFreebies.length > 0 ? eligibleFreebies.map(f => ({ id: f.id, title: f.title, conditionText: (f.minSpend > 0 ? `ยอด${f.minSpend}฿ ` : '') + (f.minQty > 0 ? `ครบ${f.minQty}ชิ้น ` : '') + (f.applicableSkus?.length > 0 ? `เฉพาะรุ่น` : ''), itemName: f.itemName, productName: f.productName || null, qty: sanitizeNum(f.qty) })) : null,
                 thaiBahtText: convertToThaiBahtText(remainingToPay) || '', billNote: finalNote, sellerUid: auth.currentUser?.uid || 'System',
-                customer: activeTab.customer ? { uid: custUid, accountName: getCustomerDisplayName(activeTab.customer, ''), phone: activeTab.customer.phone || activeTab.customer.phoneNumber || '', address: resolvedCustAddress, hidePhone: Boolean(activeTab.hidePhone) } : { uid: 'WALK-IN', accountName: activeTab.walkInName || 'ลูกค้าทั่วไป', phone: activeTab.walkInPhone || '', address: '', hidePhone: Boolean(activeTab.hidePhone) },
+                customer: activeTab.customer ? { uid: custUid, accountName: getCustomerDisplayName(activeTab.customer, ''), phone: activeTab.customer.phone || activeTab.customer.phoneNumber || '', address: resolvedCustAddress, taxId: cleanTaxId || '', branch: (typeof activeTab.customer.branch === 'string' ? activeTab.customer.branch : (activeTab.customer.taxInvoice?.branch || '')), hidePhone: Boolean(activeTab.hidePhone) } : { uid: 'WALK-IN', accountName: activeTab.walkInName || 'ลูกค้าทั่วไป', phone: activeTab.walkInPhone || '', address: '', hidePhone: Boolean(activeTab.hidePhone) },
                 items: finalOrderItems,
                 itemSkus: Array.from(new Set(
                     (finalOrderItems || [])

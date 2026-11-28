@@ -161,7 +161,12 @@ function processReceiptData(props) {
     const totalItemsCount = nonFreebies.length;
     const totalQtyCount = nonFreebies.reduce((sum, item) => sum + Number(item.qty ?? item.quantity ?? item.count ?? 1), 0);
 
-    const _walletUsed = Number(orderData ? (orderData.walletUsed || orderData.creditUsed || 0) : (walletUsed || 0));
+    const _walletUsed = Number(
+        orderData
+            ? (orderData.walletUsed ?? orderData.walletUsedAmount ?? orderData.summary?.walletUsed ?? orderData.calculationLog?.usedWallet ?? orderData.creditUsed ?? 0)
+            : (walletUsed || 0)
+    );
+    const _payableTotal = Math.max(0, Math.round((_netTotal - _walletUsed) * 100) / 100);
 
     // Bank account label (only show for Transfer/QR payments, never for Cash/Credit)
     const paymentMethod = data.paymentMethod || data.paymentType || 'Transfer';
@@ -196,6 +201,7 @@ function processReceiptData(props) {
         _otherFeeName,
         _shippingFee,
         _walletUsed,
+        _payableTotal,
         _vatAmount: vatBreakdown.vatAmount,
         vatBreakdown,
         _netTotal,
@@ -231,6 +237,7 @@ export default function ReceiptTemplate(props) {
         _otherFeeName,
         _shippingFee,
         _walletUsed,
+        _payableTotal,
         vatBreakdown,
         _netTotal,
         staffName,
@@ -438,7 +445,7 @@ export default function ReceiptTemplate(props) {
                                 />
 
                                 <ReceiptFooter 
-                                    _thaiBahtText={convertToThaiBahtText ? convertToThaiBahtText(_netTotal) : ''}
+                                    _thaiBahtText={convertToThaiBahtText ? convertToThaiBahtText(_payableTotal) : ''}
                                     billNote={isLastPage ? billNote : (pageChunks.length > 1 ? 'อ่านต่อแผ่นถัดไป...' : billNote)}
                                     _itemSubTotal={_itemSubTotal}
                                     _promoDiscount={_promoDiscount}
@@ -448,6 +455,7 @@ export default function ReceiptTemplate(props) {
                                     _shippingFee={_shippingFee}
                                     _walletUsed={_walletUsed}
                                     _netTotal={_netTotal}
+                                    _payableTotal={_payableTotal}
                                     vatBreakdown={vatBreakdown}
                                     staffName={staffName}
                                     appliedPromoDetails={appliedPromoDetails}

@@ -64,8 +64,9 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
     const hasPendingExchange = !!(order.hasPendingExchange || order.pendingExchangeCount > 0 || order.pendingExchange);
     const isWebOrder = Boolean(order.isWebOrder || order.channel === 'storefront' || order.source === 'storefront');
     const hasSlip = Boolean(order.paymentSlipUrl || order.slipUrl || order.slipImage);
-    const isAwaitingSlip = isWebOrder && !isPaid && !isCancelled && (hasSlip || payStatLower === 'pending_verification' || statLower === 'pending_payment_verification');
-    const isDraft = !isCancelled && !isPaid && !isAwaitingSlip && (statLower === 'draft' || payStatLower === 'draft' || order.isDraft === true || (!isWebOrder && String(order.orderId || '').startsWith('DH-TEMP-')));
+    const isOnAccount = !isCancelled && !isPaid && (statLower === 'on_account' || payStatLower === 'on_account');
+    const isAwaitingSlip = isWebOrder && !isPaid && !isCancelled && !isOnAccount && (hasSlip || payStatLower === 'pending_verification' || statLower === 'pending_payment_verification');
+    const isDraft = !isCancelled && !isPaid && !isOnAccount && !isAwaitingSlip && (statLower === 'draft' || payStatLower === 'draft' || order.isDraft === true || (!isWebOrder && String(order.orderId || '').startsWith('DH-TEMP-')));
 
     // Check tax invoice status
     const hasTaxInvoice = !!(order.taxInvoice || order.taxInvoiceRequested || order.requestTaxInvoice || order.taxInvoiceStatus || order.taxInvoiceUrl || order.taxData || order.hasPendingTax);
@@ -105,6 +106,10 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                 ) : isAwaitingSlip ? (
                     <span className="inline-flex items-center justify-start gap-1.5 text-blue-600 dark:text-blue-400 text-xs font-black">
                         <Clock size={13} strokeWidth={2.5} /> รอตรวจสอบสลิป ⌛
+                    </span>
+                ) : isOnAccount ? (
+                    <span className="inline-flex items-center justify-start gap-1.5 text-indigo-600 dark:text-indigo-400 text-xs font-black">
+                        <Clock size={13} strokeWidth={2.5} /> เครดิต (รอชำระ) • 📦✓
                     </span>
                 ) : isDraft ? (
                     <span className="inline-flex items-center justify-start gap-1.5 text-orange-500 dark:text-orange-400 text-xs font-black">

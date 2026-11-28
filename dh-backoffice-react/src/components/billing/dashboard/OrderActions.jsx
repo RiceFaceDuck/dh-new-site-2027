@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Ban, Trash2, Eye, History, FileEdit, Printer, X, Loader2 } from 'lucide-react';
+import { Ban, Trash2, Eye, History, FileEdit, Printer, X, Loader2, CheckCircle2 } from 'lucide-react';
 import { billingStatusTransaction } from '../../../firebase/billingStatusTransaction';
 import { auth } from '../../../firebase/config';
 import { useAuth } from '../../../contexts/AuthContext';
@@ -23,8 +23,26 @@ export default function OrderActions({
     const isApprovedOrCompleted = orderStat === 'approved' || orderStat === 'completed';
     const isCancelled = orderStat === 'cancelled' || orderStat === 'void';
     const isPaid = paymentStat === 'paid' || orderStat === 'paid';
+    const isOnAccount = !isCancelled && !isPaid && (orderStat === 'on_account' || paymentStat === 'on_account');
 
     const [isProcessing, setIsProcessing] = useState(false);
+
+    const handleSettleCreditClick = async () => {
+        const confirmMsg = `ยืนยันรับชำระเงินบิลเครดิต ${selectedOrder.orderId || selectedOrder.id}?
+
+ระบบจะเปลี่ยนสถานะเป็น 'ชำระแล้ว', บันทึกยอดขาย และแจกแต้มสะสมให้ลูกค้า (ไม่ตัดสต็อกซ้ำ)`;
+        if (!window.confirm(confirmMsg)) return;
+        setIsProcessing(true);
+        try {
+            await billingStatusTransaction.updateOrderStatus(selectedOrder.id, 'paid', orderStat, auth.currentUser?.uid || 'System');
+            toast.success('บันทึกการรับชำระบิลเครดิตสำเร็จ!');
+            handleCloseModal();
+        } catch (error) {
+            toast.error(`เกิดข้อผิดพลาดในการรับชำระบิลเครดิต: ${error.message}`);
+        } finally {
+            setIsProcessing(false);
+        }
+    };
 
     const handlePrintClick = async () => {
         if (orderStat === 'paid') {
@@ -83,7 +101,18 @@ export default function OrderActions({
 
             {/* Right Actions */}
             <div className="flex items-center gap-1.5">
-                {!isCancelled && !isApprovedOrCompleted && !isPaid && (
+                {isOnAccount && (
+                    <button 
+                        onClick={handleSettleCreditClick}
+                        disabled={isProcessing}
+                        className="flex items-center gap-1.5 text-white font-bold px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 rounded-xs shadow-xs transition-all active:scale-95 text-xs sm:text-sm disabled:opacity-50"
+                    >
+                        {isProcessing ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} strokeWidth={2.5}/>}
+                        <span className="hidden sm:inline">รับชำระบิลเครดิต</span>
+                    </button>
+                )}
+
+                {!isCancelled && !isApprovedOrCompleted && !isPaid && !isOnAccount && (
                     <button 
                         onClick={() => { handleCloseModal(); if (onResumeDraft) onResumeDraft(selectedOrder); }} 
                         className="flex items-center gap-1.5 text-white font-bold px-3 py-1.5 bg-(--dh-accent) hover:bg-(--dh-accent-hover) rounded-xs shadow-xs transition-all active:scale-95 text-xs sm:text-sm dh-active-press"

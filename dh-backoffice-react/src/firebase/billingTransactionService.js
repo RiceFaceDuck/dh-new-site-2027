@@ -87,7 +87,8 @@ async function fetchDependencies(transaction, orderData, statusLower) {
   
   let counterSnap = null;
   let promoFreebieSnaps = [];
-  if (statusLower === 'paid' || statusLower === 'approved') {
+  const isOfficialStatus = (statusLower === 'paid' || statusLower === 'approved' || statusLower === 'on_account');
+  if (isOfficialStatus) {
     counterSnap = await transaction.get(counterRef);
 
     const promosList = Array.isArray(orderData.appliedPromotions) 
@@ -139,7 +140,7 @@ function validateStock(productSnaps, productRefs, defaultBuffer, actorName, stat
       const itemBuffer = resolveEffectiveBuffer(snap.data().bufferStock, defaultBuffer);
       const checkLimit = bypassAllowed ? 0 : itemBuffer;
 
-      if (deltaQty > 0 && (currentStock - deltaQty) < checkLimit && statusLower === 'paid') {
+      if (deltaQty > 0 && (currentStock - deltaQty) < checkLimit && (statusLower === 'paid' || statusLower === 'on_account')) {
         const skuLabel = snap.data().sku || productRefs[index].itemIdentifier;
         throw new Error(bypassAllowed 
           ? `สินค้า ${skuLabel} สต็อกคงเหลือไม่เพียงพอ (คงเหลือ ${currentStock} ชิ้น, ต้องการเพิ่ม ${deltaQty} ชิ้น)`
@@ -309,7 +310,9 @@ export const billingTransactionService = {
           const { productSnaps, productRefs, settingsSnap, userSnap, counterSnap, terminalId, yearStr, promoFreebieSnaps, oldDraftData, alreadyStockDeducted, prevQtyMap } = deps;
           
           // 2. Generate Order ID
-          if (statusLower === 'paid' || statusLower === 'approved') {
+          const isOnAccount = (statusLower === 'on_account');
+          const isOfficialOrder = (statusLower === 'paid' || statusLower === 'approved' || isOnAccount);
+          if (isOfficialOrder) {
             const currentSeq = (counterSnap?.exists() ? counterSnap.data()[yearStr] || 0 : 0) + 1;
             const paddedSeq = String(currentSeq).padStart(4, '0');
             finalOrderId = `DH-${yearStr.slice(2)}-${paddedSeq}`;
@@ -365,7 +368,7 @@ export const billingTransactionService = {
           const { walletToUse, earnedPoints } = calculateWalletAndPoints(orderData, userSnap, finalSecureNetTotal, statusLower, creditPreloadSnaps, alreadyWalletDeducted);
 
           // 4. Perform Updates (WRITES)
-          if (statusLower === 'paid') {
+          if (statusLower === 'paid' || isOnAccount) {
             updates.forEach(u => {
               transaction.update(u.ref, { stockQuantity: u.newQty, 'stats.sold': increment(u.soldInc || 0) });
               successfulUpdates.push({ ...u.originalSnap.data(), sku: u.ref.id, stockQuantity: u.newQty });
@@ -444,7 +447,7 @@ export const billingTransactionService = {
             }, { merge: true });
           }
 
-          if (statusLower === 'paid' || statusLower === 'approved') {
+          if (isOfficialOrder) {
             transaction.set(doc(db, getCollectionPath('counters'), `receipt_sequence_global`), { [yearStr]: (counterSnap?.data()?.[yearStr] || 0) + 1, updatedAt: serverTimestamp() }, { merge: true });
           }
 
@@ -487,16 +490,17 @@ export const billingTransactionService = {
             items: verifiedItems, 
             itemSkus,
             orderId: finalOrderId, 
-            orderStatus: isPaidOrApproved ? (statusLower === 'approved' ? 'approved' : 'paid') : (dataToSave.orderStatus || 'Draft'),
-            status: isPaidOrApproved ? (statusLower === 'approved' ? 'approved' : 'paid') : (dataToSave.status || 'Draft'),
-            paymentStatus: isPaidOrApproved ? 'paid' : (dataToSave.paymentStatus || 'unpaid'),
-            fulfillmentStatus: isPaidOrApproved 
+            orderStatus: isPaidOrApproved ? (statusLower === 'approved' ? 'approved' : 'paid') : (isOnAccount ? 'on_account' : (dataToSave.orderStatus || 'Draft')),
+            status: isPaidOrApproved ? (statusLower === 'approved' ? 'approved' : 'paid') : (isOnAccount ? 'on_account' : (dataToSave.status || 'Draft')),
+            paymentStatus: isPaidOrApproved ? 'paid' : (isOnAccount ? 'on_account' : (dataToSave.paymentStatus || 'unpaid')),
+            isCreditBill: Boolean(isOnAccount || dataToSave.isCreditBill),
+            fulfillmentStatus: isOfficialOrder 
               ? ((dataToSave.fulfillmentType === 'StorePickup' || dataToSave.shippingMethod === 'pickup') ? 'ready_for_pickup' : 'pending_packing')
               : (dataToSave.fulfillmentStatus || 'pending_payment_verification'),
-            earnedPoints, 
+            earnedPoints: isPaidOrApproved ? earnedPoints : 0, 
             walletUsedAmount: walletToUse, 
-            isStockDeducted: isPaidOrApproved || alreadyStockDeducted, 
-            isPromoQuotaDeducted: isPaidOrApproved || alreadyQuotaDeducted,
+            isStockDeducted: isOfficialOrder || alreadyStockDeducted, 
+            isPromoQuotaDeducted: isOfficialOrder || alreadyQuotaDeducted,
             isWalletDeducted: isWalletDeducted,
             updatedAt: serverTimestamp(), 
             createdBy: actorUid || dataToSave.createdBy, 

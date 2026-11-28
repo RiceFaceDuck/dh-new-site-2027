@@ -38,6 +38,21 @@ export const getGlobalFinishedOrderIdsSet = () => {
 };
 
 /**
+ * 🛡️ Helper: ตรวจว่าแท็บมีข้อมูลงานจริงหรือไม่ (ไม่นับแท็บว่างที่เพิ่งสร้างใหม่พร้อม DH-TEMP อัตโนมัติ)
+ */
+export const hasMeaningfulDraftContent = (t) => {
+  if (!t || typeof t !== 'object') return false;
+  return Boolean(
+    (Array.isArray(t.items) && t.items.length > 0) ||
+    t.customer ||
+    (t.walkInName && String(t.walkInName).trim()) ||
+    (t.walkInPhone && String(t.walkInPhone).trim()) ||
+    (t.billNote && String(t.billNote).trim()) ||
+    t.docId
+  );
+};
+
+/**
  * 🛡️ Helper: Filter out completed and cancelled tabs from draft storage
  */
 export const filterValidDraftTabs = (tabs, finishedOrderIdsSet = null) => {
@@ -93,13 +108,7 @@ export const filterValidDraftTabs = (tabs, finishedOrderIdsSet = null) => {
         seenKeys.add(dedupKey);
       }
 
-      return (
-        (t.items && t.items.length > 0) ||
-        t.customer ||
-        t.walkInName ||
-        t.docId ||
-        t.orderId
-      );
+      return hasMeaningfulDraftContent(t);
     });
 };
 

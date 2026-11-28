@@ -73,6 +73,7 @@ export const billingStatusTransaction = {
           const normalizedCurrentStatus = (orderData.orderStatus || orderData.status || '').toLowerCase();
 
           const isCancelling = normalizedNewStatus === 'cancelled' && normalizedCurrentStatus !== 'cancelled';
+          const isSettlingOnAccount = (normalizedCurrentStatus === 'on_account' || String(orderData.paymentStatus || '').toLowerCase() === 'on_account') && (normalizedNewStatus === 'paid' || normalizedNewStatus === 'approved' || normalizedNewStatus === 'completed');
           const isConfirmingPayment = (normalizedNewStatus === 'paid' || normalizedNewStatus === 'approved' || normalizedNewStatus === 'completed') && !orderData.isStockDeducted;
 
           if (isCancelling && (normalizedCurrentStatus === 'approved' || normalizedCurrentStatus === 'completed')) {
@@ -87,7 +88,8 @@ export const billingStatusTransaction = {
           let settingsSnap = null;
           let inventorySettingsSnap = null;
           
-          if (isCancelling || isConfirmingPayment) {
+          if (isCancelling || isConfirmingPayment || isSettlingOnAccount) {
+              if (isCancelling || isConfirmingPayment) {
               const aggregatedProductMap = new Map();
               for (const item of (orderData.items || [])) {
                   const itemIdentifier = item.id || item.sku;
@@ -107,6 +109,7 @@ export const billingStatusTransaction = {
               for (const prod of aggregatedProductMap.values()) {
                   productRefs.push(prod);
                   productSnaps.push(await transaction.get(prod.ref));
+              }
               }
 
               const customerUid = orderData.customerInfo?.uid || orderData.customer?.uid || orderData.customer?.id || orderData.userId || orderData.customerId || null;
@@ -164,7 +167,7 @@ export const billingStatusTransaction = {
           const totalSaleAmount = Number(orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || orderData.finalPayable || 0);
           const walletUsed = Number(orderData.summary?.walletUsed || orderData.walletUsedAmount || orderData.walletUsed || 0);
           const amountForPoints = Math.max(0, totalSaleAmount - walletUsed);
-          const shouldPreloadEarn = isConfirmingPayment && (amountForPoints > 0 || Number(orderData.pendingCredits || 0) > 0);
+          const shouldPreloadEarn = (isConfirmingPayment || isSettlingOnAccount) && !orderData.pointsAwarded && (amountForPoints > 0 || Number(orderData.pendingCredits || 0) > 0);
           
           let earnedPoints = Number(orderData.pendingCredits || 0);
           if (earnedPoints <= 0 && amountForPoints > 0) {
@@ -257,6 +260,18 @@ export const billingStatusTransaction = {
              }
              
              updates.isStockDeducted = true;
+             updates.paymentStatus = 'paid';
+             updates.paidAt = serverTimestamp();
+          } else if (isSettlingOnAccount) {
+             const totalSaleAmount = Number(orderData.summary?.finalTotal || orderData.finalTotal || orderData.netTotal || orderData.finalPayable || 0);
+             handleSalesStatsUpdate(transaction, db, totalSaleAmount, orderData, false);
+             if (userSnap && userSnap.exists()) {
+                 handleWalletDeduction(transaction, db, orderId, orderData, userSnap, userRef, actualActorUid, updates);
+                 const earnedNewBal = await handlePointsEarned(transaction, db, orderId, totalSaleAmount, orderData, userSnap, userRef, actualActorUid, updates, creditPreloadSnaps);
+                 if (typeof earnedNewBal === 'number') updatedCreditPoints = earnedNewBal;
+             }
+             updates.paymentStatus = 'paid';
+             updates.paidAt = serverTimestamp();
           }
 
           if (isCancelling) {

@@ -16,8 +16,16 @@ export default function ReceiptHeader({
     const isTaxInvoice = rawVatType === 'included' || rawVatType === 'excluded' || !!(data?.isTaxInvoice || orderData?.isTaxInvoice || customer?.taxInvoiceNeeded || customer?.taxId);
     const trackingNumber = data?.trackingNumber || data?.trackingNo || data?.shippingTracking || data?.shippingDetails?.trackingNumber || orderData?.trackingNumber || orderData?.trackingNo || orderData?.shippingTracking || orderData?.shippingDetails?.trackingNumber;
     const courierName = data?.courier || data?.shippingMethod || orderData?.courier || orderData?.shippingMethod;
-    const customerTaxId = customer?.taxId || data?.taxId || orderData?.customer?.taxId || orderData?.taxId || '';
-    const customerBranch = customer?.branch || data?.branch || orderData?.customer?.branch || '';
+    const resolveSafeText = (val) => {
+        if (!val) return '';
+        if (typeof val === 'string' || typeof val === 'number') return String(val).trim();
+        if (typeof val === 'object') {
+            return String(val.taxId || val.number || val.value || val.branch || val.name || '').trim();
+        }
+        return '';
+    };
+    const customerTaxId = resolveSafeText(customer?.taxId || customer?.taxInvoice?.taxId || data?.taxId || data?.taxInvoice?.taxId || orderData?.customer?.taxId || orderData?.taxInvoice?.taxId || orderData?.taxId);
+    const customerBranch = resolveSafeText(customer?.branch || customer?.taxInvoice?.branch || data?.branch || data?.taxInvoice?.branch || orderData?.customer?.branch || orderData?.taxInvoice?.branch);
     const contactPerson = customer?.contactName || customer?.firstName || orderData?.customer?.contactName || orderData?.contactName || data?.contactName || '';
 
     return (

@@ -12,6 +12,7 @@ export default function ReceiptFooter({
     _shippingFee = 0,
     _walletUsed = 0,
     _netTotal = 0,
+    _payableTotal = null,
     vatBreakdown = null,
     staffName,
     appliedPromoDetails,
@@ -20,9 +21,14 @@ export default function ReceiptFooter({
     _vatOnShipping = false,
     bankAccountDisplay = ''
 }) {
-    const thaiBaht = _thaiBahtText && _thaiBahtText !== 'ศูนย์บาทถ้วน' 
+    const round2 = (val) => Math.round(Number(val || 0) * 100) / 100;
+    const effectivePayableTotal = _payableTotal !== null && _payableTotal !== undefined
+        ? Math.max(0, round2(_payableTotal))
+        : Math.max(0, round2(Number(_netTotal || 0) - Number(_walletUsed || 0)));
+
+    const thaiBaht = _thaiBahtText && (_thaiBahtText !== 'ศูนย์บาทถ้วน' || effectivePayableTotal === 0)
         ? _thaiBahtText 
-        : convertToThaiBahtText(_netTotal);
+        : convertToThaiBahtText(effectivePayableTotal);
 
     const isVatIncluded = vatBreakdown?.vatType === 'included' || vatBreakdown?.vatType === 'รวม VAT';
     const isVatExcluded = vatBreakdown?.vatType === 'excluded' || vatBreakdown?.vatType === 'แยก VAT';
@@ -33,15 +39,18 @@ export default function ReceiptFooter({
             ? `ภาษี VAT ${vatRate}% (แยกนอก)`
             : `ภาษี VAT ${vatRate}% (ไม่มี VAT)`;
     const vatMultiplier = 1 + vatRate / 100;
-    const round2 = (val) => Math.round(Number(val || 0) * 100) / 100;
 
     const displaySubTotal = isVatIncluded ? round2(_itemSubTotal / vatMultiplier) : _itemSubTotal;
     const displayPromoDiscount = isVatIncluded && _promoDiscount > 0 ? round2(_promoDiscount / vatMultiplier) : _promoDiscount;
     const displayManualDiscount = isVatIncluded && _manualDiscount > 0 ? round2(_manualDiscount / vatMultiplier) : _manualDiscount;
 
+    // Shipping display aligned with VAT mode so every line sums cleanly to netTotal:
+    // - included + vatOnShipping: extract pre-VAT shipping (matching pre-VAT subtotal/discounts + VAT row)
+    // - excluded + vatOnShipping: show pre-VAT _shippingFee (VAT on shipping is already inside vatAmount row)
+    // - exempt or !vatOnShipping: show _shippingFee as-is
     let displayShipping = _shippingFee;
-    if (_vatOnShipping && _shippingFee > 0 && vatRate > 0) {
-        displayShipping = round2(_shippingFee * vatMultiplier);
+    if (isVatIncluded && _vatOnShipping && _shippingFee > 0 && vatRate > 0) {
+        displayShipping = round2(_shippingFee / vatMultiplier);
     }
 
     const vatAmount = vatBreakdown?.vatAmount || 0;
@@ -153,7 +162,7 @@ export default function ReceiptFooter({
                                     </td>
                                     <td className="py-1.5 pr-1.5 text-right font-black text-slate-950 whitespace-nowrap">
                                         <span className="text-[15px] text-orange-600 font-black">
-                                            {_netTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
+                                            {effectivePayableTotal.toLocaleString('th-TH', { minimumFractionDigits: 2 })}
                                         </span>
                                         <span className="text-[10px] font-bold text-slate-900 ml-1">บาท</span>
                                     </td>
