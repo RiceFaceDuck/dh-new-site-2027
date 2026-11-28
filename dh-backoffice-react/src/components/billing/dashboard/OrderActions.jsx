@@ -20,7 +20,8 @@ export default function OrderActions({
     const { canDeleteOrder } = useAuth();
     const orderStat = (selectedOrder.orderStatus || selectedOrder.status || '').toLowerCase();
     const paymentStat = (selectedOrder.paymentStatus || '').toLowerCase();
-    const isApprovedOrCompleted = orderStat === 'approved' || orderStat === 'completed';
+    const hasTracking = Boolean(selectedOrder.trackingNumber || selectedOrder.trackingNo || selectedOrder.shippingTracking);
+    const isApprovedOrCompleted = orderStat === 'approved' || orderStat === 'completed' || orderStat === 'shipped' || hasTracking;
     const isCancelled = orderStat === 'cancelled' || orderStat === 'void';
     const isPaid = paymentStat === 'paid' || orderStat === 'paid';
     const isOnAccount = !isCancelled && !isPaid && (orderStat === 'on_account' || paymentStat === 'on_account');

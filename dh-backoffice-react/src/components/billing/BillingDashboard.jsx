@@ -20,6 +20,7 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
     const {
         orders,
         filteredOrders,
+        rawOrdersCount,
         loading,
         isSearching,
         filter,
@@ -125,7 +126,7 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
         const currentStat = (orderToVoid.orderStatus || orderToVoid.status || '').toLowerCase();
         
         if (currentStat === 'cancelled' || currentStat === 'void') return toast.error('บิลนี้ถูกยกเลิกไปแล้ว');
-        if (currentStat === 'approved' || currentStat === 'completed') return toast.error('บิลที่อนุมัติ/เสร็จสิ้นแล้ว ไม่สามารถยกเลิกได้');
+        if (currentStat === 'approved' || currentStat === 'completed' || currentStat === 'shipped') return toast.error('บิลที่อนุมัติ/จัดส่ง/เสร็จสิ้นแล้ว ไม่สามารถยกเลิกได้ (กรุณาทำรายการคืนสินค้า RTN แทน)');
         
         const isPaid = currentStat === 'paid' || (orderToVoid.paymentStatus || '').toLowerCase() === 'paid';
         const confirmMsg = isPaid 
@@ -234,6 +235,7 @@ export default function BillingDashboard({ onSwitchView, onResumeDraft, isSelect
                 {/* 📊 Data Table Container */}
                 <OrderListTable 
                     orders={filteredOrders} 
+                    rawOrdersCount={rawOrdersCount}
                     loading={loading} 
                     isSearching={isSearching} 
                     limitAmount={limitAmount} 

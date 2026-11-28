@@ -68,10 +68,15 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
     const isAwaitingSlip = isWebOrder && !isPaid && !isCancelled && !isOnAccount && (hasSlip || payStatLower === 'pending_verification' || statLower === 'pending_payment_verification');
     const isDraft = !isCancelled && !isPaid && !isOnAccount && !isAwaitingSlip && (statLower === 'draft' || payStatLower === 'draft' || order.isDraft === true || (!isWebOrder && String(order.orderId || '').startsWith('DH-TEMP-')));
 
-    // Check tax invoice status
-    const hasTaxInvoice = !!(order.taxInvoice || order.taxInvoiceRequested || order.requestTaxInvoice || order.taxInvoiceStatus || order.taxInvoiceUrl || order.taxData || order.hasPendingTax);
-    const isTaxInvoice = order.vatType === 'included' || order.vatType === 'excluded' || !!(order.isTaxInvoice || order.customer?.taxInvoiceNeeded || order.customer?.taxId || hasTaxInvoice);
-    const taxStatus = order.taxInvoiceStatus || (order.taxInvoiceUrl ? 'issued' : (hasTaxInvoice ? 'pending' : null));
+    // Check actual tax invoice request/issuance status (do NOT mislabel normal POS VAT bills as pending tax invoice)
+    const hasExplicitPendingTax = Boolean(
+        order.hasPendingTax ||
+        order.taxInvoiceStatus === 'pending' ||
+        order.taxInvoiceRequested ||
+        order.requestTaxInvoice ||
+        (isWebOrder && (order.taxInvoice || order.taxData) && order.taxInvoiceStatus !== 'issued' && !order.taxInvoiceUrl)
+    );
+    const taxStatus = order.taxInvoiceStatus || (order.taxInvoiceUrl ? 'issued' : (hasExplicitPendingTax ? 'pending' : null));
 
     const hasTracking = Boolean(order.trackingNumber || order.trackingNo || order.shippingTracking);
     const isShipped = statLower === 'shipped' || statLower === 'completed' || hasTracking;
@@ -231,12 +236,12 @@ const OrderTableRow = React.memo(function OrderTableRow({ order, setSelectedOrde
                         <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-emerald-500/10 text-emerald-600 text-[10px] font-black border border-emerald-500/20 shadow-xs transition-transform hover:scale-105" title="ออกใบกำกับภาษีเรียบร้อยแล้ว">
                             📄 ภาษี (ออกแล้ว)
                         </span>
-                    ) : (taxStatus === 'pending' || isTaxInvoice) ? (
+                    ) : taxStatus === 'pending' ? (
                         <span className="inline-flex items-center justify-center px-1.5 py-0.5 rounded-sm bg-teal-500/10 text-teal-600 text-[10px] font-black border border-teal-500/20 shadow-xs transition-transform hover:scale-105" title="รอออกใบกำกับภาษี">
                             📄 ภาษี (รอ)
                         </span>
                     ) : null}
-                    {claimQty === 0 && !hasPendingClaim && exchangeQty === 0 && !hasPendingExchange && returnQty === 0 && !hasPendingReturn && !isTaxInvoice && !taxStatus && (
+                    {claimQty === 0 && !hasPendingClaim && exchangeQty === 0 && !hasPendingExchange && returnQty === 0 && !hasPendingReturn && !taxStatus && !order.taxInvoiceNeedInfo && (
                         <span className="text-[11px] text-(--dh-text-muted)">-</span>
                     )}
                 </div>

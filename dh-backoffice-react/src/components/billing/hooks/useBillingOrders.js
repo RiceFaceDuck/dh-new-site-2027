@@ -91,6 +91,7 @@ export default function useBillingOrders() {
             ...order,
             staffNickname,
             hasPendingClaim: order.hasPendingClaim || svc.hasPendingClaim || false,
+            hasPendingExchange: order.hasPendingExchange || svc.hasPendingExchange || false,
             hasPendingReturn: order.hasPendingReturn || svc.hasPendingReturn || false,
             hasPendingTax: order.hasPendingTax || svc.hasPendingTax || false
         };
@@ -143,8 +144,20 @@ export default function useBillingOrders() {
         const payStat = (o.paymentStatus || '').toLowerCase();
 
         const isCancelled = stat === 'cancelled' || stat === 'void';
-        const isPaidOrCompleted = !isCancelled && (stat === 'paid' || stat === 'completed' || stat === 'approved' || payStat === 'paid');
-        const isDraftOrPending = !isCancelled && !isPaidOrCompleted && (stat === 'draft' || stat === 'pending' || stat === 'waiting_payment' || stat === 'waiting_verification' || payStat === 'unpaid');
+        const isPaidOrCompleted = !isCancelled && (stat === 'paid' || stat === 'completed' || stat === 'approved' || stat === 'shipped' || payStat === 'paid');
+        const isDraftOrPending = !isCancelled && !isPaidOrCompleted && (
+            stat === 'draft' ||
+            stat === 'pending' ||
+            stat === 'pending_payment' ||
+            stat === 'pending_payment_verification' ||
+            stat === 'waiting_payment' ||
+            stat === 'waiting_verification' ||
+            stat === 'on_account' ||
+            payStat === 'unpaid' ||
+            payStat === 'pending' ||
+            payStat === 'pending_verification' ||
+            payStat === 'on_account'
+        );
 
         const matchesFilter = filter === 'All' || 
             (filter === 'Paid' && isPaidOrCompleted) || 
@@ -232,6 +245,7 @@ export default function useBillingOrders() {
     return {
         orders: enrichedOrders,
         filteredOrders,
+        rawOrdersCount: recentOrders.length,
         loading,
         isSearching,
         filter,

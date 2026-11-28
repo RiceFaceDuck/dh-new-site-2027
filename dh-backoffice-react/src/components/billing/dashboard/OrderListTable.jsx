@@ -3,7 +3,7 @@ import { Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from '
 import { TableVirtuoso } from 'react-virtuoso';
 import OrderTableRow from './OrderTableRow';
 
-export default function OrderListTable({ orders, loading, isSearching, limitAmount, setLimitAmount, setSelectedOrder }) {
+export default function OrderListTable({ orders, rawOrdersCount, loading, isSearching, limitAmount, setLimitAmount, setSelectedOrder }) {
     const [currentPage, setCurrentPage] = useState(1);
     const [pageSize, setPageSize] = useState(21);
 
@@ -49,14 +49,16 @@ export default function OrderListTable({ orders, loading, isSearching, limitAmou
         )
     }), [setSelectedOrder]);
 
-    // Reset to page 1 when search or orders set changes
+    // Reset to page 1 only when search toggles (preserve current page when loading more items)
     useEffect(() => {
         setCurrentPage(1);
-    }, [orders.length, isSearching]);
+    }, [isSearching]);
 
     const totalItems = orders.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
     const validPage = Math.min(Math.max(1, currentPage), totalPages);
+    const effectiveRawCount = typeof rawOrdersCount === 'number' ? rawOrdersCount : orders.length;
+    const hasMoreFromServer = !isSearching && effectiveRawCount >= limitAmount && typeof setLimitAmount === 'function';
 
     const startIndex = (validPage - 1) * pageSize;
     const endIndex = Math.min(startIndex + pageSize, totalItems);
@@ -65,7 +67,7 @@ export default function OrderListTable({ orders, loading, isSearching, limitAmou
     const handleNextPage = () => {
         if (validPage < totalPages) {
             setCurrentPage(prev => prev + 1);
-        } else if (orders.length >= limitAmount && typeof setLimitAmount === 'function') {
+        } else if (hasMoreFromServer) {
             setLimitAmount(prev => prev + 100);
             setCurrentPage(prev => prev + 1);
         }
@@ -196,7 +198,7 @@ export default function OrderListTable({ orders, loading, isSearching, limitAmou
 
                         <button
                             onClick={handleNextPage}
-                            disabled={validPage >= totalPages && orders.length < limitAmount}
+                            disabled={validPage >= totalPages && !hasMoreFromServer}
                             className="px-3 py-1.5 bg-(--dh-bg-surface) border border-(--dh-border) hover:border-(--dh-accent) text-(--dh-text-main) hover:text-(--dh-accent) rounded-md font-bold text-xs flex items-center gap-1 disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-xs active:scale-95 cursor-pointer"
                             title="หน้าถัดไป"
                         >

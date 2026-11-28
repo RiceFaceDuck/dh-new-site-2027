@@ -76,8 +76,8 @@ export const billingStatusTransaction = {
           const isSettlingOnAccount = (normalizedCurrentStatus === 'on_account' || String(orderData.paymentStatus || '').toLowerCase() === 'on_account') && (normalizedNewStatus === 'paid' || normalizedNewStatus === 'approved' || normalizedNewStatus === 'completed');
           const isConfirmingPayment = (normalizedNewStatus === 'paid' || normalizedNewStatus === 'approved' || normalizedNewStatus === 'completed') && !orderData.isStockDeducted;
 
-          if (isCancelling && (normalizedCurrentStatus === 'approved' || normalizedCurrentStatus === 'completed')) {
-              throw new Error("ไม่อนุญาตให้ยกเลิกบิลที่อนุมัติหรือเสร็จสิ้นไปแล้ว");
+          if (isCancelling && (normalizedCurrentStatus === 'approved' || normalizedCurrentStatus === 'completed' || normalizedCurrentStatus === 'shipped')) {
+              throw new Error("ไม่อนุญาตให้ยกเลิกบิลที่อนุมัติ จัดส่งแล้ว หรือเสร็จสิ้นไปแล้ว กรุณาทำรายการคืนสินค้า (RTN) แทน");
           }
 
           const productRefs = [];
@@ -430,11 +430,15 @@ export const billingStatusTransaction = {
         const docSnap = await transaction.get(docRef);
         if (!docSnap.exists()) throw new Error("Document does not exist!");
         
+        const prevData = docSnap.data() || {};
+        const prevPayStat = String(prevData.paymentStatus || '').toLowerCase();
+        const resolvedPaymentStatus = prevPayStat === 'on_account' ? 'on_account' : 'paid';
         transaction.update(docRef, {
           status: 'shipped',
           orderStatus: 'shipped',
+          paymentStatus: resolvedPaymentStatus,
           trackingNumber: trackingNumber || null,
-          shippingMethod: courier || docSnap.data().shippingMethod || null,
+          shippingMethod: courier || prevData.shippingMethod || null,
           shippedAt: serverTimestamp(),
           updatedAt: serverTimestamp()
         });

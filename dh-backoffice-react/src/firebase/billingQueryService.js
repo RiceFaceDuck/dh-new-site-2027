@@ -228,36 +228,81 @@ export const billingQueryService = {
 
   subscribeActiveServiceTodos: (callback) => {
     try {
-      const q = query(
+      let todoDocs = [];
+      let claimDocs = [];
+
+      const emitMergedMap = () => {
+        const serviceMap = {};
+        const ensureEntry = (key) => {
+          if (!key) return null;
+          if (!serviceMap[key]) {
+            serviceMap[key] = {
+              hasPendingClaim: false,
+              hasPendingExchange: false,
+              hasPendingReturn: false,
+              hasPendingTax: false
+            };
+          }
+          return serviceMap[key];
+        };
+
+        const applyDoc = (t) => {
+          const keys = [t.referenceId, t.orderId, t.payload?.orderId, t.payload?.orderDocId].filter(Boolean);
+          if (keys.length === 0) return;
+          const typeUpper = String(t.type || '').toUpperCase();
+          const typeLower = String(t.type || '').toLowerCase();
+          keys.forEach((k) => {
+            const entry = ensureEntry(k);
+            if (!entry) return;
+            if (typeUpper === 'CLAIM_APPROVAL' || typeUpper === 'CANCEL_CLAIM_APPROVAL') {
+              entry.hasPendingClaim = true;
+            }
+            if (typeUpper === 'EXCHANGE_APPROVAL' || typeUpper === 'CANCEL_EXCHANGE_APPROVAL') {
+              entry.hasPendingExchange = true;
+            }
+            if (typeUpper === 'RETURN_APPROVAL' || typeUpper === 'CANCEL_RETURN_APPROVAL') {
+              entry.hasPendingReturn = true;
+            }
+            if (typeUpper === 'TAX_INVOICE' || typeLower === 'issue_tax_invoice') {
+              entry.hasPendingTax = true;
+            }
+          });
+        };
+
+        todoDocs.forEach(applyDoc);
+        claimDocs.forEach(applyDoc);
+        if (callback) callback(serviceMap);
+      };
+
+      const qTodos = query(
         collection(db, getCollectionPath('todos')),
+        where('status', 'in', ['pending_manager', 'waiting_item', 'processing', 'pending', 'todo', 'in_progress']),
+        limit(100)
+      );
+      const qClaims = query(
+        collection(db, getCollectionPath('claims')),
         where('status', 'in', ['pending_manager', 'waiting_item', 'processing', 'pending']),
         limit(100)
       );
-      return onSnapshot(q, (snapshot) => {
-        const serviceMap = {};
-        snapshot.docs.forEach(docSnap => {
-          const t = docSnap.data();
-          const orderId = t.referenceId || t.payload?.orderId || t.payload?.orderDocId;
-          if (orderId) {
-            if (!serviceMap[orderId]) {
-              serviceMap[orderId] = { hasPendingClaim: false, hasPendingReturn: false, hasPendingTax: false };
-            }
-            if (t.type === 'CLAIM_APPROVAL' || t.type === 'CANCEL_CLAIM_APPROVAL') {
-              serviceMap[orderId].hasPendingClaim = true;
-            }
-            if (t.type === 'RETURN_APPROVAL' || t.type === 'CANCEL_RETURN_APPROVAL') {
-              serviceMap[orderId].hasPendingReturn = true;
-            }
-            if (t.type === 'TAX_INVOICE') {
-              serviceMap[orderId].hasPendingTax = true;
-            }
-          }
-        });
-        if (callback) callback(serviceMap);
+
+      const unsubTodos = onSnapshot(qTodos, (snapshot) => {
+        todoDocs = snapshot.docs.map(d => d.data());
+        emitMergedMap();
       }, (err) => {
-        console.error("subscribeActiveServiceTodos error:", err);
-        if (callback) callback({});
+        console.error("subscribeActiveServiceTodos (todos) error:", err);
       });
+
+      const unsubClaims = onSnapshot(qClaims, (snapshot) => {
+        claimDocs = snapshot.docs.map(d => d.data());
+        emitMergedMap();
+      }, (err) => {
+        console.error("subscribeActiveServiceTodos (claims) error:", err);
+      });
+
+      return () => {
+        try { unsubTodos(); } catch (_) {}
+        try { unsubClaims(); } catch (_) {}
+      };
     } catch (err) {
       console.error("Error setting up subscribeActiveServiceTodos:", err);
       if (callback) callback({});
