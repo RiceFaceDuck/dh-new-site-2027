@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.IO;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -106,7 +107,7 @@ namespace DHNotebook.DeployCenter
                     SaveDeployState();
                 }
             }
-            catch (Exception ex)
+            catch
             {
                 // หากอ่านไฟล์ไม่ได้ ให้ใช้ค่าเริ่มต้น
             }
@@ -128,7 +129,7 @@ namespace DHNotebook.DeployCenter
                 }
                 File.WriteAllLines(stateFilePath, lines.ToArray(), Encoding.UTF8);
             }
-            catch (Exception ex)
+            catch
             {
                 // Ignore
             }
@@ -265,7 +266,7 @@ namespace DHNotebook.DeployCenter
                     TargetPath = "dh-frontend", 
                     BuildDir = "dh-frontend", 
                     CheckDistPath = "dh-frontend/dist",
-                    DeployCommand = "firebase deploy --only hosting:dh-notebook-frontend",
+                    DeployCommand = "firebase deploy --only hosting:dh-notebook-frontend --non-interactive",
                     IsWebsite = true
                 },
                 new DeployItem 
@@ -275,7 +276,7 @@ namespace DHNotebook.DeployCenter
                     TargetPath = "dh-backoffice-react", 
                     BuildDir = "dh-backoffice-react", 
                     CheckDistPath = "dh-backoffice-react/dist",
-                    DeployCommand = "firebase deploy --only hosting:dhnotebook-work",
+                    DeployCommand = "firebase deploy --only hosting:dhnotebook-work --non-interactive",
                     IsWebsite = true
                 },
                 new DeployItem 
@@ -285,7 +286,7 @@ namespace DHNotebook.DeployCenter
                     TargetPath = "dh-staff-app", 
                     BuildDir = "dh-staff-app", 
                     CheckDistPath = "dh-staff-app/dist",
-                    DeployCommand = "firebase deploy --only hosting:dh-notebook-69f3b",
+                    DeployCommand = "firebase deploy --only hosting:dh-notebook-69f3b --non-interactive",
                     IsWebsite = true
                 },
                 new DeployItem 
@@ -301,7 +302,7 @@ namespace DHNotebook.DeployCenter
                     Key = "rules",
                     Name = "5. กฎความปลอดภัย (Security Rules)", 
                     TargetPath = "rules", 
-                    DeployCommand = "firebase deploy --only firestore:rules,storage",
+                    DeployCommand = "firebase deploy --only firestore:rules,storage --non-interactive",
                     IsWebsite = false
                 },
                 new DeployItem 
@@ -309,7 +310,7 @@ namespace DHNotebook.DeployCenter
                     Key = "indexes",
                     Name = "6. ดัชนีฐานข้อมูล (Firestore Indexes)", 
                     TargetPath = "indexes", 
-                    DeployCommand = "firebase deploy --only firestore:indexes",
+                    DeployCommand = "firebase deploy --only firestore:indexes --non-interactive",
                     IsWebsite = false
                 },
                 new DeployItem 
@@ -516,12 +517,12 @@ namespace DHNotebook.DeployCenter
                     {
                         string targetsStr = string.Join(",", fnTargets.ToArray());
                         deployItems[3].ChangeDetails = string.Format("พบโค้ดใหม่ (เป้าหมาย: {0})", targetsStr);
-                        deployItems[3].DeployCommand = string.Format("firebase deploy --only functions:{0}", targetsStr);
+                        deployItems[3].DeployCommand = string.Format("firebase deploy --only functions:{0} --non-interactive", targetsStr);
                     }
                     else
                     {
                         deployItems[3].ChangeDetails = "พบการแก้ไขใน functions/ (ยังไม่ได้ Deploy)";
-                        deployItems[3].DeployCommand = "firebase deploy --only functions";
+                        deployItems[3].DeployCommand = "firebase deploy --only functions --non-interactive";
                     }
                 }
 
@@ -785,7 +786,7 @@ namespace DHNotebook.DeployCenter
                 {
                     string cmd = !string.IsNullOrEmpty(selectedItem.DeployCommand) 
                         ? selectedItem.DeployCommand 
-                        : "firebase deploy --only functions";
+                        : "firebase deploy --only functions --non-interactive";
                     int code = ExecuteProcessWithLog("cmd.exe", "/c " + cmd, rootPath);
                     if (code == 0)
                     {
@@ -799,9 +800,16 @@ namespace DHNotebook.DeployCenter
                 }
             });
 
-            AppendLog(string.Format("[{0:HH:mm:ss}] เสร็จสิ้น: {0}\n", DateTime.Now, selectedItem.Name));
+            AppendLog(string.Format("[{0:HH:mm:ss}] เสร็จสิ้น: {1}\n", DateTime.Now, selectedItem.Name));
             SetStatus("ดำเนินการเสร็จสิ้น", false);
             await ScanChangesAsync();
+        }
+
+        private static readonly Regex AnsiEscapeRegex = new Regex(@"\x1B\[[0-9;]*[A-Za-z]", RegexOptions.Compiled);
+
+        private static string StripAnsi(string input)
+        {
+            return string.IsNullOrEmpty(input) ? input : AnsiEscapeRegex.Replace(input, "");
         }
 
         private int ExecuteProcessWithLog(string exe, string args, string workingDir)
@@ -812,6 +820,7 @@ namespace DHNotebook.DeployCenter
                 ProcessStartInfo psi = new ProcessStartInfo(exe, args)
                 {
                     WorkingDirectory = workingDir,
+                    RedirectStandardInput = true,
                     RedirectStandardOutput = true,
                     RedirectStandardError = true,
                     UseShellExecute = false,
@@ -823,9 +832,10 @@ namespace DHNotebook.DeployCenter
                 using (Process p = new Process())
                 {
                     p.StartInfo = psi;
-                    p.OutputDataReceived += (s, e) => { if (e.Data != null) AppendLog(e.Data); };
-                    p.ErrorDataReceived += (s, e) => { if (e.Data != null) AppendLog(e.Data); };
+                    p.OutputDataReceived += (s, e) => { if (e.Data != null) AppendLog(StripAnsi(e.Data)); };
+                    p.ErrorDataReceived += (s, e) => { if (e.Data != null) AppendLog(StripAnsi(e.Data)); };
                     p.Start();
+                    try { p.StandardInput.Close(); } catch {}
                     p.BeginOutputReadLine();
                     p.BeginErrorReadLine();
                     p.WaitForExit();
